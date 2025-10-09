@@ -395,7 +395,7 @@ let conferencesData = null
 // Load conferences data
 function loadConferences() {
   try {
-    const data = readFileSync('./server/data/conferences.json', 'utf8');
+    const data = readFileSync('./data/conferences.json', 'utf8');
     conferencesData = JSON.parse(data);
     const totalConferences = (conferencesData.stateConferences?.length || 0) + (conferencesData.nationalConferences?.length || 0);
     console.log(`✓ Loaded ${totalConferences} conferences (${conferencesData.stateConferences?.length || 0} state, ${conferencesData.nationalConferences?.length || 0} national)`);
