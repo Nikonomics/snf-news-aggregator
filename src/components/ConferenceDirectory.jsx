@@ -286,9 +286,6 @@ function ConferenceDirectory() {
                 <tr key={conf.id}>
                   <td className="org-cell">
                     {conf.association || conf.organization}
-                    {conf.state && (
-                      <span className="state-badge">{conf.state}</span>
-                    )}
                   </td>
                   <td className="event-cell">
                     <div className="event-name">{conf.event}</div>
