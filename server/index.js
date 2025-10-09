@@ -357,7 +357,7 @@ app.post('/api/analyze-article', async (req, res) => {
       apiKey: apiKey
     })
 
-    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze the following article and provide detailed insights for SNF operators and administrators.
+    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze the following article and provide detailed, actionable insights for SNF operators and administrators running facilities on 1-2% margins.
 
 Article Title: ${article.title}
 Article Summary: ${article.summary}
@@ -366,23 +366,58 @@ Source: ${article.source}
 Tags: ${article.tags.join(', ')}
 
 Please provide:
-1. **Key Insights** (3-5 bullet points): What are the most important takeaways from this article?
-2. **Action Items** (4-6 specific steps): What should SNF operators do in response to this news?
-3. **Risk Assessment** (identify 2-3 risks with severity levels - high/medium/low): What are the potential risks or challenges?
-4. **Timeline Impact**: What is the urgency and timeline for response?
-5. **Financial Impact**: What are the estimated cost implications?
-6. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences.
 
-Format your response as JSON with the following structure:
+1. **Key Insights** (3-5 bullet points): What are the most important takeaways from this article?
+
+2. **Compliance Timeline** (if applicable):
+   - Comment period deadline
+   - Effective date / implementation deadline
+   - Estimated preparation time needed
+   - Any critical dates operators need to calendar
+
+3. **Financial Impact** (be specific when possible):
+   - Estimated cost per patient per day/month/year (if calculable)
+   - Approximate impact on typical 100-bed facility
+   - One-time costs vs. ongoing operational costs
+   - Timeline for when financial impact will be felt
+
+4. **Who Needs to Know**:
+   - Which roles in the facility need to be informed (Administrator, DON, CFO, Board, etc.)
+   - Why each role needs to know
+
+5. **Action Items** (prioritized by timeline):
+   - Immediate actions (next 7 days)
+   - Short-term actions (30 days)
+   - Long-term actions (60+ days)
+
+6. **Risk Assessment**: Identify 2-3 risks with severity levels:
+   - High/Medium/Low severity
+   - Brief description of each risk
+   - Mitigation strategies
+
+7. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences. If this is similar to past changes, provide that context.
+
+Format your response as JSON with this structure:
 {
   "keyInsights": ["insight1", "insight2", ...],
-  "actionItems": ["action1", "action2", ...],
-  "risks": [
-    {"level": "high|medium|low", "description": "risk description"},
-    ...
+  "complianceTimeline": {
+    "commentDeadline": "date or N/A",
+    "effectiveDate": "date or N/A",
+    "prepTime": "time estimate or N/A",
+    "criticalDates": ["date1", "date2", ...]
+  },
+  "financialImpact": "detailed financial impact description",
+  "whoNeedsToKnow": [
+    {"role": "role name", "reason": "why they need to know"}
   ],
-  "timelineImpact": "timeline description",
-  "financialImpact": "financial impact description",
+  "actionItems": {
+    "immediate": ["action1", "action2", ...],
+    "shortTerm": ["action1", "action2", ...],
+    "longTerm": ["action1", "action2", ...]
+  },
+  "risks": [
+    {"level": "high|medium|low", "description": "risk description", "mitigation": "mitigation strategy"}
+  ],
   "relevanceReasoning": "why this matters explanation"
 }`
 
