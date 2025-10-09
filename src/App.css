@@ -162,10 +162,12 @@
 
 /* Filter Panel */
 .filter-panel {
+  width: 220px;
+  flex-shrink: 0;
   background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem;
 }
 
 .filter-header {
@@ -188,9 +190,10 @@
 
 .filter-label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4a5568;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
   margin-bottom: 0.5rem;
 }
 
@@ -244,8 +247,8 @@
 .search-bar {
   position: relative;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   padding: 1rem 1rem 1rem 3rem;
   display: flex;
   align-items: center;
@@ -716,49 +719,49 @@
 /* Trending Tags */
 .trending-tags {
   background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .trending-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   color: #1a202c;
 }
 
 .trending-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .tags-container {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .trending-tag {
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex;
   align-items: center;
-  padding: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: #f7fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  text-align: left;
   font-size: 0.875rem;
 }
 
 .trending-tag:hover {
   background: #edf2f7;
   border-color: #667eea;
-  transform: translateX(2px);
+  transform: translateY(-2px);
 }
 
 .tag-name {

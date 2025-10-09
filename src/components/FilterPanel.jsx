@@ -1,6 +1,6 @@
-import { Filter } from 'lucide-react'
+import { Filter, Search } from 'lucide-react'
 
-function FilterPanel({ filters, onFilterChange }) {
+function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange }) {
   const categories = [
     'All',
     'Regulatory',
@@ -24,6 +24,20 @@ function FilterPanel({ filters, onFilterChange }) {
       <div className="filter-header">
         <Filter size={20} />
         <h3>Filters</h3>
+      </div>
+
+      <div className="filter-section">
+        <label className="filter-label">Search</label>
+        <div className="search-box-container">
+          <Search size={16} />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="search-input"
+          />
+        </div>
       </div>
 
       <div className="filter-section">

@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { Newspaper, Settings, RefreshCw, Calendar } from 'lucide-react'
 import './App.css'
-import SearchBar from './components/SearchBar'
 import FilterPanel from './components/FilterPanel'
 import ArticleList from './components/ArticleList'
 import AIAnalysis from './components/AIAnalysis'
@@ -154,10 +153,8 @@ function App() {
               <FilterPanel
                 filters={filters}
                 onFilterChange={handleFilterChange}
-              />
-              <TrendingTags
-                articles={articles}
-                onTagClick={handleTagClick}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
               />
             </aside>
 
@@ -178,10 +175,9 @@ function App() {
                 </div>
               ) : (
                 <>
-                  <SearchBar
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    onClear={() => setSearchTerm('')}
+                  <TrendingTags
+                    articles={articles}
+                    onTagClick={handleTagClick}
                   />
 
                   <ArticleList
