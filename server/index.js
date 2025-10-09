@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import Parser from 'rss-parser'
 import NodeCache from 'node-cache'
+import { readFileSync, writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -34,6 +35,8 @@ const REFRESH_INTERVAL_MS = 1800000 // 30 minutes in milliseconds (30 * 60 * 100
 
 // Cache for articles
 const cache = new NodeCache({ stdTTL: CACHE_TTL_SECONDS })
+cache.flushAll();
+console.log('Cache cleared - forcing fresh data');
 
 // RSS feed URLs
 const RSS_FEEDS = [
@@ -41,6 +44,35 @@ const RSS_FEEDS = [
   // Note: McKnight's blocks automated RSS access (403 Forbidden)
   // Many healthcare news sites actively block RSS scrapers for copyright protection
 ]
+
+// Helper function to find new articles by comparing URLs
+function findNewArticles(rssArticles, existingArticles) {
+  // Compare by URL to find which RSS articles are new
+  const existingUrls = new Set(existingArticles.map(a => a.link));
+  return rssArticles.filter(article => !existingUrls.has(article.link));
+}
+
+// Helper function to load analyzed articles from JSON file
+function loadAnalyzedArticles() {
+  try {
+    const filePath = join(__dirname, 'data', 'analyzed-articles.json');
+    const data = readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.log('No existing analyzed articles, starting fresh');
+    return [];
+  }
+}
+
+// Helper function to save analyzed articles to JSON file
+function saveAnalyzedArticles(articles) {
+  const filePath = join(__dirname, 'data', 'analyzed-articles.json');
+  writeFileSync(
+    filePath,
+    JSON.stringify(articles, null, 2),
+    'utf8'
+  );
+}
 
 // Categories mapping based on keywords
 const categorizeArticle = (title, content) => {
@@ -136,9 +168,112 @@ const calculateRelevanceScore = (title, content) => {
   return Math.min(score, 100) // Cap at 100
 }
 
+// AI article analysis function
+async function analyzeArticleWithAI(article) {
+  try {
+    console.log(`Analyzing new article: ${article.title}`);
+
+    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze the following article and provide detailed, actionable insights for SNF operators and administrators running facilities on 1-2% margins.
+
+Article Title: ${article.title}
+Article Summary: ${article.summary}
+Category: ${article.category}
+Source: ${article.source}
+Tags: ${article.tags.join(', ')}
+
+Please provide:
+
+1. **Key Insights** (3-5 bullet points): What are the most important takeaways from this article?
+
+2. **Compliance Timeline** (if applicable):
+   - Comment period deadline
+   - Effective date / implementation deadline
+   - Estimated preparation time needed
+   - Any critical dates operators need to calendar
+
+3. **Financial Impact** (be specific when possible):
+   - Estimated cost per patient per day/month/year (if calculable)
+   - Approximate impact on typical 100-bed facility
+   - One-time costs vs. ongoing operational costs
+   - Timeline for when financial impact will be felt
+
+4. **Who Needs to Know**:
+   - Which roles in the facility need to be informed (Administrator, DON, CFO, Board, etc.)
+   - Why each role needs to know
+
+5. **Action Items** (prioritized by timeline):
+   - Immediate actions (next 7 days)
+   - Short-term actions (30 days)
+   - Long-term actions (60+ days)
+
+6. **Risk Assessment**: Identify 2-3 risks with severity levels:
+   - High/Medium/Low severity
+   - Brief description of each risk
+   - Mitigation strategies
+
+7. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences. If this is similar to past changes, provide that context.
+
+Format your response as JSON with this structure:
+{
+  "keyInsights": ["insight1", "insight2", ...],
+  "complianceTimeline": {
+    "commentDeadline": "date or N/A",
+    "effectiveDate": "date or N/A",
+    "prepTime": "time estimate or N/A",
+    "criticalDates": ["date1", "date2", ...]
+  },
+  "financialImpact": "detailed financial impact description",
+  "whoNeedsToKnow": [
+    {"role": "role name", "reason": "why they need to know"}
+  ],
+  "actionItems": {
+    "immediate": ["action1", "action2", ...],
+    "shortTerm": ["action1", "action2", ...],
+    "longTerm": ["action1", "action2", ...]
+  },
+  "risks": [
+    {"level": "high|medium|low", "description": "risk description", "mitigation": "mitigation strategy"}
+  ],
+  "relevanceReasoning": "why this matters explanation"
+}`;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY not configured');
+    }
+
+    const anthropic = new Anthropic({
+      apiKey: apiKey
+    });
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    const analysisText = message.content[0].text;
+    const cleanedText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const analysis = JSON.parse(cleanedText);
+
+    console.log(`✓ Analysis complete for: ${article.title}`);
+    return { ...article, analysis };
+  } catch (error) {
+    console.error(`Error analyzing article: ${article.title}`, error.message);
+    return null;
+  }
+}
+
 // Fetch and parse RSS feeds
 async function fetchAllFeeds() {
   console.log('Fetching RSS feeds...')
+  // Load existing analyzed articles
+  const existingArticles = loadAnalyzedArticles()
   const allArticles = []
   let articleId = 1
 
@@ -149,7 +284,7 @@ async function fetchAllFeeds() {
 
       for (const item of parsedFeed.items) {
         const content = item['content:encoded'] || item.description || item.contentSnippet || ''
-        const cleanContent = content.replace(/<[^>]*>/g, '').substring(0, 500) // Strip HTML and limit length
+        const cleanContent = content.replace(/<[^>]*>/g, '').substring(0, 400) + '...' // Strip HTML and limit length
 
         const article = {
           id: articleId++,
@@ -176,8 +311,27 @@ async function fetchAllFeeds() {
   // Sort by date (newest first)
   allArticles.sort((a, b) => new Date(b.date) - new Date(a.date))
 
+  // Find which articles are new (not in existing analyzed articles)
+  const newArticles = findNewArticles(allArticles, existingArticles)
+  console.log(`Found ${newArticles.length} new articles to analyze`)
+
+  // Analyze only the new articles
+  const analyzedNewArticles = []
+  for (const article of newArticles) {
+    const analyzedArticle = await analyzeArticleWithAI(article)
+    analyzedNewArticles.push(analyzedArticle)
+  }
+  console.log(`Analyzed ${analyzedNewArticles.length} new articles`)
+
+  // Merge new analyzed articles with existing ones
+  const allAnalyzedArticles = [...analyzedNewArticles, ...existingArticles]
+
+  // Save to JSON file
+  saveAnalyzedArticles(allAnalyzedArticles)
+  console.log(`Total analyzed articles stored: ${allAnalyzedArticles.length}`)
+
   console.log(`Total articles fetched: ${allArticles.length}`)
-  return allArticles
+  return allAnalyzedArticles
 }
 
 // Middleware
@@ -239,13 +393,14 @@ app.post('/api/articles/refresh', async (req, res) => {
 let conferencesData = null
 
 // Load conferences data
-async function loadConferences() {
+function loadConferences() {
   try {
-    const data = await readFile(join(__dirname, 'data', 'conferences.json'), 'utf-8')
-    conferencesData = JSON.parse(data)
-    console.log('✓ Conferences data loaded')
+    const data = readFileSync('./server/data/conferences.json', 'utf8');
+    conferencesData = JSON.parse(data);
+    const totalConferences = (conferencesData.stateConferences?.length || 0) + (conferencesData.nationalConferences?.length || 0);
+    console.log(`✓ Loaded ${totalConferences} conferences (${conferencesData.stateConferences?.length || 0} state, ${conferencesData.nationalConferences?.length || 0} national)`);
   } catch (error) {
-    console.error('Error loading conferences data:', error.message)
+    console.error('❌ Error loading conferences:', error);
   }
 }
 
@@ -479,7 +634,7 @@ async function refreshArticlesInBackground() {
 async function startServer() {
   try {
     // Load conferences data
-    await loadConferences()
+    loadConferences()
 
     // Fetch feeds on startup
     const articles = await fetchAllFeeds()

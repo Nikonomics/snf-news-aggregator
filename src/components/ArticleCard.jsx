@@ -36,6 +36,29 @@ function ArticleCard({ article, onAnalyze, onViewDetails }) {
 
       <p className="article-summary">{article.summary}</p>
 
+      {/* AI Analysis - Pre-loaded */}
+      {article.analysis && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <details className="cursor-pointer">
+            <summary className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+              View AI Analysis
+            </summary>
+            <div className="mt-2 space-y-2 text-sm">
+              {article.analysis.keyInsights && (
+                <div>
+                  <strong>Key Insights:</strong>
+                  <ul className="list-disc ml-4 mt-1">
+                    {article.analysis.keyInsights.map((insight, i) => (
+                      <li key={i}>{insight}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </details>
+        </div>
+      )}
+
       <div className="article-tags">
         {article.tags.slice(0, 3).map((tag, index) => (
           <span key={index} className="tag">{tag}</span>
@@ -43,16 +66,6 @@ function ArticleCard({ article, onAnalyze, onViewDetails }) {
       </div>
 
       <div className="article-actions">
-        <button
-          className="btn-secondary"
-          onClick={(e) => {
-            e.stopPropagation()
-            onAnalyze(article)
-          }}
-        >
-          <AlertCircle size={14} />
-          AI
-        </button>
         <a
           href={article.url}
           target="_blank"
