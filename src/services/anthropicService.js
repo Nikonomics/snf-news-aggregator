@@ -1,6 +1,8 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+
 export async function analyzeArticleWithAI(article) {
   try {
-    const response = await fetch('http://localhost:3001/api/analyze-article', {
+    const response = await fetch(`${API_BASE_URL}/api/analyze-article`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
