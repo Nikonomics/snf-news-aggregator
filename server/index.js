@@ -449,36 +449,58 @@ async function fetchAllFeeds() {
   const newArticles = await processArticlesWithDeduplication(allArticles)
   console.log(`✅ Found ${newArticles.length} unique articles to analyze`)
 
-  // Analyze and save new articles to database
+  // Analyze and save articles in batches for better performance
+  const BATCH_SIZE = 5 // Process 5 articles concurrently
   let savedCount = 0
-  for (let i = 0; i < newArticles.length; i++) {
-    const article = newArticles[i]
-    console.log(`Analyzing new article: ${article.title}`)
+  let totalAnalyzed = 0
 
-    const analyzedArticle = await analyzeArticleWithAI(article)
-    if (analyzedArticle) {
+  for (let i = 0; i < newArticles.length; i += BATCH_SIZE) {
+    const batch = newArticles.slice(i, i + BATCH_SIZE)
+    console.log(`\n🔄 Analyzing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(newArticles.length / BATCH_SIZE)} (${batch.length} articles)...`)
+
+    // Analyze all articles in batch concurrently
+    const analysisPromises = batch.map(article =>
+      analyzeArticleWithAI(article)
+        .then(result => ({ article, result, error: null }))
+        .catch(error => ({ article, result: null, error }))
+    )
+
+    const results = await Promise.all(analysisPromises)
+
+    // Save results to database
+    for (const { article, result, error } of results) {
+      totalAnalyzed++
+
+      if (error) {
+        console.error(`❌ Error analyzing "${article.title}":`, error.message)
+        continue
+      }
+
+      if (!result) {
+        console.error(`❌ No result for "${article.title}"`)
+        continue
+      }
+
       try {
         // Insert article into database
-        const articleId = await insertArticle(analyzedArticle)
+        const articleId = await insertArticle(result)
 
         // Insert tags
-        if (analyzedArticle.tags && analyzedArticle.tags.length > 0) {
-          await insertArticleTags(articleId, analyzedArticle.tags)
+        if (result.tags && result.tags.length > 0) {
+          await insertArticleTags(articleId, result.tags)
         }
 
         savedCount++
-        console.log(`✓ Analysis complete for: ${article.title}`)
-
-        // Log progress every 10 articles
-        if ((i + 1) % 10 === 0 || i === newArticles.length - 1) {
-          console.log(`💾 Saved progress: ${savedCount}/${newArticles.length} articles analyzed`)
-        }
+        console.log(`✓ Saved: ${article.title.substring(0, 70)}...`)
       } catch (error) {
-        console.error(`Error saving article "${article.title}":`, error.message)
+        console.error(`❌ Error saving "${article.title}":`, error.message)
       }
     }
+
+    console.log(`📊 Progress: ${totalAnalyzed}/${newArticles.length} analyzed, ${savedCount} saved`)
   }
-  console.log(`✅ Completed analyzing and saving ${savedCount} new articles`)
+
+  console.log(`\n✅ Completed: ${savedCount}/${newArticles.length} articles saved to database`)
 
   // Get all articles from database for response
   const result = await db.query('SELECT COUNT(*) as count FROM articles')
@@ -500,6 +522,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// GET /api/articles - Get articles with backend filtering
+// Query params: page, limit, category, impact, source, search
+// Example: /api/articles?category=Regulatory&impact=high&page=1&limit=50
 app.get('/api/articles', async (req, res) => {
   try {
     // Parse query parameters
@@ -510,7 +535,7 @@ app.get('/api/articles', async (req, res) => {
     const source = req.query.source
     const search = req.query.search
 
-    // Get articles from database with filters
+    // Get articles from database with PostgreSQL filtering
     const result = await getArticles({
       page,
       limit,
@@ -559,6 +584,65 @@ app.post('/api/articles/refresh', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to refresh articles',
+      message: error.message
+    })
+  }
+})
+
+// Cost monitoring endpoint
+app.get('/api/stats/costs', async (req, res) => {
+  try {
+    // Get article statistics
+    const articlesResult = await db.query(`
+      SELECT COUNT(*) as total_articles,
+             COUNT(DISTINCT DATE(created_at)) as active_days
+      FROM articles
+    `)
+
+    // Get deduplication stats (from analysis JSONB field)
+    const dedupResult = await db.query(`
+      SELECT COUNT(*) as total_processed
+      FROM articles
+      WHERE created_at > NOW() - INTERVAL '30 days'
+    `)
+
+    const totalArticles = parseInt(articlesResult.rows[0].total_articles)
+    const activeDays = parseInt(articlesResult.rows[0].active_days)
+    const articlesLast30Days = parseInt(dedupResult.rows[0].total_processed)
+
+    // Cost estimates (based on current pricing)
+    const AI_ANALYSIS_COST = 0.02 // $0.02 per article analysis
+    const AI_DEDUP_COST = 0.001 // $0.001 per dedup check
+    const DEDUP_AI_USAGE_RATE = 0.01 // ~1% of articles need AI dedup
+
+    const estimatedMonthlyCost = (articlesLast30Days * AI_ANALYSIS_COST) +
+                                 (articlesLast30Days * DEDUP_AI_USAGE_RATE * AI_DEDUP_COST)
+
+    res.json({
+      success: true,
+      articles: {
+        total: totalArticles,
+        last30Days: articlesLast30Days,
+        avgPerDay: Math.round(articlesLast30Days / 30)
+      },
+      costs: {
+        estimatedMonthly: `$${estimatedMonthlyCost.toFixed(2)}`,
+        perArticle: `$${AI_ANALYSIS_COST.toFixed(3)}`,
+        dedupPerCheck: `$${AI_DEDUP_COST.toFixed(4)}`,
+        dedupUsageRate: `${(DEDUP_AI_USAGE_RATE * 100).toFixed(1)}%`
+      },
+      savings: {
+        withoutDedup: `$${(articlesLast30Days * 10 * AI_ANALYSIS_COST).toFixed(2)}`,
+        withDedup: `$${estimatedMonthlyCost.toFixed(2)}`,
+        saved: `$${((articlesLast30Days * 10 * AI_ANALYSIS_COST) - estimatedMonthlyCost).toFixed(2)}`,
+        percentage: `${(((articlesLast30Days * 10 * AI_ANALYSIS_COST - estimatedMonthlyCost) / (articlesLast30Days * 10 * AI_ANALYSIS_COST)) * 100).toFixed(1)}%`
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching cost stats:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch cost statistics',
       message: error.message
     })
   }
