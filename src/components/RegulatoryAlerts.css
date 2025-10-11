@@ -1,0 +1,265 @@
+.regulatory-alerts {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.alerts-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.alerts-count {
+  background: #FEE2E2;
+  color: #DC2626;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.alert-card {
+  background: white;
+  border-radius: 8px;
+  padding: 18px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid;
+  transition: all 0.2s;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.alert-critical {
+  border-left-color: #DC2626;
+  background: #FEF2F2;
+}
+
+.alert-high {
+  border-left-color: #F59E0B;
+  background: #FFFBEB;
+}
+
+.alert-medium {
+  border-left-color: #3B82F6;
+  background: #EFF6FF;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.alert-title-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.jurisdiction-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.jurisdiction-badge {
+  background: #E0E7FF;
+  color: #4338CA;
+}
+
+.alert-type {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  background: #F3F4F6;
+  color: #6B7280;
+  text-transform: capitalize;
+}
+
+.relevance-score {
+  background: #111827;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.alert-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.alert-description {
+  font-size: 0.95rem;
+  color: #4B5563;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  flex-grow: 1;
+}
+
+.alert-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.alert-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #6B7280;
+}
+
+.alert-detail svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.alert-deadline {
+  color: #DC2626;
+  font-weight: 600;
+}
+
+.impact-positive {
+  color: #10b981;
+}
+
+.impact-negative {
+  color: #ef4444;
+}
+
+.alert-category {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.category-badge,
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.category-badge {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-badge {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.action-items {
+  background: #FEF3C7;
+  border: 1px solid #FDE047;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.action-items strong {
+  display: block;
+  color: #92400E;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.action-items p {
+  margin: 0;
+  color: #78350F;
+}
+
+.launch-campaign-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: auto;
+  transition: all 0.2s;
+}
+
+.launch-campaign-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.launch-campaign-btn:active {
+  transform: translateY(0);
+}
+
+.launch-campaign-btn.active-campaign {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.launch-campaign-btn.active-campaign:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+@media (max-width: 768px) {
+  .alerts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alerts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .alert-card {
+    padding: 16px;
+  }
+}
