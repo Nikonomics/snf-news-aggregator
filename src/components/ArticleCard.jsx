@@ -1,7 +1,9 @@
-import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink, Bookmark, MapPin, Star } from 'lucide-react'
+import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink, Bookmark, MapPin, Star, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
+import { useState } from 'react'
 
 function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false)
   const getImpactColor = (impact) => {
     switch (impact) {
       case 'high': return '#ef4444'
@@ -82,26 +84,74 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
         </div>
       </div>
 
-      {/* AI Analysis - Pre-loaded */}
-      {article.analysis && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <details className="cursor-pointer">
-            <summary className="text-sm font-semibold text-purple-600 hover:text-purple-700">
-              View AI Analysis
-            </summary>
-            <div className="mt-2 space-y-2 text-sm">
-              {article.analysis.keyInsights && (
-                <div>
-                  <strong>Key Insights:</strong>
-                  <ul className="list-disc ml-4 mt-1">
-                    {article.analysis.keyInsights.map((insight, i) => (
-                      <li key={i}>{insight}</li>
+      {/* AI Analysis - Always Visible */}
+      {article.analysis && article.analysis.keyInsights && article.analysis.keyInsights.length > 0 && (
+        <div style={{
+          marginTop: '12px',
+          padding: '12px',
+          backgroundColor: '#faf5ff',
+          borderLeft: '3px solid #a855f7',
+          borderRadius: '4px'
+        }}>
+          {/* Top insight always visible */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <Sparkles size={16} style={{ color: '#a855f7', marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{
+                fontSize: '0.875em',
+                lineHeight: '1.4',
+                color: '#581c87',
+                margin: 0
+              }}>
+                <strong>Key Insight:</strong> {article.analysis.keyInsights[0]}
+              </p>
+
+              {/* Show more button if there are additional insights */}
+              {article.analysis.keyInsights.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFullAnalysis(!showFullAnalysis)
+                  }}
+                  style={{
+                    marginTop: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.8em',
+                    color: '#a855f7',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontWeight: '600'
+                  }}
+                >
+                  {showFullAnalysis ? (
+                    <>Show Less <ChevronUp size={14} /></>
+                  ) : (
+                    <>Show {article.analysis.keyInsights.length - 1} More Insight{article.analysis.keyInsights.length > 2 ? 's' : ''} <ChevronDown size={14} /></>
+                  )}
+                </button>
+              )}
+
+              {/* Full analysis when expanded */}
+              {showFullAnalysis && article.analysis.keyInsights.length > 1 && (
+                <div style={{ marginTop: '12px' }}>
+                  <ul style={{
+                    listStyle: 'disc',
+                    marginLeft: '20px',
+                    fontSize: '0.875em',
+                    color: '#581c87'
+                  }}>
+                    {article.analysis.keyInsights.slice(1).map((insight, i) => (
+                      <li key={i} style={{ marginTop: '6px' }}>{insight}</li>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
-          </details>
+          </div>
         </div>
       )}
 
