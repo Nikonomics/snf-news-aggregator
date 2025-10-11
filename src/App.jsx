@@ -178,8 +178,8 @@ function App() {
 
       case 'relevant':
         return sorted.sort((a, b) => {
-          const scoreA = (a.analysis?.relevanceScore || 0)
-          const scoreB = (b.analysis?.relevanceScore || 0)
+          const scoreA = (a.relevance_score || a.analysis?.relevanceScore || 0)
+          const scoreB = (b.relevance_score || b.analysis?.relevanceScore || 0)
           if (scoreB !== scoreA) return scoreB - scoreA
           // Secondary sort by date if relevance is the same
           return new Date(b.date) - new Date(a.date)
