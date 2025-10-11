@@ -517,6 +517,10 @@ async function fetchAllFeeds() {
 app.use(cors())
 app.use(express.json())
 
+// Serve static frontend files in production
+const distPath = join(__dirname, '../dist')
+app.use(express.static(distPath))
+
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -1029,6 +1033,11 @@ async function startServer() {
 
     // Load conferences data
     loadConferences()
+
+    // Fallback route - serve index.html for all non-API routes (for React Router)
+    app.get('*', (req, res) => {
+      res.sendFile(join(distPath, 'index.html'))
+    })
 
     // Start server immediately
     app.listen(PORT, () => {
