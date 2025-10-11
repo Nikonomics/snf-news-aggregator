@@ -1034,8 +1034,9 @@ async function startServer() {
     // Load conferences data
     loadConferences()
 
-    // Fallback route - serve index.html for all non-API routes (for React Router)
-    app.get('*', (req, res) => {
+    // Fallback middleware - serve index.html for all non-API routes (for React Router)
+    // This must be last, after all other routes
+    app.use((req, res) => {
       res.sendFile(join(distPath, 'index.html'))
     })
 
