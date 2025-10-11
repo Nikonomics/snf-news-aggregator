@@ -1,7 +1,7 @@
 import { Filter, Search, Globe, X, ArrowUpDown, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sortBy, onSortChange }) {
+function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sortBy, onSortChange, stateCounts = {} }) {
   const navigate = useNavigate()
   const handleStateToggle = (state) => {
     const currentStates = filters.states || []
@@ -204,15 +204,18 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
             className="filter-select state-multi-select"
             size="8"
           >
-            {states.map((state) => (
-              <option
-                key={state}
-                value={state}
-                className={filters.states?.includes(state) ? 'selected' : ''}
-              >
-                {state}
-              </option>
-            ))}
+            {states.map((state) => {
+              const count = stateCounts[state] || 0
+              return (
+                <option
+                  key={state}
+                  value={state}
+                  className={filters.states?.includes(state) ? 'selected' : ''}
+                >
+                  {state} {count > 0 ? `(${count})` : ''}
+                </option>
+              )
+            })}
           </select>
           <p className="filter-hint">Hold Ctrl/Cmd to select multiple states</p>
         </div>
@@ -240,11 +243,14 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
           defaultValue=""
         >
           <option value="">Select your state...</option>
-          {states.map((state) => (
-            <option key={state} value={state}>
-              {state}
-            </option>
-          ))}
+          {states.map((state) => {
+            const count = stateCounts[state] || 0
+            return (
+              <option key={state} value={state}>
+                {state} {count > 0 ? `(${count})` : ''}
+              </option>
+            )
+          })}
         </select>
         <p className="filter-hint">View your state's intelligence dashboard</p>
       </div>

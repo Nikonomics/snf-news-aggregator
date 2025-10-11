@@ -190,6 +190,25 @@ function App() {
     }
   }, [filteredArticles, sortBy])
 
+  // Calculate article counts per state (including both State and Local scope)
+  const stateCounts = useMemo(() => {
+    const counts = {}
+    articles.forEach(article => {
+      const scope = article.scope || article.analysis?.scope
+      const states = article.states || article.analysis?.states || []
+
+      // Include articles with State or Local scope
+      if (scope === 'State' || scope === 'Local') {
+        states.forEach(state => {
+          if (state && state !== 'N/A') {
+            counts[state] = (counts[state] || 0) + 1
+          }
+        })
+      }
+    })
+    return counts
+  }, [articles])
+
   const toggleSaveArticle = (articleUrl) => {
     setSavedArticles(prev => {
       const newSaved = prev.includes(articleUrl)
@@ -318,6 +337,7 @@ function App() {
                 onSearchChange={setSearchTerm}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
+                stateCounts={stateCounts}
               />
             </aside>
 
