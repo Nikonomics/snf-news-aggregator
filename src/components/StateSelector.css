@@ -1,0 +1,201 @@
+.state-selector-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 4rem;
+}
+
+.state-selector-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.state-selector-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 3rem;
+}
+
+.state-selector-header svg {
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+.state-selector-header h1 {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  font-weight: 700;
+}
+
+.state-selector-header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0 0 1rem 0;
+}
+
+.hovered-state-label {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.saved-state-banner {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #667eea;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.map-instructions {
+  text-align: center;
+  color: white;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* Saved State Card */
+.saved-state-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.saved-state-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.state-card.large {
+  width: 100%;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.state-card.large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.state-card.large .state-code {
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+}
+
+.state-card.large .state-label {
+  font-size: 1.2rem;
+  color: white;
+  font-weight: 600;
+}
+
+/* States Grid */
+.states-grid-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.states-grid-container h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1a202c;
+  font-size: 1.2rem;
+}
+
+.states-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 1rem;
+}
+
+.state-card {
+  padding: 1.5rem 1rem;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.state-card:hover {
+  background: #edf2f7;
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.state-card.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.state-card.active:hover {
+  background: #5a67d8;
+  border-color: #5a67d8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .state-selector-page {
+    padding: 1rem;
+  }
+
+  .state-selector-header h1 {
+    font-size: 2rem;
+  }
+
+  .states-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .state-card {
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
+  }
+
+  .state-card.large .state-code {
+    font-size: 2rem;
+  }
+
+  .state-card.large .state-label {
+    font-size: 1rem;
+  }
+}
