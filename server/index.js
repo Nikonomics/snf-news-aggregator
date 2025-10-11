@@ -773,12 +773,36 @@ app.get('/api/state/:stateCode', async (req, res) => {
 
     const stateArticles = result.rows
 
-    // Get or generate AI state summary
+    // Get or generate AI state summary with caching
     let stateSummary = null
     if (stateArticles.length > 0) {
-      const summaryResult = await generateStateSummary(stateCode.toUpperCase(), stateArticles)
-      if (summaryResult.success) {
-        stateSummary = summaryResult.analysis
+      // Check if we have a cached summary
+      const cachedSummary = await db.query(
+        'SELECT summary, articles_analyzed, updated_at FROM state_summaries WHERE state = $1',
+        [stateCode.toUpperCase()]
+      )
+
+      // Use cached summary if it exists and article count matches
+      if (cachedSummary.rows.length > 0 && cachedSummary.rows[0].articles_analyzed === stateArticles.length) {
+        console.log(`📦 Using cached summary for ${stateCode.toUpperCase()}`)
+        stateSummary = cachedSummary.rows[0].summary
+      } else {
+        // Generate new summary
+        console.log(`🤖 Generating new summary for ${stateCode.toUpperCase()}...`)
+        const summaryResult = await generateStateSummary(stateCode.toUpperCase(), stateArticles)
+        if (summaryResult.success) {
+          stateSummary = summaryResult.analysis
+
+          // Cache the new summary
+          await db.query(
+            `INSERT INTO state_summaries (state, summary, articles_analyzed)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (state)
+             DO UPDATE SET summary = $2, articles_analyzed = $3, updated_at = CURRENT_TIMESTAMP`,
+            [stateCode.toUpperCase(), JSON.stringify(stateSummary), stateArticles.length]
+          )
+          console.log(`💾 Cached summary for ${stateCode.toUpperCase()}`)
+        }
       }
     }
 

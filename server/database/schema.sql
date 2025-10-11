@@ -146,6 +146,25 @@ CREATE TABLE IF NOT EXISTS user_bookmarks (
 );
 
 -- ============================================================
+-- STATE SUMMARIES TABLE (for caching AI-generated summaries)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS state_summaries (
+    id SERIAL PRIMARY KEY,
+    state VARCHAR(2) NOT NULL UNIQUE,
+
+    -- Summary data (stored as JSONB)
+    summary JSONB NOT NULL,
+
+    -- Tracking
+    articles_analyzed INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_state_summaries_state ON state_summaries(state);
+CREATE INDEX idx_state_summaries_updated ON state_summaries(updated_at DESC);
+
+-- ============================================================
 -- HELPER FUNCTIONS
 -- ============================================================
 
@@ -166,6 +185,9 @@ CREATE TRIGGER update_conferences_updated_at BEFORE UPDATE ON conferences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_state_summaries_updated_at BEFORE UPDATE ON state_summaries
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
