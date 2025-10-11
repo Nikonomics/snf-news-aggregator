@@ -1,19 +1,10 @@
 -- SNF News Aggregator Database Schema
 -- PostgreSQL
 
--- Drop existing tables if they exist (for clean setup)
-DROP TABLE IF EXISTS article_tags CASCADE;
-DROP TABLE IF EXISTS tags CASCADE;
-DROP TABLE IF EXISTS user_bookmarks CASCADE;
-DROP TABLE IF EXISTS user_preferences CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS conferences CASCADE;
-DROP TABLE IF EXISTS articles CASCADE;
-
 -- ============================================================
 -- ARTICLES TABLE
 -- ============================================================
-CREATE TABLE articles (
+CREATE TABLE IF NOT EXISTS articles (
     -- Identity
     id SERIAL PRIMARY KEY,
     external_id VARCHAR(500) UNIQUE, -- For deduplication (hash of title+url)
@@ -72,13 +63,13 @@ CREATE INDEX idx_articles_search ON articles USING GIN(
 -- ============================================================
 -- TAGS TABLES
 -- ============================================================
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE article_tags (
+CREATE TABLE IF NOT EXISTS article_tags (
     article_id INTEGER REFERENCES articles(id) ON DELETE CASCADE,
     tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
     PRIMARY KEY (article_id, tag_id)
@@ -90,7 +81,7 @@ CREATE INDEX idx_article_tags_tag ON article_tags(tag_id);
 -- ============================================================
 -- CONFERENCES TABLE
 -- ============================================================
-CREATE TABLE conferences (
+CREATE TABLE IF NOT EXISTS conferences (
     id SERIAL PRIMARY KEY,
 
     -- Basic Info
@@ -124,14 +115,14 @@ CREATE INDEX idx_conferences_status ON conferences(status);
 -- ============================================================
 -- USER TABLES (for future features)
 -- ============================================================
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE user_preferences (
+CREATE TABLE IF NOT EXISTS user_preferences (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 
@@ -147,7 +138,7 @@ CREATE TABLE user_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE user_bookmarks (
+CREATE TABLE IF NOT EXISTS user_bookmarks (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     article_id INTEGER REFERENCES articles(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
