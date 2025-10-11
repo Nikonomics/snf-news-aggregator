@@ -4,9 +4,12 @@ function TrendingTags({ articles, onTagClick }) {
   // Count tag occurrences
   const tagCounts = {}
   articles.forEach(article => {
-    article.tags.forEach(tag => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1
-    })
+    // Check if tags exist and is an array
+    if (article.tags && Array.isArray(article.tags)) {
+      article.tags.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1
+      })
+    }
   })
 
   // Sort by count and get top 10
