@@ -60,7 +60,7 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
       <div className="article-meta" style={{ marginTop: '12px', gap: '8px', flexWrap: 'wrap' }}>
         <div className="meta-item">
           <Calendar size={12} />
-          <span>{format(new Date(article.date), 'MMM d')}</span>
+          <span>{format(new Date(article.date || article.published_date), 'MMM d')}</span>
         </div>
         <div className="meta-item">
           <Tag size={12} />
