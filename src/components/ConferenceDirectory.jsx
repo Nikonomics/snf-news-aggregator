@@ -49,14 +49,23 @@ function ConferenceDirectory() {
     return ['All States', ...uniqueStates.sort()]
   }, [conferences.state])
 
-  // Handle conference type checkbox changes
-  const handleTypeChange = (type) => {
-    if (type === 'all') {
+  // Handle conference type dropdown change
+  const handleTypeChange = (value) => {
+    if (value === 'all') {
       setConferenceTypes({ state: true, national: true, all: false })
-    } else {
-      const newTypes = { ...conferenceTypes, [type]: !conferenceTypes[type], all: false }
-      setConferenceTypes(newTypes)
+    } else if (value === 'state') {
+      setConferenceTypes({ state: true, national: false, all: false })
+    } else if (value === 'national') {
+      setConferenceTypes({ state: false, national: true, all: false })
     }
+  }
+
+  // Get current conference type selection for dropdown
+  const getCurrentType = () => {
+    if (conferenceTypes.state && conferenceTypes.national) return 'all'
+    if (conferenceTypes.state) return 'state'
+    if (conferenceTypes.national) return 'national'
+    return 'all'
   }
 
   // Handle column sort
@@ -156,88 +165,67 @@ function ConferenceDirectory() {
       {/* Header */}
       <div className="conference-header">
         <h2>Conference Directory</h2>
-        <p>Find state and national conferences for the skilled nursing industry</p>
+        <p className="conference-subtitle">Find state and national conferences for the skilled nursing industry</p>
       </div>
 
-      {/* Main content with sidebar */}
-      <div className="conference-content">
-        {/* Left Sidebar - Filters */}
-        <aside className="conference-sidebar">
-          <div className="sidebar-section">
-            <label className="sidebar-label">Search</label>
-            <div className="search-box-container">
-              <Search size={16} />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
+      {/* Horizontal Filter Row */}
+      <div className="conference-filter-row">
+        <div className="filter-row-left">
+          {/* Search Box */}
+          <div className="conference-search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Search conferences..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="conference-search-input"
+            />
           </div>
 
-          <div className="sidebar-section">
-            <label className="sidebar-label">Conference Type</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={conferenceTypes.state}
-                  onChange={() => handleTypeChange('state')}
-                  className="checkbox-input"
-                />
-                <span>State Conferences</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={conferenceTypes.national}
-                  onChange={() => handleTypeChange('national')}
-                  className="checkbox-input"
-                />
-                <span>National Conferences</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={conferenceTypes.state && conferenceTypes.national}
-                  onChange={() => handleTypeChange('all')}
-                  className="checkbox-input"
-                />
-                <span>All Conferences</span>
-              </label>
-            </div>
+          {/* Conference Type Dropdown */}
+          <div className="filter-dropdown-wrapper">
+            <label className="filter-dropdown-label">CONFERENCE TYPE</label>
+            <select
+              value={getCurrentType()}
+              onChange={(e) => handleTypeChange(e.target.value)}
+              className="filter-dropdown"
+            >
+              <option value="all">All Conferences</option>
+              <option value="state">State Conferences</option>
+              <option value="national">National Conferences</option>
+            </select>
           </div>
 
-          {conferenceTypes.state && (
-            <div className="sidebar-section">
-              <label className="sidebar-label">Filter by State</label>
-              <div className="state-filter">
-                <Filter size={16} />
-                <select
-                  value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
-                  className="state-select"
-                >
-                  {states.map(state => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          <div className="sidebar-section">
-            <div className="results-count">
-              {filteredConferences.length} conference{filteredConferences.length !== 1 ? 's' : ''}
+          {/* State Filter Dropdown */}
+          <div className="filter-dropdown-wrapper">
+            <label className="filter-dropdown-label">STATE</label>
+            <div className="filter-dropdown-with-icon">
+              <MapPin size={14} className="dropdown-icon" />
+              <select
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className="filter-dropdown with-icon"
+              >
+                {states.map(state => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
             </div>
           </div>
-        </aside>
+        </div>
 
-        {/* Right Side - Conference Table */}
-        <div className="conference-table-wrapper">
-          <div className="conference-table-container">
+        {/* Conference Count */}
+        <div className="filter-row-right">
+          <span className="conference-count">
+            {filteredConferences.length} conference{filteredConferences.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+
+      {/* Conference Table */}
+      <div className="conference-table-wrapper">
+        <div className="conference-table-container">
         <table className="conference-table">
           <thead>
             <tr>
@@ -350,7 +338,6 @@ function ConferenceDirectory() {
             )}
           </tbody>
         </table>
-          </div>
         </div>
       </div>
     </div>

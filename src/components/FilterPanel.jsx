@@ -1,6 +1,19 @@
-import { Filter, Search } from 'lucide-react'
+import { Filter, Search, Globe, X, ArrowUpDown, MapPin } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange }) {
+function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sortBy, onSortChange }) {
+  const navigate = useNavigate()
+  const handleStateToggle = (state) => {
+    const currentStates = filters.states || []
+    const newStates = currentStates.includes(state)
+      ? currentStates.filter(s => s !== state)
+      : [...currentStates, state]
+    onFilterChange('states', newStates)
+  }
+
+  const clearAllStates = () => {
+    onFilterChange('states', [])
+  }
   const categories = [
     'All',
     'Regulatory',
@@ -19,6 +32,14 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange }) {
     // Note: McKnight's and other sites block automated RSS access
   ]
 
+  const states = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+  ]
+
   return (
     <div className="filter-panel">
       <div className="filter-header">
@@ -32,12 +53,35 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange }) {
           <Search size={16} />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search articles..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="search-input"
           />
+          {searchTerm && (
+            <X
+              size={14}
+              className="clear-search-btn"
+              onClick={() => onSearchChange('')}
+            />
+          )}
         </div>
+      </div>
+
+      <div className="filter-section">
+        <label className="filter-label">
+          <ArrowUpDown size={16} style={{ display: 'inline', marginRight: '4px' }} />
+          Sort By
+        </label>
+        <select
+          value={sortBy}
+          onChange={(e) => onSortChange(e.target.value)}
+          className="filter-select"
+        >
+          <option value="recent">Most Recent</option>
+          <option value="impact">Highest Impact</option>
+          <option value="relevant">Most Relevant</option>
+        </select>
       </div>
 
       <div className="filter-section">
@@ -100,12 +144,110 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange }) {
         </select>
       </div>
 
+      <div className="filter-section">
+        <label className="filter-label">
+          <Globe size={16} style={{ display: 'inline', marginRight: '4px' }} />
+          Geographic Scope
+        </label>
+        <select
+          value={filters.scope || 'all'}
+          onChange={(e) => onFilterChange('scope', e.target.value)}
+          className="filter-select"
+        >
+          <option value="all">All Stories</option>
+          <option value="National">National</option>
+          <option value="Regional">Regional</option>
+          <option value="State">State-Specific</option>
+          <option value="Local">Local</option>
+        </select>
+      </div>
+
+      {filters.scope === 'State' && (
+        <div className="filter-section">
+          <div className="filter-label-with-action">
+            <label className="filter-label">Select States</label>
+            {filters.states?.length > 0 && (
+              <button
+                className="clear-states-btn"
+                onClick={clearAllStates}
+                title="Clear all states"
+              >
+                Clear ({filters.states.length})
+              </button>
+            )}
+          </div>
+
+          {/* Selected states display */}
+          {filters.states?.length > 0 && (
+            <div className="selected-states">
+              {filters.states.map((state) => (
+                <span key={state} className="state-tag">
+                  {state}
+                  <X
+                    size={14}
+                    className="remove-state"
+                    onClick={() => handleStateToggle(state)}
+                  />
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Multi-select dropdown */}
+          <select
+            multiple
+            value={filters.states || []}
+            onChange={(e) => {
+              const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+              onFilterChange('states', selectedOptions)
+            }}
+            className="filter-select state-multi-select"
+            size="8"
+          >
+            {states.map((state) => (
+              <option
+                key={state}
+                value={state}
+                className={filters.states?.includes(state) ? 'selected' : ''}
+              >
+                {state}
+              </option>
+            ))}
+          </select>
+          <p className="filter-hint">Hold Ctrl/Cmd to select multiple states</p>
+        </div>
+      )}
+
       <button
         className="btn-reset"
         onClick={() => onFilterChange('reset')}
       >
         Reset Filters
       </button>
+
+      <div className="state-dashboard-link">
+        <label className="filter-label">
+          <MapPin size={16} style={{ display: 'inline', marginRight: '4px' }} />
+          My State Dashboard
+        </label>
+        <select
+          className="filter-select"
+          onChange={(e) => {
+            if (e.target.value) {
+              navigate(`/state/${e.target.value}`)
+            }
+          }}
+          defaultValue=""
+        >
+          <option value="">Select your state...</option>
+          {states.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
+        <p className="filter-hint">View your state's intelligence dashboard</p>
+      </div>
     </div>
   )
 }

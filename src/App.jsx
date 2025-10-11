@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Newspaper, Settings, RefreshCw, Calendar } from 'lucide-react'
+import { Newspaper, Settings, RefreshCw, Calendar, Bookmark, User, LogIn, UserCircle } from 'lucide-react'
 import './App.css'
 import FilterPanel from './components/FilterPanel'
 import ArticleList from './components/ArticleList'
@@ -8,22 +8,44 @@ import AIAnalysis from './components/AIAnalysis'
 import ArticleDetail from './components/ArticleDetail'
 import TrendingTags from './components/TrendingTags'
 import ConferenceDirectory from './components/ConferenceDirectory'
+import StateDashboard from './components/StateDashboard'
+import EnhancedStateDashboard from './components/EnhancedStateDashboard'
+import StateSelector from './components/StateSelector'
+import StateComparisonMap from './components/StateComparisonMap'
+import Pagination from './components/Pagination'
 import { fetchArticles } from './services/apiService'
 
 function App() {
   const location = useLocation()
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState('recent')
+  const [savedArticles, setSavedArticles] = useState(() => {
+    const saved = localStorage.getItem('savedArticles')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef(null)
   const [filters, setFilters] = useState({
     category: 'All',
     impact: 'all',
     source: 'All Sources',
-    dateRange: 'all'
+    dateRange: 'all',
+    scope: 'all',
+    states: []
   })
   const [selectedArticle, setSelectedArticle] = useState(null)
   const [selectedArticleForDetail, setSelectedArticleForDetail] = useState(null)
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  })
 
   const handleFilterChange = (filterType, value) => {
     if (filterType === 'reset') {
@@ -31,7 +53,9 @@ function App() {
         category: 'All',
         impact: 'all',
         source: 'All Sources',
-        dateRange: 'all'
+        dateRange: 'all',
+        scope: 'all',
+        states: []
       })
       setSearchTerm('')
     } else {
@@ -43,12 +67,13 @@ function App() {
     setSearchTerm(tag)
   }
 
-  const loadArticles = async () => {
+  const loadArticles = async (page = 1) => {
     try {
       setLoading(true)
       setError(null)
-      const data = await fetchArticles()
-      setArticles(data)
+      const data = await fetchArticles(page, 50)
+      setArticles(data.articles)
+      setPagination(data.pagination)
       setLoading(false)
     } catch (err) {
       setError('Failed to load articles. Please make sure the backend server is running.')
@@ -57,9 +82,31 @@ function App() {
     }
   }
 
+  const handlePageChange = (newPage) => {
+    loadArticles(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   useEffect(() => {
     loadArticles()
   }, [])
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false)
+      }
+    }
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [userMenuOpen])
 
   const filteredArticles = useMemo(() => {
     return articles.filter(article => {
@@ -98,50 +145,172 @@ function App() {
         }
       })()
 
+      // Geographic scope filter
+      const matchesScope = (() => {
+        if (filters.scope === 'all') return true
+        const articleScope = article.analysis?.scope
+        if (!articleScope) return false
+
+        if (filters.scope === 'State' && filters.states?.length > 0) {
+          // If specific states are selected, match both scope AND state
+          const articleState = article.analysis?.state
+          // Check if the article's state matches any of the selected states
+          return articleScope === 'State' && filters.states.some(selectedState =>
+            articleState?.includes(selectedState)
+          )
+        }
+
+        return articleScope === filters.scope
+      })()
+
       return matchesSearch && matchesCategory && matchesImpact &&
-             matchesSource && matchesDate
-    }).sort((a, b) => new Date(b.date) - new Date(a.date))
+             matchesSource && matchesDate && matchesScope
+    })
   }, [searchTerm, filters, articles])
+
+  const sortedArticles = useMemo(() => {
+    const sorted = [...filteredArticles]
+
+    switch (sortBy) {
+      case 'recent':
+        return sorted.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+      case 'impact':
+        const impactOrder = { high: 0, medium: 1, low: 2 }
+        return sorted.sort((a, b) => {
+          const impactDiff = impactOrder[a.impact] - impactOrder[b.impact]
+          if (impactDiff !== 0) return impactDiff
+          // Secondary sort by date if impact is the same
+          return new Date(b.date) - new Date(a.date)
+        })
+
+      case 'relevant':
+        return sorted.sort((a, b) => {
+          const scoreA = (a.analysis?.relevanceScore || 0)
+          const scoreB = (b.analysis?.relevanceScore || 0)
+          if (scoreB !== scoreA) return scoreB - scoreA
+          // Secondary sort by date if relevance is the same
+          return new Date(b.date) - new Date(a.date)
+        })
+
+      default:
+        return sorted
+    }
+  }, [filteredArticles, sortBy])
+
+  const toggleSaveArticle = (articleUrl) => {
+    setSavedArticles(prev => {
+      const newSaved = prev.includes(articleUrl)
+        ? prev.filter(url => url !== articleUrl)
+        : [...prev, articleUrl]
+      localStorage.setItem('savedArticles', JSON.stringify(newSaved))
+      return newSaved
+    })
+  }
 
   return (
     <div className="App">
       <header className="app-header">
-        <div className="header-content">
-          <div className="header-title">
-            <Newspaper size={32} />
-            <h1>SNF News Aggregator</h1>
+        <div className="header-wrapper">
+          {/* Top Bar */}
+          <div className="header-top-bar">
+            <div className="header-logo">
+              <Newspaper size={28} />
+              <h1>SNF News Aggregator</h1>
+            </div>
+
+            <div className="header-search">
+              <input
+                type="text"
+                placeholder="Search articles, topics, states..."
+                className="search-input"
+              />
+            </div>
+
+            <div className="header-actions">
+              {location.pathname === '/' && (
+                <button
+                  className="refresh-btn"
+                  onClick={loadArticles}
+                  title="Refresh Articles"
+                  disabled={loading}
+                >
+                  <RefreshCw size={18} className={loading ? 'spinning' : ''} />
+                </button>
+              )}
+
+              {/* User Menu */}
+              <div className="user-menu-container" ref={userMenuRef}>
+                <button
+                  className="user-menu-btn"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  aria-label="User menu"
+                >
+                  <User size={20} />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="user-dropdown">
+                    <Link to="/login" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <LogIn size={16} />
+                      <span>Login</span>
+                    </Link>
+                    <Link to="/saved" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <Bookmark size={16} />
+                      <span>Saved</span>
+                    </Link>
+                    <Link to="/account" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <UserCircle size={16} />
+                      <span>Account</span>
+                    </Link>
+                    <Link to="/settings" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="main-nav">
+          {/* Navigation Tabs */}
+          <nav className="header-nav">
             <Link
               to="/"
-              className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+              className={`nav-tab ${location.pathname === '/' ? 'active' : ''}`}
             >
               News Feed
             </Link>
-            <span className="nav-separator">|</span>
+            <Link
+              to="/state-comparison"
+              className={`nav-tab ${location.pathname === '/state-comparison' || location.pathname.startsWith('/state/') ? 'active' : ''}`}
+            >
+              State Analysis
+            </Link>
             <Link
               to="/conferences"
-              className={`nav-link ${location.pathname === '/conferences' ? 'active' : ''}`}
+              className={`nav-tab ${location.pathname === '/conferences' ? 'active' : ''}`}
             >
               Conferences
             </Link>
+            <Link
+              to="/tools"
+              className={`nav-tab ${location.pathname === '/tools' ? 'active' : ''}`}
+            >
+              Tools
+            </Link>
+            <Link
+              to="/advocate"
+              className={`nav-tab ${location.pathname === '/advocate' ? 'active' : ''}`}
+            >
+              Advocate
+            </Link>
           </nav>
 
-          {location.pathname === '/' && (
-            <button
-              className="settings-btn"
-              onClick={loadArticles}
-              title="Refresh Articles"
-              disabled={loading}
-            >
-              <RefreshCw size={20} className={loading ? 'spinning' : ''} />
-            </button>
-          )}
-          <p className="header-subtitle">
+          {/* Tagline */}
+          <div className="header-tagline">
             Stay informed with the latest skilled nursing facility industry news and conferences
-          </p>
+          </div>
         </div>
       </header>
 
@@ -155,6 +324,8 @@ function App() {
                 onFilterChange={handleFilterChange}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
               />
             </aside>
 
@@ -181,9 +352,16 @@ function App() {
                   />
 
                   <ArticleList
-                    articles={filteredArticles}
+                    articles={sortedArticles}
                     onAnalyze={setSelectedArticle}
                     onViewDetails={setSelectedArticleForDetail}
+                    savedArticles={savedArticles}
+                    onToggleSave={toggleSaveArticle}
+                  />
+
+                  <Pagination
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 </>
               )}
@@ -191,8 +369,106 @@ function App() {
           </main>
         } />
 
+        {/* Saved Articles Route */}
+        <Route path="/saved" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              <div style={{ padding: '20px' }}>
+                <h2 style={{ marginBottom: '20px' }}>
+                  <Bookmark size={24} style={{ marginRight: '8px', display: 'inline', verticalAlign: 'middle' }} />
+                  My Saved Articles ({savedArticles.length})
+                </h2>
+                {savedArticles.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
+                    <Bookmark size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
+                    <p>No saved articles yet</p>
+                    <p style={{ fontSize: '0.9em' }}>Click the bookmark icon on any article to save it here</p>
+                  </div>
+                ) : (
+                  <ArticleList
+                    articles={articles.filter(a => savedArticles.includes(a.url))}
+                    onAnalyze={setSelectedArticle}
+                    onViewDetails={setSelectedArticleForDetail}
+                    savedArticles={savedArticles}
+                    onToggleSave={toggleSaveArticle}
+                  />
+                )}
+              </div>
+            </div>
+          </main>
+        } />
+
+        {/* State Comparison Map Route */}
+        <Route path="/state-comparison" element={<StateComparisonMap />} />
+
+        {/* State Dashboard Route (original with articles/sentiment) */}
+        <Route path="/state/:stateCode" element={<StateDashboard />} />
+
+        {/* Enhanced Market Dashboard Route (prototype with facilities/metrics) */}
+        <Route path="/dashboard/:stateCode" element={<EnhancedStateDashboard />} />
+
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />
+
+        {/* Tools Route (Placeholder) */}
+        <Route path="/tools" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Tools</h2>
+                <p style={{ color: '#6b7280' }}>Coming soon - SNF industry tools and calculators</p>
+              </div>
+            </div>
+          </main>
+        } />
+
+        {/* Advocate Route (Placeholder) */}
+        <Route path="/advocate" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Advocate</h2>
+                <p style={{ color: '#6b7280' }}>Coming soon - Advocacy resources and tools</p>
+              </div>
+            </div>
+          </main>
+        } />
+
+        {/* Login Route (Placeholder) */}
+        <Route path="/login" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '400px', margin: '0 auto' }}>
+              <div style={{ padding: '40px' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>Login</h2>
+                <p style={{ color: '#6b7280', textAlign: 'center' }}>Authentication coming soon</p>
+              </div>
+            </div>
+          </main>
+        } />
+
+        {/* Account Route (Placeholder) */}
+        <Route path="/account" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '800px', margin: '0 auto' }}>
+              <div style={{ padding: '40px' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>My Account</h2>
+                <p style={{ color: '#6b7280' }}>Account management coming soon</p>
+              </div>
+            </div>
+          </main>
+        } />
+
+        {/* Settings Route (Placeholder) */}
+        <Route path="/settings" element={
+          <main className="app-main">
+            <div className="content" style={{ maxWidth: '800px', margin: '0 auto' }}>
+              <div style={{ padding: '40px' }}>
+                <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Settings</h2>
+                <p style={{ color: '#6b7280' }}>Settings and preferences coming soon</p>
+              </div>
+            </div>
+          </main>
+        } />
       </Routes>
 
       {selectedArticleForDetail && (

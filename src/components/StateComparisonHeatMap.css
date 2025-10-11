@@ -1,0 +1,101 @@
+.heat-map-container {
+  position: relative;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.heat-map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  color: #6B7280;
+  font-size: 16px;
+}
+
+.heat-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.heat-map-state {
+  transition: all 0.2s ease;
+}
+
+.heat-map-state:hover {
+  opacity: 0.9;
+}
+
+.state-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+.heat-map-tooltip {
+  position: fixed;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 1000;
+  min-width: 220px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.tooltip-header strong {
+  font-size: 16px;
+  color: #111827;
+}
+
+.tooltip-score {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #374151;
+}
+
+.tooltip-row span:first-child {
+  color: #6B7280;
+}
+
+.tooltip-row span:last-child {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .heat-map-container {
+    padding: 16px;
+  }
+
+  .state-label {
+    font-size: 9px !important;
+  }
+}

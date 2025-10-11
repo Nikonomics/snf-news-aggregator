@@ -3,11 +3,15 @@ import express from 'express'
 import cors from 'cors'
 import Parser from 'rss-parser'
 import NodeCache from 'node-cache'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import Anthropic from '@anthropic-ai/sdk'
+import * as db from './database/db.js'
+import { insertArticle, insertArticleTags, getArticles } from './database/articles.js'
+import { generateStateSummary } from './services/stateAnalysis.js'
+import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './services/stateComparison.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -40,38 +44,31 @@ console.log('Cache cleared - forcing fresh data');
 
 // RSS feed URLs
 const RSS_FEEDS = [
-  { url: 'https://skillednursingnews.com/feed/', source: 'Skilled Nursing News' }
+  { url: 'https://skillednursingnews.com/feed/', source: 'Skilled Nursing News' },
+  { url: 'https://news.google.com/rss/search?q=skilled+nursing+facilities&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=nursing+homes&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=Medicare+SNF&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=long-term+care&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=CMS+nursing+home+news&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=post-acute+care&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=SNF+staffing&hl=en-US&gl=US&ceid=US:en', source: 'Google News' },
+  { url: 'https://news.google.com/rss/search?q=SNF+reimbursement&hl=en-US&gl=US&ceid=US:en', source: 'Google News' }
   // Note: McKnight's blocks automated RSS access (403 Forbidden)
   // Many healthcare news sites actively block RSS scrapers for copyright protection
 ]
 
-// Helper function to find new articles by comparing URLs
-function findNewArticles(rssArticles, existingArticles) {
-  // Compare by URL to find which RSS articles are new
-  const existingUrls = new Set(existingArticles.map(a => a.link));
-  return rssArticles.filter(article => !existingUrls.has(article.link));
-}
-
-// Helper function to load analyzed articles from JSON file
-function loadAnalyzedArticles() {
+// Helper function to find new articles by comparing URLs with database
+async function findNewArticles(rssArticles) {
   try {
-    const filePath = join(__dirname, 'data', 'analyzed-articles.json');
-    const data = readFileSync(filePath, 'utf8');
-    return JSON.parse(data);
+    // Get all existing article URLs from database
+    const result = await db.query('SELECT url FROM articles');
+    const existingUrls = new Set(result.rows.map(row => row.url));
+    return rssArticles.filter(article => !existingUrls.has(article.url));
   } catch (error) {
-    console.log('No existing analyzed articles, starting fresh');
-    return [];
+    console.error('Error checking for new articles:', error.message);
+    // If database query fails, treat all articles as new
+    return rssArticles;
   }
-}
-
-// Helper function to save analyzed articles to JSON file
-function saveAnalyzedArticles(articles) {
-  const filePath = join(__dirname, 'data', 'analyzed-articles.json');
-  writeFileSync(
-    filePath,
-    JSON.stringify(articles, null, 2),
-    'utf8'
-  );
 }
 
 // Categories mapping based on keywords
@@ -175,6 +172,8 @@ async function analyzeArticleWithAI(article) {
 
     const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze the following article and provide detailed, actionable insights for SNF operators and administrators running facilities on 1-2% margins.
 
+CRITICAL: You must respond with ONLY a valid JSON object. Do not include any explanatory text, comments, or natural language before or after the JSON. Start your response with { and end with }.
+
 Article Title: ${article.title}
 Article Summary: ${article.summary}
 Category: ${article.category}
@@ -213,6 +212,12 @@ Please provide:
 
 7. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences. If this is similar to past changes, provide that context.
 
+8. **Geographic Scope** (2-3 sentences):
+   - Scope: Is this story National, State-specific, Regional, or Local?
+   - State: If state-specific, provide the 2-letter state code (e.g., AL, CA, TX, FL)
+   - If multiple states mentioned, list all relevant state codes
+   - If national or not state-specific, put "N/A" for state
+
 Format your response as JSON with this structure:
 {
   "keyInsights": ["insight1", "insight2", ...],
@@ -234,8 +239,12 @@ Format your response as JSON with this structure:
   "risks": [
     {"level": "high|medium|low", "description": "risk description", "mitigation": "mitigation strategy"}
   ],
-  "relevanceReasoning": "why this matters explanation"
-}`;
+  "relevanceReasoning": "why this matters explanation",
+  "scope": "National/State/Regional/Local",
+  "state": "Two-letter state code or N/A or comma-separated list"
+}
+
+REMINDER: Return ONLY the JSON object above. No additional text. No explanations. No markdown. Just pure JSON starting with { and ending with }.`;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -258,7 +267,21 @@ Format your response as JSON with this structure:
     });
 
     const analysisText = message.content[0].text;
-    const cleanedText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Strip markdown code fences and extract only the JSON object
+    let cleanedText = analysisText.trim();
+    const oldCleanedText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Find the JSON object (starts with { and ends with })
+    const jsonStart = cleanedText.indexOf('{');
+    const jsonEnd = cleanedText.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error('No JSON object found in response');
+    }
+
+    cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
+
     const analysis = JSON.parse(cleanedText);
 
     console.log(`✓ Analysis complete for: ${article.title}`);
@@ -272,8 +295,6 @@ Format your response as JSON with this structure:
 // Fetch and parse RSS feeds
 async function fetchAllFeeds() {
   console.log('Fetching RSS feeds...')
-  // Load existing analyzed articles
-  const existingArticles = loadAnalyzedArticles()
   const allArticles = []
   let articleId = 1
 
@@ -311,27 +332,50 @@ async function fetchAllFeeds() {
   // Sort by date (newest first)
   allArticles.sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  // Find which articles are new (not in existing analyzed articles)
-  const newArticles = findNewArticles(allArticles, existingArticles)
+  // Find which articles are new (not in database)
+  const newArticles = await findNewArticles(allArticles)
   console.log(`Found ${newArticles.length} new articles to analyze`)
 
-  // Analyze only the new articles
-  const analyzedNewArticles = []
-  for (const article of newArticles) {
+  // Analyze and save new articles to database
+  let savedCount = 0
+  for (let i = 0; i < newArticles.length; i++) {
+    const article = newArticles[i]
+    console.log(`Analyzing new article: ${article.title}`)
+
     const analyzedArticle = await analyzeArticleWithAI(article)
-    analyzedNewArticles.push(analyzedArticle)
+    if (analyzedArticle) {
+      try {
+        // Insert article into database
+        const articleId = await insertArticle(analyzedArticle)
+
+        // Insert tags
+        if (analyzedArticle.tags && analyzedArticle.tags.length > 0) {
+          await insertArticleTags(articleId, analyzedArticle.tags)
+        }
+
+        savedCount++
+        console.log(`✓ Analysis complete for: ${article.title}`)
+
+        // Log progress every 10 articles
+        if ((i + 1) % 10 === 0 || i === newArticles.length - 1) {
+          console.log(`💾 Saved progress: ${savedCount}/${newArticles.length} articles analyzed`)
+        }
+      } catch (error) {
+        console.error(`Error saving article "${article.title}":`, error.message)
+      }
+    }
   }
-  console.log(`Analyzed ${analyzedNewArticles.length} new articles`)
+  console.log(`✅ Completed analyzing and saving ${savedCount} new articles`)
 
-  // Merge new analyzed articles with existing ones
-  const allAnalyzedArticles = [...analyzedNewArticles, ...existingArticles]
+  // Get all articles from database for response
+  const result = await db.query('SELECT COUNT(*) as count FROM articles')
+  console.log(`Total articles in database: ${result.rows[0].count}`)
 
-  // Save to JSON file
-  saveAnalyzedArticles(allAnalyzedArticles)
-  console.log(`Total analyzed articles stored: ${allAnalyzedArticles.length}`)
+  console.log(`Total articles fetched from RSS: ${allArticles.length}`)
 
-  console.log(`Total articles fetched: ${allArticles.length}`)
-  return allAnalyzedArticles
+  // Return articles from database
+  const dbArticles = await getArticles({ limit: 1000 })
+  return dbArticles.articles || []
 }
 
 // Middleware
@@ -354,10 +398,25 @@ app.get('/api/articles', async (req, res) => {
       cache.set('articles', articles)
     }
 
+    // Pagination parameters
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 50
+    const offset = (page - 1) * limit
+
+    // Calculate pagination
+    const totalArticles = articles.length
+    const totalPages = Math.ceil(totalArticles / limit)
+    const paginatedArticles = articles.slice(offset, offset + limit)
+
     res.json({
       success: true,
-      count: articles.length,
-      articles: articles
+      count: totalArticles,
+      page: page,
+      limit: limit,
+      totalPages: totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      articles: paginatedArticles
     })
   } catch (error) {
     console.error('Error fetching articles:', error)
@@ -395,7 +454,8 @@ let conferencesData = null
 // Load conferences data
 function loadConferences() {
   try {
-    const data = readFileSync('./data/conferences.json', 'utf8');
+    const conferencesPath = join(__dirname, 'data', 'conferences.json');
+    const data = readFileSync(conferencesPath, 'utf8');
     conferencesData = JSON.parse(data);
     const totalConferences = (conferencesData.stateConferences?.length || 0) + (conferencesData.nationalConferences?.length || 0);
     console.log(`✓ Loaded ${totalConferences} conferences (${conferencesData.stateConferences?.length || 0} state, ${conferencesData.nationalConferences?.length || 0} national)`);
@@ -406,6 +466,7 @@ function loadConferences() {
 
 // GET /api/conferences - Return all conferences
 app.get('/api/conferences', (req, res) => {
+  console.log('DEBUG: conferencesData is:', conferencesData ? 'loaded' : 'null');
   if (!conferencesData) {
     return res.status(500).json({
       success: false,
@@ -487,6 +548,129 @@ app.get('/api/conferences/upcoming', (req, res) => {
   })
 })
 
+// GET /api/state/:stateCode - Get state dashboard data
+app.get('/api/state/:stateCode', async (req, res) => {
+  const { stateCode } = req.params
+
+  try {
+    // Get state association info from conferences
+    const stateAssociations = conferencesData?.stateConferences?.filter(
+      conf => conf.state === stateCode.toUpperCase()
+    ) || []
+
+    // Get state-specific articles from database
+    const result = await db.query(
+      `SELECT * FROM articles
+       WHERE scope = 'State'
+       AND (states @> ARRAY[$1] OR analysis->>'state' LIKE $2)
+       ORDER BY published_date DESC`,
+      [stateCode.toUpperCase(), `%${stateCode.toUpperCase()}%`]
+    )
+
+    const stateArticles = result.rows
+
+    // Get or generate AI state summary
+    let stateSummary = null
+    if (stateArticles.length > 0) {
+      const summaryResult = await generateStateSummary(stateCode.toUpperCase(), stateArticles)
+      if (summaryResult.success) {
+        stateSummary = summaryResult.analysis
+      }
+    }
+
+    res.json({
+      success: true,
+      state: stateCode.toUpperCase(),
+      associations: stateAssociations,
+      articles: stateArticles,
+      articleCount: stateArticles.length,
+      summary: stateSummary
+    })
+
+  } catch (error) {
+    console.error('Error fetching state data:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/dashboard - Get comprehensive dashboard data
+app.get('/api/state/:stateCode/dashboard', async (req, res) => {
+  const { stateCode } = req.params
+
+  try {
+    // Load dashboard data from JSON file (for prototype)
+    const dashboardPath = join(__dirname, 'data', `${stateCode.toLowerCase()}-dashboard-data.json`)
+    const dashboardData = await readFile(dashboardPath, 'utf8')
+    const data = JSON.parse(dashboardData)
+
+    res.json({
+      success: true,
+      ...data
+    })
+
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+
+    // If file doesn't exist, return a helpful error
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({
+        success: false,
+        error: `Dashboard data not available for state: ${stateCode.toUpperCase()}`,
+        message: 'Currently only Idaho (ID) has prototype dashboard data available'
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/states/comparison - Get all states with scores
+app.get('/api/states/comparison', (req, res) => {
+  try {
+    const metric = req.query.metric || 'overall'
+    const states = getStatesByMetric(metric)
+
+    res.json({
+      success: true,
+      metric: metric,
+      count: states.length,
+      states: states
+    })
+  } catch (error) {
+    console.error('Error fetching state comparison data:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/states/rankings - Get top and bottom performers
+app.get('/api/states/rankings', (req, res) => {
+  try {
+    const count = parseInt(req.query.count) || 10
+    const rankings = getTopBottomStates(count)
+
+    res.json({
+      success: true,
+      top10: rankings.top10,
+      bottom10: rankings.bottom10
+    })
+  } catch (error) {
+    console.error('Error fetching state rankings:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // AI Analysis endpoint
 app.post('/api/analyze-article', async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -551,6 +735,12 @@ Please provide:
    - Mitigation strategies
 
 7. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences. If this is similar to past changes, provide that context.
+
+8. **Geographic Scope** (2-3 sentences):
+   - Scope: Is this story National, State-specific, Regional, or Local?
+   - State: If state-specific, provide the 2-letter state code (e.g., AL, CA, TX, FL)
+   - If multiple states mentioned, list all relevant state codes
+   - If national or not state-specific, put "N/A" for state
 
 Format your response as JSON with this structure:
 {
@@ -633,19 +823,17 @@ async function refreshArticlesInBackground() {
 // Start server and fetch feeds on startup
 async function startServer() {
   try {
+    // Initialize database
+    await db.testConnection()
+    await db.initializeDatabase()
+
     // Load conferences data
     loadConferences()
 
-    // Fetch feeds on startup
-    const articles = await fetchAllFeeds()
-    cache.set('articles', articles)
-
-    // Set up automatic refresh interval
-    setInterval(refreshArticlesInBackground, REFRESH_INTERVAL_MS)
-
+    // Start server immediately
     app.listen(PORT, () => {
       console.log(`\n✓ Server running on http://localhost:${PORT}`)
-      console.log(`✓ Articles cached: ${articles.length}`)
+      console.log(`✓ Conferences loaded: ${conferencesData ? 'yes' : 'no'}`)
       console.log(`✓ Auto-refresh: Every ${REFRESH_INTERVAL_MS / 60000} minutes`)
       console.log(`✓ API endpoints:`)
       console.log(`  - GET  http://localhost:${PORT}/api/articles`)
@@ -655,8 +843,22 @@ async function startServer() {
       console.log(`  - GET  http://localhost:${PORT}/api/conferences/state/:state`)
       console.log(`  - GET  http://localhost:${PORT}/api/conferences/national`)
       console.log(`  - GET  http://localhost:${PORT}/api/conferences/upcoming`)
+      console.log(`  - GET  http://localhost:${PORT}/api/states/comparison?metric=overall`)
+      console.log(`  - GET  http://localhost:${PORT}/api/states/rankings`)
       console.log(`  - POST http://localhost:${PORT}/api/analyze-article\n`)
     })
+
+    // Fetch feeds after server starts (non-blocking)
+    fetchAllFeeds().then(articles => {
+      cache.set('articles', articles)
+      console.log(`✓ Articles cached: ${articles.length}`)
+
+      // Set up automatic refresh interval
+      setInterval(refreshArticlesInBackground, REFRESH_INTERVAL_MS)
+    }).catch(error => {
+      console.error('Error fetching initial articles:', error)
+    })
+
   } catch (error) {
     console.error('Failed to start server:', error)
     process.exit(1)
