@@ -1,4 +1,4 @@
-import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink, Bookmark } from 'lucide-react'
+import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink, Bookmark, MapPin, Star } from 'lucide-react'
 import { format } from 'date-fns'
 
 function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
@@ -9,6 +9,13 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
       case 'low': return '#10b981'
       default: return '#6b7280'
     }
+  }
+
+  // Truncate summary to 150 characters
+  const truncateSummary = (text) => {
+    if (!text) return ''
+    if (text.length <= 150) return text
+    return text.substring(0, 147) + '...'
   }
 
   return (
@@ -37,18 +44,43 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
         </div>
       </div>
 
-      <div className="article-meta">
+      {/* Article preview */}
+      <p className="article-summary" style={{
+        fontSize: '0.9em',
+        color: '#4b5563',
+        marginTop: '8px',
+        lineHeight: '1.4'
+      }}>
+        {truncateSummary(article.summary)}
+      </p>
+
+      {/* Metadata badges */}
+      <div className="article-meta" style={{ marginTop: '12px', gap: '8px', flexWrap: 'wrap' }}>
         <div className="meta-item">
           <Calendar size={12} />
           <span>{format(new Date(article.date), 'MMM d')}</span>
         </div>
         <div className="meta-item">
           <Tag size={12} />
+          <span>{article.category || 'General'}</span>
+        </div>
+        {article.scope && (
+          <div className="meta-item">
+            <MapPin size={12} />
+            <span>{article.scope}{article.states && article.states.length > 0 ? `: ${article.states.join(', ')}` : ''}</span>
+          </div>
+        )}
+        {article.relevance_score && (
+          <div className="meta-item">
+            <Star size={12} />
+            <span>Relevance: {article.relevance_score}</span>
+          </div>
+        )}
+        <div className="meta-item">
+          <Tag size={12} />
           <span>{article.source}</span>
         </div>
       </div>
-
-      <p className="article-summary">{article.summary}</p>
 
       {/* AI Analysis - Pre-loaded */}
       {article.analysis && (
