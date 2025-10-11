@@ -72,47 +72,54 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #1a202c;
+  color: #1a1a1a;
   margin: 0;
-  font-size: 2rem;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.state-header h1 svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* Dashboard Tabs */
 .dashboard-tabs {
   display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 1.5rem;
-  padding: 0 2rem;
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
 .tab-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  padding: 1rem 1.5rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: white;
+  gap: 8px;
+  height: 42px;
+  padding: 10px 20px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.2s;
-  background: #8B5CF6;
-  border-radius: 8px 8px 0 0;
-  opacity: 0.7;
+  transition: all 0.15s ease;
 }
 
-.tab-button:hover {
-  opacity: 0.85;
+.tab-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tab-button:hover:not(.active) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .tab-button.active {
-  opacity: 1;
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-  border-bottom-color: #6366F1;
+  border-color: #4F46E5;
+  background: #4F46E5;
+  color: white;
 }
 
 .tab-content {
@@ -317,52 +324,73 @@
 .associations-section {
   background: white;
   border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
 }
 
 .associations-section h2 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0;
-  color: #667eea;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.associations-section h2 svg {
+  width: 18px;
+  height: 18px;
+  color: #6366f1;
 }
 
 .associations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .association-card {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
+  background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 20px;
+  transition: all 0.15s;
+}
+
+.association-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .association-card h3 {
-  margin: 0 0 1rem 0;
-  color: #1a202c;
-  font-size: 1.1rem;
+  margin: 0 0 12px 0;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .association-links {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .assoc-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #667eea;
+  gap: 6px;
+  color: #3b82f6;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 14px;
+}
+
+.assoc-link svg {
+  width: 14px;
+  height: 14px;
 }
 
 .assoc-link:hover {
@@ -372,11 +400,16 @@
 .next-event {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #718096;
-  font-size: 0.85rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.next-event svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Summary Section */
@@ -574,22 +607,33 @@
 .articles-section {
   background: white;
   border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  margin-top: 32px;
 }
 
 .articles-section h2 {
-  margin-top: 0;
-  color: #667eea;
+  margin: 0 0 16px 0;
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .no-articles {
   text-align: center;
-  padding: 3rem;
-  color: #718096;
+  padding: 40px 0;
+  color: #6b7280;
+  font-size: 15px;
 }
 
 /* Responsive */
+
+@media (max-width: 1200px) {
+  .associations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 @media (max-width: 768px) {
   .state-dashboard {
