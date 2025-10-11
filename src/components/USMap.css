@@ -1,0 +1,86 @@
+.us-map-grid {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  grid-template-rows: repeat(7, 60px);
+  gap: 4px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.map-state {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.map-state:hover {
+  background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+  border-color: #667eea;
+  color: #667eea;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  z-index: 10;
+}
+
+.map-state.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #5a67d8;
+  color: white;
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  z-index: 20;
+}
+
+.map-state.selected:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: scale(1.1);
+}
+
+.map-state.wide {
+  font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .us-map-grid {
+    grid-template-columns: repeat(20, minmax(30px, 1fr));
+    grid-template-rows: repeat(7, 50px);
+    gap: 3px;
+    padding: 10px;
+  }
+
+  .map-state {
+    font-size: 0.75rem;
+  }
+
+  .map-state.wide {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .us-map-grid {
+    grid-template-columns: repeat(20, minmax(25px, 1fr));
+    grid-template-rows: repeat(7, 40px);
+    gap: 2px;
+  }
+
+  .map-state {
+    font-size: 0.65rem;
+    border-width: 1px;
+  }
+
+  .map-state.wide {
+    font-size: 0.75rem;
+  }
+}

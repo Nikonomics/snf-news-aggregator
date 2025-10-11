@@ -1,0 +1,117 @@
+.interactive-map-container {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.us-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.map-state {
+  fill: #e2e8f0;
+  stroke: #ffffff;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-state:hover,
+.map-state.hovered {
+  fill: #cbd5e0;
+  stroke: #667eea;
+  stroke-width: 3;
+  filter: url(#shadow);
+}
+
+.map-state.selected {
+  fill: #667eea;
+  stroke: #5a67d8;
+  stroke-width: 3;
+}
+
+.map-state.selected:hover {
+  fill: #5a67d8;
+}
+
+.state-label {
+  fill: #1a202c;
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.map-state.selected + .state-label,
+.map-state.hovered + .state-label {
+  fill: #ffffff;
+}
+
+.state-tooltip {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(102, 126, 234, 0.95);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.selected-state-info {
+  text-align: center;
+  margin-top: 20px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 1rem;
+}
+
+.selected-state-info strong {
+  color: #667eea;
+  margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .interactive-map-container {
+    padding: 10px;
+  }
+
+  .state-label {
+    font-size: 10px;
+  }
+
+  .state-tooltip {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .state-label {
+    font-size: 8px;
+  }
+
+  .map-state {
+    stroke-width: 1.5;
+  }
+
+  .map-state:hover,
+  .map-state.selected {
+    stroke-width: 2;
+  }
+}

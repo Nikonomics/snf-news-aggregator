@@ -1,7 +1,7 @@
 import ArticleCard from './ArticleCard'
 import { FileX } from 'lucide-react'
 
-function ArticleList({ articles, onAnalyze, onViewDetails }) {
+function ArticleList({ articles, onAnalyze, onViewDetails, savedArticles, onToggleSave }) {
   if (articles.length === 0) {
     return (
       <div className="empty-state">
@@ -24,6 +24,8 @@ function ArticleList({ articles, onAnalyze, onViewDetails }) {
             article={article}
             onAnalyze={onAnalyze}
             onViewDetails={onViewDetails}
+            isSaved={savedArticles?.includes(article.url)}
+            onToggleSave={onToggleSave}
           />
         ))}
       </div>

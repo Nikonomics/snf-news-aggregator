@@ -1,7 +1,7 @@
-import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink } from 'lucide-react'
+import { Calendar, Tag, TrendingUp, AlertCircle, ExternalLink, Bookmark } from 'lucide-react'
 import { format } from 'date-fns'
 
-function ArticleCard({ article, onAnalyze, onViewDetails }) {
+function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
   const getImpactColor = (impact) => {
     switch (impact) {
       case 'high': return '#ef4444'
@@ -14,13 +14,27 @@ function ArticleCard({ article, onAnalyze, onViewDetails }) {
   return (
     <div className="article-card" onClick={() => onViewDetails(article)}>
       <div className="article-header">
-        <h3 className="article-title">{article.title}</h3>
-        <span
-          className="impact-badge"
-          style={{ backgroundColor: getImpactColor(article.impact) }}
-        >
-          {article.impact} impact
-        </span>
+        <div style={{ flex: 1 }}>
+          <h3 className="article-title">{article.title}</h3>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+          <button
+            className={`bookmark-btn ${isSaved ? 'saved' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSave(article.url)
+            }}
+            title={isSaved ? 'Remove from saved' : 'Save article'}
+          >
+            <Bookmark size={18} fill={isSaved ? 'currentColor' : 'none'} />
+          </button>
+          <span
+            className="impact-badge"
+            style={{ backgroundColor: getImpactColor(article.impact) }}
+          >
+            {article.impact} impact
+          </span>
+        </div>
       </div>
 
       <div className="article-meta">
