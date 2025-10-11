@@ -277,6 +277,105 @@ export async function articleExists(url) {
   return result.rows.length > 0
 }
 
+// ============================================================
+// NEW DEDUPLICATION FUNCTIONS
+// ============================================================
+
+// Stage 1: Find article by exact URL
+export async function findArticleByURL(url) {
+  const query = `
+    SELECT id, content_hash, title, summary, updated_at
+    FROM articles
+    WHERE url = $1
+    LIMIT 1
+  `
+  const result = await db.query(query, [url])
+  return result.rows.length > 0 ? result.rows[0] : null
+}
+
+// Stage 2: Find article by content hash
+export async function findArticleByContentHash(hash) {
+  const query = `
+    SELECT id, url, title, summary, published_date, updated_at
+    FROM articles
+    WHERE content_hash = $1
+    LIMIT 1
+  `
+  const result = await db.query(query, [hash])
+  return result.rows.length > 0 ? result.rows[0] : null
+}
+
+// Stage 3: Find similar articles (fuzzy title search + date proximity)
+export async function findSimilarArticles(title, publishedDate, dateWindowDays = 7, limit = 5) {
+  const query = `
+    SELECT
+      id, url, title, summary, content_hash, published_date, source,
+      similarity(title, $1) as title_similarity
+    FROM articles
+    WHERE
+      published_date BETWEEN $2::timestamp - INTERVAL '${dateWindowDays} days'
+                        AND $2::timestamp + INTERVAL '${dateWindowDays} days'
+      AND similarity(title, $1) > 0.3
+    ORDER BY title_similarity DESC, published_date DESC
+    LIMIT $3
+  `
+  const result = await db.query(query, [title, publishedDate, limit])
+  return result.rows
+}
+
+// Update article content and metadata
+export async function updateArticleContent(id, updates) {
+  const query = `
+    UPDATE articles
+    SET
+      title = COALESCE($2, title),
+      summary = COALESCE($3, summary),
+      content_hash = COALESCE($4, content_hash),
+      last_content_update = COALESCE($5, last_content_update),
+      duplicate_check_count = duplicate_check_count + 1,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING id
+  `
+  const values = [
+    id,
+    updates.title || null,
+    updates.summary || null,
+    updates.contentHash || null,
+    updates.lastContentUpdate || new Date()
+  ]
+
+  const result = await db.query(query, values)
+  return result.rows.length > 0
+}
+
+// Generate content hash for deduplication
+export function generateContentHash(title, summary) {
+  // Normalize: lowercase, collapse whitespace, remove special chars
+  const normalizedTitle = title
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const content = `${normalizedTitle}|${summary.substring(0, 500)}`
+  return crypto.createHash('md5').update(content).digest('hex')
+}
+
+// Get deduplication statistics
+export async function getDuplicateStats() {
+  const query = `
+    SELECT
+      COUNT(*) as total_articles,
+      COUNT(DISTINCT content_hash) as unique_content_hashes,
+      COUNT(*) - COUNT(DISTINCT content_hash) as potential_duplicates,
+      SUM(duplicate_check_count) as total_ai_checks,
+      MAX(last_content_update) as most_recent_update
+    FROM articles
+  `
+  const result = await db.query(query)
+  return result.rows[0]
+}
+
 export default {
   insertArticle,
   insertArticleTags,
@@ -284,5 +383,12 @@ export default {
   getArticleById,
   getTrendingTags,
   articleExists,
-  generateExternalId
+  generateExternalId,
+  // New deduplication functions
+  findArticleByURL,
+  findArticleByContentHash,
+  findSimilarArticles,
+  updateArticleContent,
+  generateContentHash,
+  getDuplicateStats
 }

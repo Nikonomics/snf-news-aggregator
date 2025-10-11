@@ -9,9 +9,10 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import Anthropic from '@anthropic-ai/sdk'
 import * as db from './database/db.js'
-import { insertArticle, insertArticleTags, getArticles } from './database/articles.js'
+import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
 import { generateStateSummary } from './services/stateAnalysis.js'
 import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './services/stateComparison.js'
+import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -57,18 +58,68 @@ const RSS_FEEDS = [
   // Many healthcare news sites actively block RSS scrapers for copyright protection
 ]
 
-// Helper function to find new articles by comparing URLs with database
-async function findNewArticles(rssArticles) {
-  try {
-    // Get all existing article URLs from database
-    const result = await db.query('SELECT url FROM articles');
-    const existingUrls = new Set(result.rows.map(row => row.url));
-    return rssArticles.filter(article => !existingUrls.has(article.url));
-  } catch (error) {
-    console.error('Error checking for new articles:', error.message);
-    // If database query fails, treat all articles as new
-    return rssArticles;
+// NEW: Process articles with enhanced deduplication
+async function processArticlesWithDeduplication(rssArticles) {
+  const stats = {
+    total: rssArticles.length,
+    duplicates: 0,
+    updated: 0,
+    new: 0,
+    aiChecks: 0,
+    errors: 0
   }
+
+  const uniqueArticles = []
+
+  for (const article of rssArticles) {
+    try {
+      // Check for duplicates using 4-stage system
+      const dupeCheck = await checkDuplicate(article)
+
+      if (dupeCheck.stats?.aiCalled) {
+        stats.aiChecks++
+      }
+
+      if (dupeCheck.isDuplicate) {
+        stats.duplicates++
+
+        // If content changed significantly, update the existing article
+        if (dupeCheck.contentChanged) {
+          stats.updated++
+          const contentHash = generateContentHash(article.title, article.summary)
+          await updateArticleContent(dupeCheck.matchedId, {
+            title: article.title,
+            summary: article.summary,
+            contentHash,
+            lastContentUpdate: new Date()
+          })
+          console.log(`📝 Updated article: ${article.title}`)
+        } else {
+          console.log(`⏭️  Skipping duplicate: ${article.title.substring(0, 60)}... (method: ${dupeCheck.method})`)
+        }
+      } else {
+        // Not a duplicate - add to list for AI analysis
+        uniqueArticles.push(article)
+        stats.new++
+      }
+    } catch (error) {
+      console.error(`Error processing "${article.title}":`, error.message)
+      stats.errors++
+      // On error, treat as new article to be safe
+      uniqueArticles.push(article)
+      stats.new++
+    }
+  }
+
+  console.log(`\n📊 Deduplication Results:`)
+  console.log(`   Total: ${stats.total}`)
+  console.log(`   New: ${stats.new}`)
+  console.log(`   Duplicates: ${stats.duplicates}`)
+  console.log(`   Updated: ${stats.updated}`)
+  console.log(`   AI Checks: ${stats.aiChecks}`)
+  console.log(`   Errors: ${stats.errors}\n`)
+
+  return uniqueArticles
 }
 
 // Categories mapping based on keywords
@@ -332,9 +383,10 @@ async function fetchAllFeeds() {
   // Sort by date (newest first)
   allArticles.sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  // Find which articles are new (not in database)
-  const newArticles = await findNewArticles(allArticles)
-  console.log(`Found ${newArticles.length} new articles to analyze`)
+  // Process articles with enhanced deduplication (4-stage system)
+  console.log(`\n🔍 Processing ${allArticles.length} articles through deduplication...`)
+  const newArticles = await processArticlesWithDeduplication(allArticles)
+  console.log(`✅ Found ${newArticles.length} unique articles to analyze`)
 
   // Analyze and save new articles to database
   let savedCount = 0

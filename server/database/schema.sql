@@ -39,7 +39,12 @@ CREATE TABLE articles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- AI Analysis (stored as JSONB for flexibility)
-    analysis JSONB
+    analysis JSONB,
+
+    -- Deduplication fields (added 2025-10-11)
+    content_hash VARCHAR(64),
+    last_content_update TIMESTAMP,
+    duplicate_check_count INTEGER DEFAULT 0
 );
 
 -- Indexes for common queries
@@ -52,6 +57,12 @@ CREATE INDEX idx_articles_states ON articles USING GIN(states);
 CREATE INDEX idx_articles_relevance ON articles(relevance_score DESC);
 CREATE INDEX idx_articles_analysis ON articles USING GIN(analysis);
 CREATE INDEX idx_articles_external_id ON articles(external_id);
+
+-- Deduplication indexes (added 2025-10-11)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_articles_content_hash ON articles(content_hash);
+CREATE INDEX IF NOT EXISTS idx_articles_title_trgm ON articles USING gin(title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_articles_published_date_hash ON articles(published_date, content_hash);
 
 -- Full-text search index
 CREATE INDEX idx_articles_search ON articles USING GIN(
