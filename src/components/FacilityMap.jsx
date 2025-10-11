@@ -65,47 +65,16 @@ function FacilityMap({ facilities, metrics }) {
     )
   }
 
-  // Color mapping for metric categories - subtle backgrounds
-  const getCategoryColor = (category) => {
-    const colorMap = {
-      'Workforce': '#DBEAFE',
-      'Reimbursement': '#D1FAE5',
-      'Market': '#E9D5FF',
-      'Demographics': '#FFEDD5',
-      'Quality': '#FECACA',
-      'Occupancy': '#CCFBF1',
-      'default': '#E0E7FF'
-    }
-    return colorMap[category] || colorMap.default
-  }
-
-  // Border colors for metric categories
-  const getCategoryBorderColor = (category) => {
-    const colorMap = {
-      'Workforce': '#3B82F6',
-      'Reimbursement': '#10B981',
-      'Market': '#A855F7',
-      'Demographics': '#F97316',
-      'Quality': '#EF4444',
-      'Occupancy': '#14B8A6',
-      'default': '#6366F1'
-    }
-    return colorMap[category] || colorMap.default
-  }
-
-  const iconMap = {
-    'Users': '👥',
-    'DollarSign': '💰',
-    'TrendingUp': '📊',
-    'Star': '⭐',
-    'Percent': '📈',
-    'Building': '🏥'
-  }
-
   const getTrendIcon = (trend) => {
     if (trend === 'up') return '▲'
     if (trend === 'down') return '▼'
     return '●'
+  }
+
+  const getTrendColor = (trend) => {
+    if (trend === 'up') return '#10b981'
+    if (trend === 'down') return '#ef4444'
+    return '#6b7280'
   }
 
   return (
@@ -147,16 +116,14 @@ function FacilityMap({ facilities, metrics }) {
               <div
                 key={metric.id}
                 className="metric-compact-card"
-                style={{
-                  background: getCategoryColor(metric.category),
-                  borderColor: getCategoryBorderColor(metric.category)
-                }}
               >
                 <div className="metric-label-small">{metric.label}</div>
                 <div className="metric-value-section">
                   <div className="metric-value-small">{metric.value}</div>
                   <div className="metric-comparison-small">
-                    <span className="trend-indicator">{getTrendIcon(metric.trend)}</span>
+                    <span className="trend-indicator" style={{ color: getTrendColor(metric.trend) }}>
+                      {getTrendIcon(metric.trend)}
+                    </span>
                     <span>{metric.comparison}</span>
                   </div>
                 </div>

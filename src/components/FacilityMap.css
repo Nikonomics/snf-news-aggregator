@@ -1,10 +1,10 @@
 .facility-map-container {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  padding: 1.25rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  margin-bottom: 0.5rem;
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 16px;
 }
 
 .map-header {
@@ -20,11 +20,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
-  font-weight: 800;
-  color: #1a202c;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
   margin: 0;
-  letter-spacing: -0.5px;
+}
+
+.map-header h3 svg {
+  width: 16px;
+  height: 16px;
 }
 
 .map-legend {
@@ -61,50 +65,29 @@
 }
 
 .metric-compact-card {
-  /* Background color set inline via style prop */
-  border: 2px solid;
-  border-radius: 10px;
-  padding: 20px 18px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  position: relative;
-  overflow: hidden;
-  min-height: 130px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 100px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
 }
 
-.metric-compact-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%);
-  pointer-events: none;
-}
-
 .metric-compact-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .metric-label-small {
-  font-size: 30px;
-  color: #1F2937;
-  font-weight: 900;
-  text-transform: none;
-  letter-spacing: -0.5px;
-  position: relative;
-  z-index: 1;
+  font-size: 16px;
+  color: #1f2937;
+  font-weight: 600;
   flex: 1;
-  line-height: 1.2;
-  max-width: 55%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  line-height: 1.4;
 }
 
 .metric-value-section {
@@ -112,35 +95,30 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  position: relative;
-  z-index: 1;
   flex-shrink: 0;
-  max-width: 45%;
 }
 
 .metric-value-small {
-  font-size: 34px;
-  font-weight: 900;
-  color: #1F2937;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1f2937;
   line-height: 1;
-  letter-spacing: -1px;
   text-align: right;
 }
 
 .metric-comparison-small {
-  font-size: 20px;
-  color: #6B7280;
+  font-size: 13px;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  font-weight: 600;
-  flex-wrap: wrap;
+  gap: 4px;
+  font-weight: 400;
   text-align: right;
 }
 
 .trend-indicator {
-  font-size: 20px;
+  font-size: 12px;
   font-weight: bold;
 }
 
