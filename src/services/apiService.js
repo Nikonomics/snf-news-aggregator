@@ -1,8 +1,28 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
 
-export async function fetchArticles() {
+export async function fetchArticles(page = 1, limit = 50, filters = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/articles`)
+    // Build query parameters
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    })
+
+    // Add optional filters
+    if (filters.category && filters.category !== 'All') {
+      params.append('category', filters.category)
+    }
+    if (filters.impact && filters.impact !== 'all') {
+      params.append('impact', filters.impact)
+    }
+    if (filters.source && filters.source !== 'All Sources') {
+      params.append('source', filters.source)
+    }
+    if (filters.search) {
+      params.append('search', filters.search)
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/articles?${params.toString()}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -11,7 +31,17 @@ export async function fetchArticles() {
     const data = await response.json()
 
     if (data.success && data.articles) {
-      return data.articles
+      return {
+        articles: data.articles,
+        pagination: {
+          page: data.page,
+          limit: data.limit,
+          totalPages: data.totalPages,
+          totalCount: data.count,
+          hasNextPage: data.hasNextPage,
+          hasPrevPage: data.hasPrevPage
+        }
+      }
     } else {
       throw new Error('Invalid response format')
     }

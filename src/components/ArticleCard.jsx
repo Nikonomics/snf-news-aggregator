@@ -74,7 +74,7 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
       )}
 
       <div className="article-tags">
-        {article.tags.slice(0, 3).map((tag, index) => (
+        {(article.analysis?.tags || []).slice(0, 3).map((tag, index) => (
           <span key={index} className="tag">{tag}</span>
         ))}
       </div>

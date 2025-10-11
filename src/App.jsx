@@ -71,7 +71,13 @@ function App() {
     try {
       setLoading(true)
       setError(null)
-      const data = await fetchArticles(page, 50)
+      // Pass filters to backend (category, impact, source, search)
+      const data = await fetchArticles(page, 50, {
+        category: filters.category,
+        impact: filters.impact,
+        source: filters.source,
+        search: searchTerm
+      })
       setArticles(data.articles)
       setPagination(data.pagination)
       setLoading(false)
@@ -91,6 +97,11 @@ function App() {
     loadArticles()
   }, [])
 
+  // Re-fetch when filters or search changes
+  useEffect(() => {
+    loadArticles(1)
+  }, [filters.category, filters.impact, filters.source, searchTerm])
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -108,31 +119,13 @@ function App() {
     }
   }, [userMenuOpen])
 
+  // Client-side filtering for date and scope only (backend handles category, impact, source, search)
   const filteredArticles = useMemo(() => {
     return articles.filter(article => {
-      // Search filter
-      const searchLower = searchTerm.toLowerCase()
-      const matchesSearch = !searchTerm ||
-        article.title.toLowerCase().includes(searchLower) ||
-        article.summary.toLowerCase().includes(searchLower) ||
-        article.tags.some(tag => tag.toLowerCase().includes(searchLower))
-
-      // Category filter
-      const matchesCategory = filters.category === 'All' ||
-        article.category === filters.category
-
-      // Impact filter
-      const matchesImpact = filters.impact === 'all' ||
-        article.impact === filters.impact
-
-      // Source filter
-      const matchesSource = filters.source === 'All Sources' ||
-        article.source === filters.source
-
-      // Date filter
+      // Date filter (client-side only)
       const matchesDate = (() => {
         if (filters.dateRange === 'all') return true
-        const articleDate = new Date(article.date)
+        const articleDate = new Date(article.date || article.published_date)
         const now = new Date()
         const daysDiff = Math.floor((now - articleDate) / (1000 * 60 * 60 * 24))
 
@@ -145,7 +138,7 @@ function App() {
         }
       })()
 
-      // Geographic scope filter
+      // Geographic scope filter (client-side only)
       const matchesScope = (() => {
         if (filters.scope === 'all') return true
         const articleScope = article.analysis?.scope
@@ -163,10 +156,9 @@ function App() {
         return articleScope === filters.scope
       })()
 
-      return matchesSearch && matchesCategory && matchesImpact &&
-             matchesSource && matchesDate && matchesScope
+      return matchesDate && matchesScope
     })
-  }, [searchTerm, filters, articles])
+  }, [filters.dateRange, filters.scope, filters.states, articles])
 
   const sortedArticles = useMemo(() => {
     const sorted = [...filteredArticles]
