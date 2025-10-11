@@ -34,7 +34,7 @@ const parser = new Parser({
 })
 
 // Auto-refresh configuration
-const REFRESH_INTERVAL_MS = 1800000 // 30 minutes in milliseconds (30 * 60 * 1000)
+const REFRESH_INTERVAL_MS = 14400000 // 4 hours in milliseconds (4 * 60 * 60 * 1000)
 
 // RSS feed URLs
 const RSS_FEEDS = [
