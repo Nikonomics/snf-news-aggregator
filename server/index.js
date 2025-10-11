@@ -2,7 +2,6 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import Parser from 'rss-parser'
-import NodeCache from 'node-cache'
 import { readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
@@ -34,14 +33,8 @@ const parser = new Parser({
   timeout: 10000
 })
 
-// Cache configuration
-const CACHE_TTL_SECONDS = 1800 // 30 minutes (1800 seconds)
+// Auto-refresh configuration
 const REFRESH_INTERVAL_MS = 1800000 // 30 minutes in milliseconds (30 * 60 * 1000)
-
-// Cache for articles
-const cache = new NodeCache({ stdTTL: CACHE_TTL_SECONDS })
-cache.flushAll();
-console.log('Cache cleared - forcing fresh data');
 
 // RSS feed URLs
 const RSS_FEEDS = [
@@ -398,42 +391,55 @@ REMINDER: Return ONLY the JSON object above. No additional text. No explanations
   }
 }
 
-// Fetch and parse RSS feeds
+// Fetch and parse RSS feeds (in parallel for speed)
 async function fetchAllFeeds() {
-  console.log('Fetching RSS feeds...')
+  console.log('Fetching RSS feeds in parallel...')
+  const startTime = Date.now()
+
+  // Fetch all feeds in parallel
+  const feedPromises = RSS_FEEDS.map(feed =>
+    parser.parseURL(feed.url)
+      .then(parsedFeed => ({ feed, parsedFeed, error: null }))
+      .catch(error => ({ feed, parsedFeed: null, error }))
+  )
+
+  const results = await Promise.all(feedPromises)
+
+  // Process results
   const allArticles = []
   let articleId = 1
 
-  for (const feed of RSS_FEEDS) {
-    try {
-      console.log(`Fetching ${feed.source}...`)
-      const parsedFeed = await parser.parseURL(feed.url)
+  for (const { feed, parsedFeed, error } of results) {
+    if (error) {
+      console.error(`Error fetching ${feed.source}:`, error.message)
+      continue
+    }
 
-      for (const item of parsedFeed.items) {
-        const content = item['content:encoded'] || item.description || item.contentSnippet || ''
-        const cleanContent = content.replace(/<[^>]*>/g, '').substring(0, 400) + '...' // Strip HTML and limit length
+    for (const item of parsedFeed.items) {
+      const content = item['content:encoded'] || item.description || item.contentSnippet || ''
+      const cleanContent = content.replace(/<[^>]*>/g, '').substring(0, 400) + '...' // Strip HTML and limit length
 
-        const article = {
-          id: articleId++,
-          title: item.title,
-          summary: cleanContent,
-          date: item.isoDate || item.pubDate,
-          source: feed.source,
-          category: categorizeArticle(item.title, cleanContent),
-          impact: determineImpact(item.title, cleanContent),
-          tags: extractTags(item.title, cleanContent, categorizeArticle(item.title, cleanContent)),
-          relevanceScore: calculateRelevanceScore(item.title, cleanContent),
-          url: item.link
-        }
-
-        allArticles.push(article)
+      const article = {
+        id: articleId++,
+        title: item.title,
+        summary: cleanContent,
+        date: item.isoDate || item.pubDate,
+        source: feed.source,
+        category: categorizeArticle(item.title, cleanContent),
+        impact: determineImpact(item.title, cleanContent),
+        tags: extractTags(item.title, cleanContent, categorizeArticle(item.title, cleanContent)),
+        relevanceScore: calculateRelevanceScore(item.title, cleanContent),
+        url: item.link
       }
 
-      console.log(`✓ Fetched ${parsedFeed.items.length} articles from ${feed.source}`)
-    } catch (error) {
-      console.error(`Error fetching ${feed.source}:`, error.message)
+      allArticles.push(article)
     }
+
+    console.log(`✓ Fetched ${parsedFeed.items.length} articles from ${feed.source}`)
   }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+  console.log(`⚡ Fetched ${RSS_FEEDS.length} feeds in ${elapsed}s (parallel)`)
 
   // Sort by date (newest first)
   allArticles.sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -496,34 +502,33 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/articles', async (req, res) => {
   try {
-    // Check cache first
-    let articles = cache.get('articles')
-
-    if (!articles) {
-      // Fetch fresh data if cache is empty
-      articles = await fetchAllFeeds()
-      cache.set('articles', articles)
-    }
-
-    // Pagination parameters
+    // Parse query parameters
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 50
-    const offset = (page - 1) * limit
+    const category = req.query.category
+    const impact = req.query.impact
+    const source = req.query.source
+    const search = req.query.search
 
-    // Calculate pagination
-    const totalArticles = articles.length
-    const totalPages = Math.ceil(totalArticles / limit)
-    const paginatedArticles = articles.slice(offset, offset + limit)
+    // Get articles from database with filters
+    const result = await getArticles({
+      page,
+      limit,
+      category,
+      impact,
+      source,
+      search
+    })
 
     res.json({
       success: true,
-      count: totalArticles,
-      page: page,
-      limit: limit,
-      totalPages: totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-      articles: paginatedArticles
+      count: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      hasNextPage: result.hasNextPage,
+      hasPrevPage: result.hasPrevPage,
+      articles: result.articles
     })
   } catch (error) {
     console.error('Error fetching articles:', error)
@@ -535,15 +540,19 @@ app.get('/api/articles', async (req, res) => {
   }
 })
 
-// Force refresh endpoint (useful for testing)
+// Force refresh endpoint (triggers RSS fetch + analysis)
 app.post('/api/articles/refresh', async (req, res) => {
   try {
-    const articles = await fetchAllFeeds()
-    cache.set('articles', articles)
+    await fetchAllFeeds()
+
+    // Get count from database
+    const result = await db.query('SELECT COUNT(*) as count FROM articles')
+    const totalArticles = parseInt(result.rows[0].count)
+
     res.json({
       success: true,
       message: 'Articles refreshed successfully',
-      count: articles.length
+      totalInDatabase: totalArticles
     })
   } catch (error) {
     console.error('Error refreshing articles:', error)
