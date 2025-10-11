@@ -59,6 +59,46 @@ const RSS_FEEDS = [
 ]
 
 // NEW: Process articles with enhanced deduplication
+// Detect if an article update is significant enough to warrant re-analysis
+function isSignificantUpdate(oldArticle, newArticle) {
+  // Keywords indicating major status changes
+  const significantKeywords = [
+    'finalized', 'passed', 'approved', 'rejected', 'delayed', 'cancelled',
+    'implemented', 'withdrawn', 'revised', 'amended', 'overturned',
+    'breaking', 'update:', 'revised:', 'correction:', 'developing:'
+  ]
+
+  const oldTitle = (oldArticle.title || '').toLowerCase()
+  const newTitle = (newArticle.title || '').toLowerCase()
+  const oldSummary = (oldArticle.summary || '').toLowerCase()
+  const newSummary = (newArticle.summary || '').toLowerCase()
+
+  // Check if title gained significant keywords
+  for (const keyword of significantKeywords) {
+    if (newTitle.includes(keyword) && !oldTitle.includes(keyword)) {
+      return true // Status changed (e.g., "proposed" → "finalized")
+    }
+  }
+
+  // Check if summary gained significant keywords
+  for (const keyword of significantKeywords) {
+    if (newSummary.includes(keyword) && !oldSummary.includes(keyword)) {
+      return true // Major development added
+    }
+  }
+
+  // Check if content length changed significantly (>30% change)
+  const oldLength = oldSummary.length
+  const newLength = newSummary.length
+  const lengthChange = Math.abs(newLength - oldLength) / oldLength
+  if (lengthChange > 0.3) {
+    return true // Substantial content added/removed
+  }
+
+  // Default: minor update (typo fix, formatting, etc.)
+  return false
+}
+
 async function processArticlesWithDeduplication(rssArticles) {
   const stats = {
     total: rssArticles.length,
@@ -66,7 +106,8 @@ async function processArticlesWithDeduplication(rssArticles) {
     updated: 0,
     new: 0,
     aiChecks: 0,
-    errors: 0
+    errors: 0,
+    reanalyzed: 0
   }
 
   const uniqueArticles = []
@@ -83,17 +124,30 @@ async function processArticlesWithDeduplication(rssArticles) {
       if (dupeCheck.isDuplicate) {
         stats.duplicates++
 
-        // If content changed significantly, update the existing article
+        // If content changed significantly, decide whether to re-analyze
         if (dupeCheck.contentChanged) {
           stats.updated++
-          const contentHash = generateContentHash(article.title, article.summary)
-          await updateArticleContent(dupeCheck.matchedId, {
-            title: article.title,
-            summary: article.summary,
-            contentHash,
-            lastContentUpdate: new Date()
-          })
-          console.log(`📝 Updated article: ${article.title}`)
+
+          // Check if this is a significant update that warrants re-analysis
+          const oldArticle = dupeCheck.matchedArticle
+          const significantUpdate = isSignificantUpdate(oldArticle, article)
+
+          if (significantUpdate) {
+            // Major update - re-analyze with AI to capture new developments
+            console.log(`🔄 Significant update detected, re-analyzing: ${article.title}`)
+            uniqueArticles.push(article)
+            stats.reanalyzed = (stats.reanalyzed || 0) + 1
+          } else {
+            // Minor update - just update database, skip AI
+            const contentHash = generateContentHash(article.title, article.summary)
+            await updateArticleContent(dupeCheck.matchedId, {
+              title: article.title,
+              summary: article.summary,
+              contentHash,
+              lastContentUpdate: new Date()
+            })
+            console.log(`📝 Minor update, skipping AI: ${article.title.substring(0, 60)}...`)
+          }
         } else {
           console.log(`⏭️  Skipping duplicate: ${article.title.substring(0, 60)}... (method: ${dupeCheck.method})`)
         }
@@ -116,6 +170,7 @@ async function processArticlesWithDeduplication(rssArticles) {
   console.log(`   New: ${stats.new}`)
   console.log(`   Duplicates: ${stats.duplicates}`)
   console.log(`   Updated: ${stats.updated}`)
+  console.log(`   Re-analyzed: ${stats.reanalyzed}`)
   console.log(`   AI Checks: ${stats.aiChecks}`)
   console.log(`   Errors: ${stats.errors}\n`)
 
