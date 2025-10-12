@@ -267,6 +267,8 @@
   align-items: flex-start;
   margin-bottom: 32px;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .rankings-beside-map {
@@ -274,7 +276,7 @@
   flex-direction: column;
   gap: 12px;
   flex: 0 1 180px;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .rankings-column-compact {
@@ -444,7 +446,7 @@
 /* Conference section inside three-column layout (Priority 3 - lowest) */
 .conferences-section-inline {
   flex: 0 1 180px;
-  min-width: 140px;
+  min-width: 120px;
   background: white;
   border-radius: 12px;
   padding: 16px;
