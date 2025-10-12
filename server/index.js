@@ -1481,7 +1481,6 @@ app.post('/api/admin/cleanup-duplicates', async (req, res) => {
     })
   }
 })
-*/
 
 // ============================================================
 // LEGISLATION TRACKING API ENDPOINTS
