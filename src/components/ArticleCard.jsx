@@ -99,11 +99,23 @@ function ArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave 
               </div>
             </div>
 
-            {/* Thumbnail image placeholder */}
+            {/* Thumbnail image */}
             <div className="gnews-thumbnail">
-              <div className="gnews-thumbnail-placeholder">
-                <Tag size={24} />
-              </div>
+              {article.image_url ? (
+                <img
+                  src={article.image_url}
+                  alt={article.title}
+                  className="gnews-thumbnail-image"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    e.target.parentElement.innerHTML = '<div class="gnews-thumbnail-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>'
+                  }}
+                />
+              ) : (
+                <div className="gnews-thumbnail-placeholder">
+                  <Tag size={24} />
+                </div>
+              )}
             </div>
           </div>
 

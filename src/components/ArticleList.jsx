@@ -3,6 +3,36 @@ import CompactArticleCard from './CompactArticleCard'
 import { FileX, ChevronRight } from 'lucide-react'
 import { useMemo } from 'react'
 
+// Utility function to clean article titles
+const cleanTitle = (title) => {
+  if (!title) return ''
+  // Decode HTML entities
+  const txt = document.createElement('textarea')
+  txt.innerHTML = title
+  let cleaned = txt.value
+  // Remove &nbsp; and other entities
+  cleaned = cleaned.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+  // Trim whitespace
+  cleaned = cleaned.trim()
+  return cleaned
+}
+
+// Generate one-sentence highlight for a category
+const getCategoryHighlight = (category, articles) => {
+  if (!articles || articles.length === 0) return ''
+
+  const topArticles = articles.slice(0, 3)
+  const titles = topArticles.map(a => cleanTitle(a.title).split(':')[0].split('—')[0].split('|')[0].trim())
+
+  if (category.toLowerCase().includes('financ')) {
+    return `${titles.join(', ')} and more financial updates`
+  } else if (category.toLowerCase().includes('reimburs')) {
+    return `${titles.join(', ')}`
+  } else {
+    return `Top stories: ${titles.join(', ')}`
+  }
+}
+
 function ArticleList({ articles, onAnalyze, onViewDetails, savedArticles, onToggleSave }) {
   // Group articles by category
   const articlesByCategory = useMemo(() => {
@@ -46,7 +76,18 @@ function ArticleList({ articles, onAnalyze, onViewDetails, savedArticles, onTogg
 
       {/* Sectioned Layout */}
       <div className="category-sections">
-        {Object.entries(articlesByCategory).map(([category, categoryArticles]) => {
+        {Object.entries(articlesByCategory)
+          .sort(([categoryA], [categoryB]) => {
+            // Finance always first
+            if (categoryA.toLowerCase().includes('financ')) return -1
+            if (categoryB.toLowerCase().includes('financ')) return 1
+            // Reimbursement second
+            if (categoryA.toLowerCase().includes('reimburs')) return -1
+            if (categoryB.toLowerCase().includes('reimburs')) return 1
+            // Then alphabetical
+            return categoryA.localeCompare(categoryB)
+          })
+          .map(([category, categoryArticles]) => {
           // First article is hero (highest relevance), rest are compact
           const heroArticle = categoryArticles[0]
           const supplementalArticles = categoryArticles.slice(1, 5) // Show up to 4 supplemental articles
@@ -61,6 +102,11 @@ function ArticleList({ articles, onAnalyze, onViewDetails, savedArticles, onTogg
                 </div>
                 <ChevronRight size={20} className="category-arrow" />
               </div>
+
+              {/* Category Highlight */}
+              <p className="category-highlight">
+                {getCategoryHighlight(category, categoryArticles)}
+              </p>
 
               {/* Articles Grid: Hero + Supplemental */}
               <div className="category-grid">

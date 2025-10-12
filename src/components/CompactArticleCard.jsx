@@ -2,6 +2,20 @@ import { Calendar, Tag, ExternalLink, Bookmark, MapPin, Star, Sparkles, ChevronR
 import { format } from 'date-fns'
 import { useState } from 'react'
 
+// Utility function to clean article titles
+const cleanTitle = (title) => {
+  if (!title) return ''
+  // Decode HTML entities
+  const txt = document.createElement('textarea')
+  txt.innerHTML = title
+  let cleaned = txt.value
+  // Remove &nbsp; and other entities
+  cleaned = cleaned.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+  // Trim whitespace
+  cleaned = cleaned.trim()
+  return cleaned
+}
+
 function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
   const [showFullAnalysis, setShowFullAnalysis] = useState(false)
 
@@ -18,6 +32,11 @@ function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onTogg
     <>
       {/* Compact Article Card */}
       <div className="compact-card" onClick={() => setShowFullAnalysis(true)}>
+        {/* Thumbnail */}
+        <div className="compact-thumbnail">
+          <Tag size={24} className="compact-thumbnail-icon" />
+        </div>
+
         <div className="compact-content">
           {/* Source and timestamp */}
           <div className="compact-source-row">
@@ -29,7 +48,7 @@ function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onTogg
           </div>
 
           {/* Headline only (no preview snippet) */}
-          <h3 className="compact-headline">{article.title}</h3>
+          <h3 className="compact-headline">{cleanTitle(article.title)}</h3>
 
           {/* Metadata badges - compact */}
           <div className="compact-metadata">
@@ -45,18 +64,6 @@ function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onTogg
               </span>
             )}
           </div>
-
-          {/* Bookmark button */}
-          <button
-            className={`compact-bookmark-btn ${isSaved ? 'saved' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleSave(article.url)
-            }}
-            title={isSaved ? 'Remove from saved' : 'Save article'}
-          >
-            <Bookmark size={14} fill={isSaved ? 'currentColor' : 'none'} />
-          </button>
         </div>
       </div>
 
@@ -114,7 +121,7 @@ function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onTogg
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                 <h2 style={{ margin: 0, fontSize: '1.5em', flex: 1, color: '#111827' }}>
-                  {article.title}
+                  {cleanTitle(article.title)}
                 </h2>
                 <span
                   className="impact-badge"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, TrendingUp, AlertCircle, ExternalLink, Edit2, Save, X } from 'lucide-react'
+import { Calendar, TrendingUp, AlertCircle, ExternalLink, Edit2, Save, X, ChevronDown, ChevronUp } from 'lucide-react'
 import './WeeklyInsights.css'
 
 function WeeklyInsights() {
@@ -10,6 +10,7 @@ function WeeklyInsights() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [expandedStories, setExpandedStories] = useState(new Set())
   const [editForm, setEditForm] = useState({
     introduction: '',
     editor_note: '',
@@ -69,8 +70,20 @@ function WeeklyInsights() {
         author_name: selectedReport.author_name || 'Nicolas Hulewsky',
         author_title: selectedReport.author_title || 'Healthcare Policy Analyst'
       })
+      // Reset expanded stories when switching reports
+      setExpandedStories(new Set())
     }
   }, [selectedReport])
+
+  const toggleStoryExpansion = (index) => {
+    const newExpanded = new Set(expandedStories)
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index)
+    } else {
+      newExpanded.add(index)
+    }
+    setExpandedStories(newExpanded)
+  }
 
   const handleEditClick = () => {
     setIsEditing(true)
@@ -234,23 +247,44 @@ function WeeklyInsights() {
                 ) : null}
 
                 <div className="report-content">
-                  {selectedReport.report_data?.stories?.map((story, index) => (
-                    <section key={index} className="story-section">
-                      <div className="story-header">
-                        <div className="story-number">#{index + 1}</div>
-                        <h3>{story.headline}</h3>
-                      </div>
-
-                      {story.trend && (
-                        <div className={`story-badge trend-${story.trend}`}>
-                          <TrendingUp size={14} />
-                          <span>{story.trend}</span>
+                  {selectedReport.report_data?.stories?.map((story, index) => {
+                    const isExpanded = expandedStories.has(index)
+                    return (
+                      <section key={index} className="story-section">
+                        <div className="story-header">
+                          <div className="story-number">#{index + 1}</div>
+                          <h3>{story.headline}</h3>
                         </div>
-                      )}
 
-                      <p className="story-summary">{story.summary}</p>
+                        {story.trend && (
+                          <div className={`story-badge trend-${story.trend}`}>
+                            <TrendingUp size={14} />
+                            <span>{story.trend}</span>
+                          </div>
+                        )}
 
-                      <div className="story-details">
+                        <p className="story-summary">{story.summary}</p>
+
+                        <button
+                          className="expand-story-btn"
+                          onClick={() => toggleStoryExpansion(index)}
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp size={16} />
+                              <span>Show Less</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={16} />
+                              <span>Read More</span>
+                            </>
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <>
+                            <div className="story-details">
                         <div className="detail-box">
                           <h4>Why It Matters</h4>
                           <p>{story.whyItMatters}</p>
@@ -320,8 +354,11 @@ function WeeklyInsights() {
                           </ul>
                         </details>
                       )}
+                          </>
+                        )}
                     </section>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 {/* Editor's Note */}

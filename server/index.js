@@ -24,6 +24,7 @@ import { generateStateSummary } from './services/stateAnalysis.js'
 import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './services/stateComparison.js'
 import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
 import { getTopStories, getEmergingTrends } from './services/trendAnalysis.js'
+import { getArticleImage } from './utils/imageExtractor.js'
 import cron from 'node-cron'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -510,6 +511,9 @@ async function fetchAllFeeds() {
         }
       }
 
+      // Extract image from RSS feed (fast, no HTTP requests)
+      const imageUrl = await getArticleImage(item, item.link)
+
       const article = {
         id: articleId++,
         title: cleanTitle,
@@ -520,7 +524,8 @@ async function fetchAllFeeds() {
         impact: determineImpact(cleanTitle, cleanContent),
         tags: extractTags(cleanTitle, cleanContent, categorizeArticle(cleanTitle, cleanContent)),
         relevanceScore: calculateRelevanceScore(cleanTitle, cleanContent),
-        url: item.link
+        url: item.link,
+        image_url: imageUrl
       }
 
       allArticles.push(article)
@@ -944,6 +949,31 @@ app.post('/api/weekly-reports/generate', async (req, res) => {
     })
   } catch (error) {
     console.error('Error generating weekly report:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// Admin: Add image_url column to articles
+app.post('/api/admin/add-image-url-column', async (req, res) => {
+  try {
+    console.log('\n🔧 Adding image_url column to articles table...')
+
+    await db.query(`
+      ALTER TABLE articles
+      ADD COLUMN IF NOT EXISTS image_url TEXT
+    `)
+
+    console.log('✅ image_url column added successfully')
+
+    res.json({
+      success: true,
+      message: 'image_url column added to articles table'
+    })
+  } catch (error) {
+    console.error('❌ Error adding image_url column:', error)
     res.status(500).json({
       success: false,
       error: error.message

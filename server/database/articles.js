@@ -36,8 +36,8 @@ export async function insertArticle(article) {
   const query = `
     INSERT INTO articles (
       external_id, title, summary, url, source, published_date,
-      category, impact, relevance_score, scope, states, analysis
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      category, impact, relevance_score, scope, states, analysis, image_url
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (external_id) DO UPDATE SET
       title = EXCLUDED.title,
       summary = EXCLUDED.summary,
@@ -47,6 +47,7 @@ export async function insertArticle(article) {
       scope = EXCLUDED.scope,
       states = EXCLUDED.states,
       analysis = EXCLUDED.analysis,
+      image_url = EXCLUDED.image_url,
       updated_at = CURRENT_TIMESTAMP
     RETURNING id
   `
@@ -71,7 +72,8 @@ export async function insertArticle(article) {
     article.relevanceScore || null,
     scope,
     article.analysis?.state ? [article.analysis.state] : null,
-    article.analysis || null
+    article.analysis || null,
+    article.image_url || null
   ]
 
   try {
@@ -195,7 +197,7 @@ export async function getArticles(options = {}) {
     SELECT
       id, external_id, title, summary, url, source, published_date as date,
       category, impact, relevance_score, scope, states, analysis,
-      created_at, updated_at
+      image_url, created_at, updated_at
     FROM articles
     ${whereClause}
     ORDER BY published_date DESC
@@ -226,7 +228,7 @@ export async function getArticleById(id) {
     SELECT
       id, external_id, title, summary, url, source, published_date as date,
       category, impact, relevance_score, scope, states, analysis,
-      created_at, updated_at
+      image_url, created_at, updated_at
     FROM articles
     WHERE id = $1
   `

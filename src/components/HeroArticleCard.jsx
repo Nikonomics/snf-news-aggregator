@@ -2,6 +2,20 @@ import { Calendar, Tag, ExternalLink, Bookmark, MapPin, Star, Sparkles, ChevronR
 import { format } from 'date-fns'
 import { useState } from 'react'
 
+// Utility function to clean article titles
+const cleanTitle = (title) => {
+  if (!title) return ''
+  // Decode HTML entities
+  const txt = document.createElement('textarea')
+  txt.innerHTML = title
+  let cleaned = txt.value
+  // Remove &nbsp; and other entities
+  cleaned = cleaned.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+  // Trim whitespace
+  cleaned = cleaned.trim()
+  return cleaned
+}
+
 function HeroArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
   const [showFullAnalysis, setShowFullAnalysis] = useState(false)
 
@@ -79,26 +93,11 @@ function HeroArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleS
           </div>
 
           {/* Headline */}
-          <h2 className="hero-headline">{article.title}</h2>
+          <h2 className="hero-headline">{cleanTitle(article.title)}</h2>
 
           {/* Preview snippet */}
           {previewSnippet && (
             <p className="hero-snippet">{previewSnippet}</p>
-          )}
-
-          {/* AI Insights Preview - Show 2 insights for hero */}
-          {insightPreviews && insightPreviews.length > 0 && (
-            <div className="hero-insights">
-              <div className="hero-insights-header">
-                <Sparkles size={16} />
-                <span>AI Analysis</span>
-              </div>
-              <ul className="hero-insights-list">
-                {insightPreviews.map((insight, idx) => (
-                  <li key={idx}>{insight}</li>
-                ))}
-              </ul>
-            </div>
           )}
 
           {/* Metadata row */}
@@ -186,7 +185,7 @@ function HeroArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleS
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                 <h2 style={{ margin: 0, fontSize: '1.5em', flex: 1, color: '#111827' }}>
-                  {article.title}
+                  {cleanTitle(article.title)}
                 </h2>
                 <span
                   className="impact-badge"
