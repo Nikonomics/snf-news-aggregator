@@ -9,11 +9,10 @@ import ArticleDetail from './components/ArticleDetail'
 import TrendingTags from './components/TrendingTags'
 import ConferenceDirectory from './components/ConferenceDirectory'
 import StateDashboard from './components/StateDashboard'
-import EnhancedStateDashboard from './components/EnhancedStateDashboard'
 import StateSelector from './components/StateSelector'
 import StateComparisonMap from './components/StateComparisonMap'
 import Pagination from './components/Pagination'
-import { fetchArticles } from './services/apiService'
+import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
   const location = useLocation()
@@ -38,6 +37,7 @@ function App() {
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [filterStats, setFilterStats] = useState(null)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -71,12 +71,14 @@ function App() {
     try {
       setLoading(true)
       setError(null)
-      // Pass filters to backend (category, impact, source, search)
+      // Pass all filters to backend
       const data = await fetchArticles(page, 50, {
         category: filters.category,
         impact: filters.impact,
         source: filters.source,
-        search: searchTerm
+        search: searchTerm,
+        scope: filters.scope,
+        states: filters.states
       })
       setArticles(data.articles)
       setPagination(data.pagination)
@@ -95,12 +97,18 @@ function App() {
 
   useEffect(() => {
     loadArticles()
+    // Load filter stats
+    fetchArticleStats().then(stats => {
+      setFilterStats(stats)
+    }).catch(err => {
+      console.error('Error loading filter stats:', err)
+    })
   }, [])
 
   // Re-fetch when filters or search changes
   useEffect(() => {
     loadArticles(1)
-  }, [filters.category, filters.impact, filters.source, searchTerm])
+  }, [filters.category, filters.impact, filters.source, filters.scope, filters.states, searchTerm])
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -119,46 +127,24 @@ function App() {
     }
   }, [userMenuOpen])
 
-  // Client-side filtering for date and scope only (backend handles category, impact, source, search)
+  // Client-side filtering for date only (backend handles everything else)
   const filteredArticles = useMemo(() => {
     return articles.filter(article => {
       // Date filter (client-side only)
-      const matchesDate = (() => {
-        if (filters.dateRange === 'all') return true
-        const articleDate = new Date(article.date || article.published_date)
-        const now = new Date()
-        const daysDiff = Math.floor((now - articleDate) / (1000 * 60 * 60 * 24))
+      if (filters.dateRange === 'all') return true
+      const articleDate = new Date(article.date || article.published_date)
+      const now = new Date()
+      const daysDiff = Math.floor((now - articleDate) / (1000 * 60 * 60 * 24))
 
-        switch (filters.dateRange) {
-          case 'today': return daysDiff === 0
-          case 'week': return daysDiff <= 7
-          case 'month': return daysDiff <= 30
-          case 'quarter': return daysDiff <= 90
-          default: return true
-        }
-      })()
-
-      // Geographic scope filter (client-side only)
-      const matchesScope = (() => {
-        if (filters.scope === 'all') return true
-        const articleScope = article.analysis?.scope
-        if (!articleScope) return false
-
-        if (filters.scope === 'State' && filters.states?.length > 0) {
-          // If specific states are selected, match both scope AND state
-          const articleState = article.analysis?.state
-          // Check if the article's state matches any of the selected states
-          return articleScope === 'State' && filters.states.some(selectedState =>
-            articleState?.includes(selectedState)
-          )
-        }
-
-        return articleScope === filters.scope
-      })()
-
-      return matchesDate && matchesScope
+      switch (filters.dateRange) {
+        case 'today': return daysDiff === 0
+        case 'week': return daysDiff <= 7
+        case 'month': return daysDiff <= 30
+        case 'quarter': return daysDiff <= 90
+        default: return true
+      }
     })
-  }, [filters.dateRange, filters.scope, filters.states, articles])
+  }, [filters.dateRange, articles])
 
   const sortedArticles = useMemo(() => {
     const sorted = [...filteredArticles]
@@ -299,6 +285,12 @@ function App() {
               State Analysis
             </Link>
             <Link
+              to="/regulatory"
+              className={`nav-tab ${location.pathname === '/regulatory' ? 'active' : ''}`}
+            >
+              Regulatory Feed
+            </Link>
+            <Link
               to="/conferences"
               className={`nav-tab ${location.pathname === '/conferences' ? 'active' : ''}`}
             >
@@ -338,6 +330,7 @@ function App() {
                 sortBy={sortBy}
                 onSortChange={setSortBy}
                 stateCounts={stateCounts}
+                filterStats={filterStats}
               />
             </aside>
 
@@ -413,11 +406,85 @@ function App() {
         {/* State Comparison Map Route */}
         <Route path="/state-comparison" element={<StateComparisonMap />} />
 
-        {/* State Dashboard Route (original with articles/sentiment) */}
+        {/* State Dashboard Route (with articles/sentiment analysis) */}
         <Route path="/state/:stateCode" element={<StateDashboard />} />
 
-        {/* Enhanced Market Dashboard Route (prototype with facilities/metrics) */}
-        <Route path="/dashboard/:stateCode" element={<EnhancedStateDashboard />} />
+        {/* Regulatory Feed Route */}
+        <Route path="/regulatory" element={
+          <main className="app-main">
+            <aside className="sidebar">
+              <FilterPanel
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                stateCounts={stateCounts}
+                filterStats={filterStats}
+              />
+            </aside>
+
+            <div className="content">
+              {error && (
+                <div className="error-banner">
+                  <p>{error}</p>
+                  <button onClick={loadArticles} className="retry-btn">
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="loading-container">
+                  <div className="spinner-large"></div>
+                  <p>Loading regulatory articles...</p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>Regulatory Feed</h2>
+                    <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                      Stay informed about regulatory changes, policy updates, and compliance requirements affecting SNFs
+                    </p>
+                  </div>
+
+                  <TrendingTags
+                    articles={sortedArticles.filter(a => {
+                      const category = a.category || a.analysis?.category || ''
+                      return category.toLowerCase().includes('regulation') ||
+                             category.toLowerCase().includes('policy') ||
+                             category.toLowerCase().includes('compliance') ||
+                             category.toLowerCase().includes('medicare') ||
+                             category.toLowerCase().includes('medicaid')
+                    })}
+                    onTagClick={handleTagClick}
+                  />
+
+                  <ArticleList
+                    articles={sortedArticles.filter(a => {
+                      const category = a.category || a.analysis?.category || ''
+                      return category.toLowerCase().includes('regulation') ||
+                             category.toLowerCase().includes('policy') ||
+                             category.toLowerCase().includes('compliance') ||
+                             category.toLowerCase().includes('medicare') ||
+                             category.toLowerCase().includes('medicaid')
+                    })}
+                    onAnalyze={setSelectedArticle}
+                    onViewDetails={setSelectedArticleForDetail}
+                    savedArticles={savedArticles}
+                    onToggleSave={toggleSaveArticle}
+                  />
+
+                  <Pagination
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
+                  />
+                </>
+              )}
+            </div>
+          </main>
+        } />
 
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />
