@@ -13,6 +13,8 @@ import RegulatoryAlerts from './RegulatoryAlerts'
 import DashboardSkeleton from './DashboardSkeleton'
 import './StateDashboard.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+
 function StateDashboard() {
   const { stateCode } = useParams()
   const [loading, setLoading] = useState(true)
@@ -40,7 +42,7 @@ function StateDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`http://localhost:3001/api/state/${stateCode}`)
+      const response = await fetch(`${API_BASE_URL}/api/state/${stateCode}`)
       const data = await response.json()
 
       if (!data.success) {
@@ -58,7 +60,7 @@ function StateDashboard() {
   const loadDashboardData = async () => {
     try {
       setDashboardLoading(true)
-      const response = await fetch(`http://localhost:3001/api/state/${stateCode}/dashboard`)
+      const response = await fetch(`${API_BASE_URL}/api/state/${stateCode}/dashboard`)
       const data = await response.json()
 
       if (!data.success) {

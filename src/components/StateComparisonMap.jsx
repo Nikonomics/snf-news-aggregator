@@ -4,6 +4,8 @@ import { TrendingUp, MapPin, DollarSign, Users, Building2, Star, Calendar } from
 import StateComparisonHeatMap from './StateComparisonHeatMap'
 import './StateComparisonMap.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+
 function StateComparisonMap() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -26,8 +28,8 @@ function StateComparisonMap() {
       setError(null)
 
       const [comparisonRes, rankingsRes] = await Promise.all([
-        fetch(`http://localhost:3001/api/states/comparison?metric=${activeMetric}`),
-        fetch('http://localhost:3001/api/states/rankings')
+        fetch(`${API_BASE_URL}/api/states/comparison?metric=${activeMetric}`),
+        fetch(`${API_BASE_URL}/api/states/rankings`)
       ])
 
       const comparisonData = await comparisonRes.json()
@@ -48,7 +50,7 @@ function StateComparisonMap() {
 
   const loadUpcomingConferences = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/conferences')
+      const response = await fetch(`${API_BASE_URL}/api/conferences`)
       const data = await response.json()
 
       if (data.success) {
