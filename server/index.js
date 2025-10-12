@@ -9,6 +9,17 @@ import { dirname, join } from 'path'
 import Anthropic from '@anthropic-ai/sdk'
 import * as db from './database/db.js'
 import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
+import {
+  getBills,
+  getBillById,
+  getBillByNumber,
+  insertBill,
+  updateBill,
+  getUrgentBills,
+  getBillsWithCommentDeadlines,
+  getBillStats,
+  createBillAlert
+} from './database/bills.js'
 import { generateStateSummary } from './services/stateAnalysis.js'
 import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './services/stateComparison.js'
 import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
@@ -269,9 +280,80 @@ async function analyzeArticleWithAI(article) {
   try {
     console.log(`Analyzing new article: ${article.title}`);
 
-    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze the following article and provide detailed, actionable insights for SNF operators and administrators running facilities on 1-2% margins.
+    // Detect if this is an opinion/commentary piece
+    const titleLower = article.title.toLowerCase();
+    const summaryLower = (article.summary || '').toLowerCase();
+    const combinedText = titleLower + ' ' + summaryLower;
 
-CRITICAL: You must respond with ONLY a valid JSON object. Do not include any explanatory text, comments, or natural language before or after the JSON. Start your response with { and end with }.
+    // Opinion indicators in title/content
+    const opinionIndicators = [
+      'opinion:', 'commentary:', 'perspective:', 'my view',
+      'i think', 'i believe', 'in my opinion', 'personal reflection',
+      'i feel', 'from my perspective', 'i often', 'i recently',
+      'as i ', 'my ', 'foolproof childhood plan', 'my strategy'
+    ];
+
+    const hasOpinionLanguage = opinionIndicators.some(indicator => combinedText.includes(indicator));
+
+    const isOpinionPiece = article.category === 'Opinion' ||
+                          article.tags.some(tag => ['opinion', 'commentary', 'editorial', 'perspective', 'column'].includes(tag.toLowerCase())) ||
+                          hasOpinionLanguage;
+
+    if (isOpinionPiece) {
+      console.log(`  → Detected as opinion/commentary piece`);
+    }
+
+    const prompt = isOpinionPiece
+      ? `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). This appears to be an opinion piece or commentary article. Provide a brief, lighter analysis focused on relevance.
+
+CRITICAL: Respond with ONLY valid JSON. No text before or after. Start with { and end with }.
+
+Article Title: ${article.title}
+Article Summary: ${article.summary}
+Category: ${article.category}
+Source: ${article.source}
+
+Requirements:
+
+1. **Key Insights** (1-2 bullet points): What's the main theme or perspective? How might it relate to SNF operators? Keep it brief and relevant.
+
+2. Skip detailed compliance timelines, financial impact, and action items for opinion pieces. Instead provide:
+   - complianceTimeline: Set all fields to "N/A"
+   - financialImpact: "No direct financial impact - opinion/commentary piece"
+   - actionItems: Empty arrays for immediate, shortTerm, longTerm
+   - risks: Empty array
+   - whoNeedsToKnow: Just Administrator if it's industry-relevant, empty array otherwise
+
+3. **Why This Matters** (relevanceReasoning): 1-2 sentences on why this perspective might be relevant to SNF operators, or state "General interest piece with limited operational relevance" if not directly applicable.
+
+4. **Geographic Scope**: Based on content, set scope and state appropriately.
+
+JSON Structure:
+{
+  "keyInsights": ["brief theme or perspective"],
+  "complianceTimeline": {
+    "commentDeadline": "N/A",
+    "effectiveDate": "N/A",
+    "prepTime": "N/A",
+    "criticalDates": []
+  },
+  "financialImpact": "No direct financial impact - opinion/commentary piece",
+  "whoNeedsToKnow": [],
+  "actionItems": {
+    "immediate": [],
+    "shortTerm": [],
+    "longTerm": []
+  },
+  "risks": [],
+  "relevanceReasoning": "Brief explanation of relevance or 'General interest piece with limited operational relevance'",
+  "scope": "National|State|Regional|Local",
+  "state": "XX or N/A"
+}
+
+Return ONLY the JSON object. No markdown. No extra text.`
+      : `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Analyze this article for SNF operators running facilities on 1-2% margins.
+
+CRITICAL: Respond with ONLY valid JSON. No text before or after. Start with { and end with }.
 
 Article Title: ${article.title}
 Article Summary: ${article.summary}
@@ -279,71 +361,66 @@ Category: ${article.category}
 Source: ${article.source}
 Tags: ${article.tags.join(', ')}
 
-Please provide:
+IMPORTANT: If the article summary is limited or unavailable, focus your analysis on what can be reasonably inferred from the TITLE alone. Make educated guesses based on the title's topic and typical SNF industry patterns. Do NOT mention that content is limited or unavailable - just provide the best analysis you can based on the title.
 
-1. **Key Insights** (3-5 bullet points): What are the most important takeaways from this article?
+Requirements:
 
-2. **Compliance Timeline** (if applicable):
-   - Comment period deadline
-   - Effective date / implementation deadline
-   - Estimated preparation time needed
-   - Any critical dates operators need to calendar
+1. **Key Insights** (1-2 bullet points): Write concise, actionable takeaways based on the title and any available content. Each should be 1-2 sentences. Focus on what matters most to operators. NEVER mention that content is "limited", "truncated", "unavailable", or that you cannot provide analysis. Instead, infer likely implications from the title. Avoid phrases like "this article discusses" or "may provide opportunities."
 
-3. **Financial Impact** (be specific when possible):
-   - Estimated cost per patient per day/month/year (if calculable)
-   - Approximate impact on typical 100-bed facility
-   - One-time costs vs. ongoing operational costs
-   - Timeline for when financial impact will be felt
+2. **Compliance Timeline**: Extract exact dates if mentioned. If not mentioned, use "N/A".
+   - commentDeadline: Exact date or "N/A"
+   - effectiveDate: Exact date or "N/A"
+   - prepTime: Estimated time needed or "N/A"
+   - criticalDates: Array of specific dates with context, or empty array
 
-4. **Who Needs to Know**:
-   - Which roles in the facility need to be informed (Administrator, DON, CFO, Board, etc.)
-   - Why each role needs to know
+3. **Financial Impact** (be specific): Provide concrete numbers when possible. For a 100-bed facility, estimate:
+   - Per-patient costs (daily/monthly/yearly)
+   - One-time vs. ongoing costs
+   - ROI timeline
+   If no financial impact, state "No direct financial impact" and explain briefly.
 
-5. **Action Items** (prioritized by timeline):
-   - Immediate actions (next 7 days)
-   - Short-term actions (30 days)
-   - Long-term actions (60+ days)
+4. **Who Needs to Know**: List 2-4 key roles. Be specific about why each role needs to know.
 
-6. **Risk Assessment**: Identify 2-3 risks with severity levels:
-   - High/Medium/Low severity
-   - Brief description of each risk
-   - Mitigation strategies
+5. **Action Items**: List 1-3 actions per timeframe. Be specific and actionable. If no actions needed, use empty arrays.
 
-7. **Why This Matters**: Explain the relevance and importance to SNF facilities in 2-3 sentences. If this is similar to past changes, provide that context.
+6. **Risks**: Identify 1-3 real risks. Avoid generic risks. Each risk must have:
+   - level: "high", "medium", or "low"
+   - description: Brief, specific risk
+   - mitigation: Concrete mitigation strategy
 
-8. **Geographic Scope** (2-3 sentences):
-   - Scope: Is this story National, State-specific, Regional, or Local?
-   - State: If state-specific, provide the 2-letter state code (e.g., AL, CA, TX, FL)
-   - If multiple states mentioned, list all relevant state codes
-   - If national or not state-specific, put "N/A" for state
+7. **Why This Matters** (relevanceReasoning): 2-3 sentences max. Explain direct impact on SNF operations. Skip if not relevant.
 
-Format your response as JSON with this structure:
+8. **Geographic Scope**:
+   - scope: Must be exactly one of: "National", "State", "Regional", or "Local"
+   - state: Two-letter state code(s) if state-specific, or "N/A"
+
+JSON Structure:
 {
-  "keyInsights": ["insight1", "insight2", ...],
+  "keyInsights": ["concise insight 1", "concise insight 2"],
   "complianceTimeline": {
-    "commentDeadline": "date or N/A",
-    "effectiveDate": "date or N/A",
-    "prepTime": "time estimate or N/A",
-    "criticalDates": ["date1", "date2", ...]
+    "commentDeadline": "MM/DD/YYYY or N/A",
+    "effectiveDate": "MM/DD/YYYY or N/A",
+    "prepTime": "X days/weeks/months or N/A",
+    "criticalDates": ["date with context"]
   },
-  "financialImpact": "detailed financial impact description",
+  "financialImpact": "Specific financial impact with numbers, or 'No direct financial impact'",
   "whoNeedsToKnow": [
-    {"role": "role name", "reason": "why they need to know"}
+    {"role": "Title", "reason": "specific reason"}
   ],
   "actionItems": {
-    "immediate": ["action1", "action2", ...],
-    "shortTerm": ["action1", "action2", ...],
-    "longTerm": ["action1", "action2", ...]
+    "immediate": ["specific action"],
+    "shortTerm": ["specific action"],
+    "longTerm": ["specific action"]
   },
   "risks": [
-    {"level": "high|medium|low", "description": "risk description", "mitigation": "mitigation strategy"}
+    {"level": "high|medium|low", "description": "specific risk", "mitigation": "specific strategy"}
   ],
-  "relevanceReasoning": "why this matters explanation",
-  "scope": "National/State/Regional/Local",
-  "state": "Two-letter state code or N/A or comma-separated list"
+  "relevanceReasoning": "Direct, concise explanation of why this matters",
+  "scope": "National|State|Regional|Local",
+  "state": "XX or N/A"
 }
 
-REMINDER: Return ONLY the JSON object above. No additional text. No explanations. No markdown. Just pure JSON starting with { and ending with }.`;
+Return ONLY the JSON object. No markdown. No extra text.`;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -419,16 +496,28 @@ async function fetchAllFeeds() {
       const content = item['content:encoded'] || item.description || item.contentSnippet || ''
       const cleanContent = content.replace(/<[^>]*>/g, '').substring(0, 400) + '...' // Strip HTML and limit length
 
+      // Extract actual source from Google News titles (format: "Title - Source")
+      let actualSource = feed.source
+      let cleanTitle = item.title
+
+      if (feed.source === 'Google News' && item.title) {
+        const lastDash = item.title.lastIndexOf(' - ')
+        if (lastDash > 0) {
+          actualSource = item.title.substring(lastDash + 3).trim()
+          cleanTitle = item.title.substring(0, lastDash).trim()
+        }
+      }
+
       const article = {
         id: articleId++,
-        title: item.title,
+        title: cleanTitle,
         summary: cleanContent,
         date: item.isoDate || item.pubDate,
-        source: feed.source,
-        category: categorizeArticle(item.title, cleanContent),
-        impact: determineImpact(item.title, cleanContent),
-        tags: extractTags(item.title, cleanContent, categorizeArticle(item.title, cleanContent)),
-        relevanceScore: calculateRelevanceScore(item.title, cleanContent),
+        source: actualSource,
+        category: categorizeArticle(cleanTitle, cleanContent),
+        impact: determineImpact(cleanTitle, cleanContent),
+        tags: extractTags(cleanTitle, cleanContent, categorizeArticle(cleanTitle, cleanContent)),
+        relevanceScore: calculateRelevanceScore(cleanTitle, cleanContent),
         url: item.link
       }
 
@@ -538,6 +627,8 @@ app.get('/api/articles', async (req, res) => {
     const impact = req.query.impact
     const source = req.query.source
     const search = req.query.search
+    const scope = req.query.scope
+    const states = req.query.states ? req.query.states.split(',') : undefined
 
     // Get articles from database with PostgreSQL filtering
     const result = await getArticles({
@@ -546,24 +637,117 @@ app.get('/api/articles', async (req, res) => {
       category,
       impact,
       source,
-      search
+      search,
+      scope,
+      states
     })
 
     res.json({
       success: true,
-      count: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-      hasNextPage: result.hasNextPage,
-      hasPrevPage: result.hasPrevPage,
-      articles: result.articles
+      articles: result.articles,
+      pagination: result.pagination
     })
   } catch (error) {
     console.error('Error fetching articles:', error)
     res.status(500).json({
       success: false,
       error: 'Failed to fetch articles',
+      message: error.message
+    })
+  }
+})
+
+// Get filter statistics (counts for each filter option)
+app.get('/api/articles/stats', async (req, res) => {
+  try {
+    // Get counts for each filter type
+    const [categoryStats, impactStats, sourceStats, scopeStats] = await Promise.all([
+      // Category counts
+      db.query(`
+        SELECT category, COUNT(*) as count
+        FROM articles
+        GROUP BY category
+        ORDER BY category
+      `),
+      // Impact counts
+      db.query(`
+        SELECT impact, COUNT(*) as count
+        FROM articles
+        GROUP BY impact
+        ORDER BY
+          CASE impact
+            WHEN 'high' THEN 1
+            WHEN 'medium' THEN 2
+            WHEN 'low' THEN 3
+          END
+      `),
+      // Source counts
+      db.query(`
+        SELECT source, COUNT(*) as count
+        FROM articles
+        GROUP BY source
+        ORDER BY count DESC
+      `),
+      // Scope counts
+      db.query(`
+        SELECT scope, COUNT(*) as count
+        FROM articles
+        WHERE scope IS NOT NULL
+        GROUP BY scope
+        ORDER BY scope
+      `)
+    ])
+
+    // Get state counts (including both State and Local scope)
+    const stateStats = await db.query(`
+      SELECT UNNEST(states) as state, COUNT(*) as count
+      FROM articles
+      WHERE (scope = 'State' OR scope = 'Local')
+        AND states IS NOT NULL
+        AND array_length(states, 1) > 0
+      GROUP BY state
+      ORDER BY state
+    `)
+
+    // Format response
+    const stats = {
+      categories: categoryStats.rows.reduce((acc, row) => {
+        acc[row.category] = parseInt(row.count)
+        return acc
+      }, {}),
+      impacts: impactStats.rows.reduce((acc, row) => {
+        acc[row.impact] = parseInt(row.count)
+        return acc
+      }, {}),
+      sources: sourceStats.rows.reduce((acc, row) => {
+        acc[row.source] = parseInt(row.count)
+        return acc
+      }, {}),
+      scopes: scopeStats.rows.reduce((acc, row) => {
+        acc[row.scope] = parseInt(row.count)
+        return acc
+      }, {}),
+      states: stateStats.rows.reduce((acc, row) => {
+        if (row.state && row.state !== 'N/A') {
+          acc[row.state] = parseInt(row.count)
+        }
+        return acc
+      }, {})
+    }
+
+    // Calculate total
+    const totalResult = await db.query('SELECT COUNT(*) as count FROM articles')
+    stats.total = parseInt(totalResult.rows[0].count)
+
+    res.json({
+      success: true,
+      stats
+    })
+  } catch (error) {
+    console.error('Error fetching article stats:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics',
       message: error.message
     })
   }
@@ -762,10 +946,10 @@ app.get('/api/state/:stateCode', async (req, res) => {
       conf => conf.state === stateCode.toUpperCase()
     ) || []
 
-    // Get state-specific articles from database
+    // Get state-specific articles from database (including both State and Local scope)
     const result = await db.query(
       `SELECT * FROM articles
-       WHERE scope = 'State'
+       WHERE (scope = 'State' OR scope = 'Local')
        AND (states @> ARRAY[$1] OR analysis->>'state' LIKE $2)
        ORDER BY published_date DESC`,
       [stateCode.toUpperCase(), `%${stateCode.toUpperCase()}%`]
@@ -1048,6 +1232,525 @@ async function refreshArticlesInBackground() {
   }
 }
 
+// POST /api/admin/update-google-news-sources - Extract actual sources from Google News articles
+app.post('/api/admin/update-google-news-sources', async (req, res) => {
+  try {
+    console.log('Updating Google News article sources...')
+
+    // Get all articles with "Google News" source
+    const result = await db.query(`
+      SELECT id, title, source
+      FROM articles
+      WHERE source = 'Google News'
+    `)
+
+    console.log(`Found ${result.rows.length} Google News articles to update`)
+
+    let updated = 0
+    let failed = 0
+
+    for (const article of result.rows) {
+      try {
+        // Extract source from title (format: "Title - Source")
+        const lastDash = article.title.lastIndexOf(' - ')
+
+        if (lastDash > 0) {
+          const actualSource = article.title.substring(lastDash + 3).trim()
+          const cleanTitle = article.title.substring(0, lastDash).trim()
+
+          // Update the article
+          await db.query(`
+            UPDATE articles
+            SET source = $1, title = $2
+            WHERE id = $3
+          `, [actualSource, cleanTitle, article.id])
+
+          updated++
+        }
+      } catch (err) {
+        failed++
+        console.error(`Error updating article ${article.id}:`, err.message)
+      }
+    }
+
+    console.log(`✅ Update complete! Updated: ${updated}, Failed: ${failed}`)
+
+    res.json({
+      success: true,
+      message: 'Google News sources updated',
+      updated,
+      failed,
+      total: result.rows.length
+    })
+  } catch (error) {
+    console.error('Error updating Google News sources:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// POST /api/admin/create-state-summaries-table - Create state_summaries table
+app.post('/api/admin/create-state-summaries-table', async (req, res) => {
+  try {
+    console.log('Creating state_summaries table...')
+
+    const migrationSQL = `
+      CREATE TABLE IF NOT EXISTS state_summaries (
+          id SERIAL PRIMARY KEY,
+          state VARCHAR(2) NOT NULL UNIQUE,
+          summary JSONB NOT NULL,
+          articles_analyzed INTEGER NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_state_summaries_state ON state_summaries(state);
+      CREATE INDEX IF NOT EXISTS idx_state_summaries_updated ON state_summaries(updated_at DESC);
+
+      CREATE OR REPLACE FUNCTION update_updated_at_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+          NEW.updated_at = CURRENT_TIMESTAMP;
+          RETURN NEW;
+      END;
+      $$ language 'plpgsql';
+
+      DROP TRIGGER IF EXISTS update_state_summaries_updated_at ON state_summaries;
+      CREATE TRIGGER update_state_summaries_updated_at
+          BEFORE UPDATE ON state_summaries
+          FOR EACH ROW
+          EXECUTE FUNCTION update_updated_at_column();
+    `
+
+    await db.query(migrationSQL)
+
+    console.log('✅ state_summaries table created successfully')
+
+    res.json({
+      success: true,
+      message: 'state_summaries table created successfully'
+    })
+  } catch (error) {
+    console.error('Error creating state_summaries table:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// POST /api/admin/tag-opinion-pieces - Identify and tag opinion/commentary articles
+app.post('/api/admin/tag-opinion-pieces', async (req, res) => {
+  try {
+    console.log('\n🔍 Identifying opinion/commentary pieces...')
+
+    // Get all articles
+    const result = await db.query('SELECT id, title, summary, category FROM articles')
+    console.log(`Analyzing ${result.rows.length} articles...`)
+
+    let updated = 0
+    let alreadyTagged = 0
+
+    // Opinion indicators (same as in analyzeArticleWithAI)
+    const opinionIndicators = [
+      'opinion:', 'commentary:', 'perspective:', 'my view',
+      'i think', 'i believe', 'in my opinion', 'personal reflection',
+      'i feel', 'from my perspective', 'i often', 'i recently',
+      'as i ', 'my '
+    ]
+
+    for (const article of result.rows) {
+      // Skip if already categorized as Opinion
+      if (article.category === 'Opinion') {
+        alreadyTagged++
+        continue
+      }
+
+      const titleLower = (article.title || '').toLowerCase()
+      const summaryLower = (article.summary || '').toLowerCase()
+      const combinedText = titleLower + ' ' + summaryLower
+
+      // Check if it matches opinion criteria
+      const hasOpinionLanguage = opinionIndicators.some(indicator => combinedText.includes(indicator))
+
+      if (hasOpinionLanguage) {
+        // Update category to Opinion
+        await db.query('UPDATE articles SET category = $1 WHERE id = $2', ['Opinion', article.id])
+        updated++
+        console.log(`  ✓ Tagged: "${article.title.substring(0, 60)}..."`)
+      }
+    }
+
+    console.log('\n✅ Tagging complete!')
+    console.log(`   Updated: ${updated}`)
+    console.log(`   Already tagged: ${alreadyTagged}`)
+    console.log(`   Total checked: ${result.rows.length}`)
+
+    res.json({
+      success: true,
+      message: 'Opinion pieces tagged',
+      updated,
+      alreadyTagged,
+      total: result.rows.length
+    })
+  } catch (error) {
+    console.error('Error tagging opinion pieces:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// Admin endpoint to cleanup duplicate articles
+app.post('/api/admin/cleanup-duplicates', async (req, res) => {
+  try {
+    console.log('\n🔍 Finding duplicate articles...')
+
+    // Find articles with the same normalized title
+    const result = await db.query(`
+      SELECT
+        id,
+        title,
+        published_date,
+        source,
+        url,
+        LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_title
+      FROM articles
+      ORDER BY normalized_title, published_date ASC
+    `)
+
+    console.log(`Analyzing ${result.rows.length} articles...`)
+
+    // Group by normalized title
+    const titleGroups = {}
+    for (const article of result.rows) {
+      const key = article.normalized_title
+      if (!titleGroups[key]) {
+        titleGroups[key] = []
+      }
+      titleGroups[key].push(article)
+    }
+
+    // Find duplicates (groups with more than 1 article)
+    const duplicateGroups = Object.entries(titleGroups)
+      .filter(([_, articles]) => articles.length > 1)
+      .sort((a, b) => b[1].length - a[1].length) // Sort by most duplicates first
+
+    console.log(`Found ${duplicateGroups.length} sets of duplicates`)
+
+    let totalDeleted = 0
+    const deletedArticles = []
+
+    for (const [normalizedTitle, articles] of duplicateGroups) {
+      // Keep the oldest one (first published)
+      const keeper = articles[0]
+      const duplicates = articles.slice(1)
+
+      console.log(`\n📄 "${keeper.title}" - keeping ID ${keeper.id}, deleting ${duplicates.length} duplicates`)
+
+      for (const dup of duplicates) {
+        // Delete the duplicate
+        await db.query('DELETE FROM articles WHERE id = $1', [dup.id])
+        totalDeleted++
+        deletedArticles.push({
+          id: dup.id,
+          title: dup.title,
+          date: dup.published_date
+        })
+      }
+    }
+
+    console.log(`\n✅ Cleanup complete! Deleted ${totalDeleted} duplicates`)
+
+    res.json({
+      success: true,
+      message: 'Duplicates cleaned up',
+      totalDeleted,
+      duplicateGroups: duplicateGroups.length,
+      totalArticles: result.rows.length,
+      remainingArticles: result.rows.length - totalDeleted
+    })
+  } catch (error) {
+    console.error('Error cleaning up duplicates:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// ============================================================
+// LEGISLATION TRACKING API ENDPOINTS
+// ============================================================
+
+// GET /api/bills - Get bills with filtering and pagination
+app.get('/api/bills', async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      source,
+      jurisdiction,
+      state,
+      priority,
+      minRelevanceScore,
+      hasCommentPeriod,
+      search,
+      sortBy = 'last_action_date',
+      sortOrder = 'DESC'
+    } = req.query
+
+    const result = await getBills({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      source,
+      jurisdiction,
+      state,
+      priority,
+      minRelevanceScore: minRelevanceScore ? parseInt(minRelevanceScore) : undefined,
+      hasCommentPeriod: hasCommentPeriod ? hasCommentPeriod === 'true' : undefined,
+      search,
+      sortBy,
+      sortOrder
+    })
+
+    res.json({
+      success: true,
+      bills: result.bills,
+      pagination: result.pagination
+    })
+  } catch (error) {
+    console.error('Error fetching bills:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch bills',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/bills/stats - Get bill statistics
+app.get('/api/bills/stats', async (req, res) => {
+  try {
+    const stats = await getBillStats()
+
+    res.json({
+      success: true,
+      stats
+    })
+  } catch (error) {
+    console.error('Error fetching bill stats:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch bill statistics',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/bills/urgent - Get urgent bills (high priority or upcoming deadlines)
+app.get('/api/bills/urgent', async (req, res) => {
+  try {
+    const urgentBills = await getUrgentBills()
+
+    res.json({
+      success: true,
+      count: urgentBills.length,
+      bills: urgentBills
+    })
+  } catch (error) {
+    console.error('Error fetching urgent bills:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch urgent bills',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/bills/comment-deadlines - Get bills with upcoming comment deadlines
+app.get('/api/bills/comment-deadlines', async (req, res) => {
+  try {
+    const daysAhead = parseInt(req.query.days) || 30
+    const bills = await getBillsWithCommentDeadlines(daysAhead)
+
+    res.json({
+      success: true,
+      daysAhead,
+      count: bills.length,
+      bills
+    })
+  } catch (error) {
+    console.error('Error fetching bills with comment deadlines:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch bills with comment deadlines',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/bills/:id - Get a single bill by ID
+app.get('/api/bills/:id', async (req, res) => {
+  try {
+    const billId = parseInt(req.params.id)
+    const bill = await getBillById(billId)
+
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        error: 'Bill not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      bill
+    })
+  } catch (error) {
+    console.error('Error fetching bill:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch bill',
+      message: error.message
+    })
+  }
+})
+
+// POST /api/bills - Create a new bill (admin/collector use)
+app.post('/api/bills', async (req, res) => {
+  try {
+    const bill = req.body
+
+    // Validate required fields
+    if (!bill.bill_number || !bill.title || !bill.source || !bill.jurisdiction || !bill.url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: bill_number, title, source, jurisdiction, url'
+      })
+    }
+
+    // Check if bill already exists
+    const existing = await getBillByNumber(bill.bill_number, bill.source)
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        error: 'Bill already exists',
+        existingBillId: existing.id
+      })
+    }
+
+    const billId = await insertBill(bill)
+
+    res.status(201).json({
+      success: true,
+      message: 'Bill created successfully',
+      billId
+    })
+  } catch (error) {
+    console.error('Error creating bill:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create bill',
+      message: error.message
+    })
+  }
+})
+
+// PUT /api/bills/:id - Update an existing bill
+app.put('/api/bills/:id', async (req, res) => {
+  try {
+    const billId = parseInt(req.params.id)
+    const updates = req.body
+
+    // Check if bill exists
+    const existing = await getBillById(billId)
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        error: 'Bill not found'
+      })
+    }
+
+    await updateBill(billId, updates)
+
+    res.json({
+      success: true,
+      message: 'Bill updated successfully'
+    })
+  } catch (error) {
+    console.error('Error updating bill:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update bill',
+      message: error.message
+    })
+  }
+})
+
+// POST /api/bills/:id/analyze - Trigger AI analysis for a specific bill
+app.post('/api/bills/:id/analyze', async (req, res) => {
+  try {
+    const billId = parseInt(req.params.id)
+
+    // Get the bill
+    const bill = await getBillById(billId)
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        error: 'Bill not found'
+      })
+    }
+
+    // TODO: Implement AI analysis service
+    // For now, return a placeholder
+    res.json({
+      success: true,
+      message: 'AI analysis will be implemented in the next phase',
+      billId
+    })
+  } catch (error) {
+    console.error('Error analyzing bill:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to analyze bill',
+      message: error.message
+    })
+  }
+})
+
+// POST /api/bills/collect - Trigger bill collection from external sources
+app.post('/api/bills/collect', async (req, res) => {
+  try {
+    const { source } = req.body // 'congress', 'federal_register', 'legiscan'
+
+    if (!source) {
+      return res.status(400).json({
+        success: false,
+        error: 'Source is required (congress, federal_register, or legiscan)'
+      })
+    }
+
+    // TODO: Implement bill collection services
+    // For now, return a placeholder
+    res.json({
+      success: true,
+      message: 'Bill collection will be implemented in the next phase',
+      source
+    })
+  } catch (error) {
+    console.error('Error collecting bills:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to collect bills',
+      message: error.message
+    })
+  }
+})
+
 // Start server and fetch feeds on startup
 async function startServer() {
   try {
@@ -1089,6 +1792,61 @@ async function startServer() {
 
       // Set up automatic refresh interval
       setInterval(refreshArticlesInBackground, REFRESH_INTERVAL_MS)
+
+      // Set up daily duplicate cleanup (runs at 3am)
+      const scheduleCleanup = () => {
+        const now = new Date()
+        const next3AM = new Date()
+        next3AM.setHours(3, 0, 0, 0)
+        if (next3AM <= now) {
+          next3AM.setDate(next3AM.getDate() + 1)
+        }
+        const msUntil3AM = next3AM - now
+
+        setTimeout(async () => {
+          console.log('\n🧹 Running automated duplicate cleanup...')
+          try {
+            const result = await db.query(`
+              SELECT id, title, published_date, LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_title
+              FROM articles
+              ORDER BY normalized_title, published_date ASC
+            `)
+
+            const titleGroups = {}
+            for (const article of result.rows) {
+              const key = article.normalized_title
+              if (!titleGroups[key]) titleGroups[key] = []
+              titleGroups[key].push(article)
+            }
+
+            const duplicateGroups = Object.entries(titleGroups).filter(([_, articles]) => articles.length > 1)
+            let totalDeleted = 0
+
+            for (const [_, articles] of duplicateGroups) {
+              const duplicates = articles.slice(1)
+              for (const dup of duplicates) {
+                await db.query('DELETE FROM articles WHERE id = $1', [dup.id])
+                totalDeleted++
+              }
+            }
+
+            if (totalDeleted > 0) {
+              console.log(`✓ Automated cleanup removed ${totalDeleted} duplicates`)
+            } else {
+              console.log(`✓ No duplicates found`)
+            }
+          } catch (error) {
+            console.error('❌ Automated cleanup failed:', error)
+          }
+
+          // Schedule next cleanup
+          scheduleCleanup()
+        }, msUntil3AM)
+
+        console.log(`✓ Duplicate cleanup scheduled for ${next3AM.toLocaleString()}`)
+      }
+
+      scheduleCleanup()
     }).catch(error => {
       console.error('Error fetching initial articles:', error)
     })

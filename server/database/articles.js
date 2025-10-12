@@ -351,13 +351,23 @@ export async function updateArticleContent(id, updates) {
 
 // Generate content hash for deduplication
 export function generateContentHash(title, summary) {
-  // Normalize: lowercase, collapse whitespace, remove special chars
+  // Normalize title: lowercase, remove all punctuation/special chars, collapse whitespace
   const normalizedTitle = title
     .toLowerCase()
+    .replace(/[^\w\s]/g, '') // Remove all non-alphanumeric characters
     .replace(/\s+/g, ' ')
     .trim()
 
-  const content = `${normalizedTitle}|${summary.substring(0, 500)}`
+  // Normalize summary: lowercase, remove special chars, collapse whitespace
+  const normalizedSummary = (summary || '')
+    .toLowerCase()
+    .replace(/&nbsp;|&amp;|&quot;|&lt;|&gt;/g, ' ') // Remove HTML entities
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 500)
+
+  const content = `${normalizedTitle}|${normalizedSummary}`
   return crypto.createHash('md5').update(content).digest('hex')
 }
 

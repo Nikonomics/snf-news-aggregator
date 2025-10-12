@@ -1,7 +1,7 @@
 import { Filter, Search, Globe, X, ArrowUpDown, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sortBy, onSortChange, stateCounts = {} }) {
+function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sortBy, onSortChange, stateCounts = {}, filterStats = null }) {
   const navigate = useNavigate()
   const handleStateToggle = (state) => {
     const currentStates = filters.states || []
@@ -14,15 +14,19 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
   const clearAllStates = () => {
     onFilterChange('states', [])
   }
-  const categories = [
-    'All',
-    'Regulatory',
-    'Finance',
-    'Operations',
-    'Workforce',
-    'Quality',
-    'Technology'
-  ]
+
+  // Get categories dynamically from filterStats, or use defaults
+  const categories = filterStats?.categories
+    ? ['All', ...Object.keys(filterStats.categories).sort()]
+    : [
+      'All',
+      'Regulatory',
+      'Finance',
+      'Operations',
+      'Workforce',
+      'Quality',
+      'Technology'
+    ]
 
   const impacts = ['all', 'high', 'medium', 'low']
 
@@ -91,11 +95,16 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
           onChange={(e) => onFilterChange('category', e.target.value)}
           className="filter-select"
         >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
+          {categories.map((cat) => {
+            const count = cat === 'All'
+              ? filterStats?.total
+              : filterStats?.categories?.[cat]
+            return (
+              <option key={cat} value={cat}>
+                {cat}{count !== undefined ? ` (${count})` : ''}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -106,11 +115,17 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
           onChange={(e) => onFilterChange('impact', e.target.value)}
           className="filter-select"
         >
-          {impacts.map((imp) => (
-            <option key={imp} value={imp}>
-              {imp.charAt(0).toUpperCase() + imp.slice(1)}
-            </option>
-          ))}
+          {impacts.map((imp) => {
+            const count = imp === 'all'
+              ? filterStats?.total
+              : filterStats?.impacts?.[imp]
+            const label = imp.charAt(0).toUpperCase() + imp.slice(1)
+            return (
+              <option key={imp} value={imp}>
+                {label}{count !== undefined ? ` (${count})` : ''}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -121,11 +136,16 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
           onChange={(e) => onFilterChange('source', e.target.value)}
           className="filter-select"
         >
-          {sources.map((src) => (
-            <option key={src} value={src}>
-              {src}
-            </option>
-          ))}
+          {sources.map((src) => {
+            const count = src === 'All Sources'
+              ? filterStats?.total
+              : filterStats?.sources?.[src]
+            return (
+              <option key={src} value={src}>
+                {src}{count !== undefined ? ` (${count})` : ''}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -154,11 +174,22 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
           onChange={(e) => onFilterChange('scope', e.target.value)}
           className="filter-select"
         >
-          <option value="all">All Stories</option>
-          <option value="National">National</option>
-          <option value="Regional">Regional</option>
-          <option value="State">State-Specific</option>
-          <option value="Local">Local</option>
+          {[
+            { value: 'all', label: 'All Stories' },
+            { value: 'National', label: 'National' },
+            { value: 'Regional', label: 'Regional' },
+            { value: 'State', label: 'State-Specific' },
+            { value: 'Local', label: 'Local' }
+          ].map(({ value, label }) => {
+            const count = value === 'all'
+              ? filterStats?.total
+              : filterStats?.scopes?.[value]
+            return (
+              <option key={value} value={value}>
+                {label}{count !== undefined ? ` (${count})` : ''}
+              </option>
+            )
+          })}
         </select>
       </div>
 
@@ -205,7 +236,7 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
             size="8"
           >
             {states.map((state) => {
-              const count = stateCounts[state] || 0
+              const count = filterStats?.states?.[state] || stateCounts[state] || 0
               return (
                 <option
                   key={state}
@@ -244,7 +275,7 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
         >
           <option value="">Select your state...</option>
           {states.map((state) => {
-            const count = stateCounts[state] || 0
+            const count = filterStats?.states?.[state] || stateCounts[state] || 0
             return (
               <option key={state} value={state}>
                 {state} {count > 0 ? `(${count})` : ''}
