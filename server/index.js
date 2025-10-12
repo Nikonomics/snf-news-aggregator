@@ -1481,11 +1481,14 @@ app.post('/api/admin/cleanup-duplicates', async (req, res) => {
     })
   }
 })
+*/
 
 // ============================================================
 // LEGISLATION TRACKING API ENDPOINTS
 // ============================================================
+// TODO: Uncomment when bills.js is implemented
 
+/*
 // GET /api/bills - Get bills with filtering and pagination
 app.get('/api/bills', async (req, res) => {
   try {
@@ -1750,6 +1753,7 @@ app.post('/api/bills/collect', async (req, res) => {
     })
   }
 })
+*/
 
 // Start server and fetch feeds on startup
 async function startServer() {
