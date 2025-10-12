@@ -21,6 +21,13 @@ export async function fetchArticles(page = 1, limit = 50, filters = {}) {
     if (filters.search) {
       params.append('search', filters.search)
     }
+    if (filters.scope && filters.scope !== 'all') {
+      params.append('scope', filters.scope)
+    }
+    if (filters.states && filters.states.length > 0) {
+      // Send states as comma-separated values
+      params.append('states', filters.states.join(','))
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/articles?${params.toString()}`)
 
@@ -33,13 +40,13 @@ export async function fetchArticles(page = 1, limit = 50, filters = {}) {
     if (data.success && data.articles) {
       return {
         articles: data.articles,
-        pagination: {
-          page: data.page,
-          limit: data.limit,
-          totalPages: data.totalPages,
-          totalCount: data.count,
-          hasNextPage: data.hasNextPage,
-          hasPrevPage: data.hasPrevPage
+        pagination: data.pagination || {
+          page: 1,
+          limit: 50,
+          totalPages: 1,
+          totalCount: data.articles.length,
+          hasNextPage: false,
+          hasPrevPage: false
         }
       }
     } else {
@@ -81,6 +88,22 @@ export async function checkHealth() {
     return data
   } catch (error) {
     console.error('Error checking API health:', error)
+    throw error
+  }
+}
+
+export async function fetchArticleStats() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/articles/stats`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.stats
+  } catch (error) {
+    console.error('Error fetching article stats:', error)
     throw error
   }
 }
