@@ -278,9 +278,9 @@
   flex: 0 1 180px;
   min-width: 120px;
   position: sticky;
-  top: 160px;
+  top: 20px;
   align-self: flex-start;
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
 }
 
@@ -457,9 +457,9 @@
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: sticky;
-  top: 160px;
+  top: 20px;
   align-self: flex-start;
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
 }
 
