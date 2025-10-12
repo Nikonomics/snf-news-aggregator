@@ -1,6 +1,7 @@
 .heat-map-container {
   position: sticky;
   top: 160px;
+  align-self: flex-start;
   flex: 4 1 400px;
   min-width: 300px;
   background: white;

@@ -277,6 +277,11 @@
   gap: 12px;
   flex: 0 1 180px;
   min-width: 120px;
+  position: sticky;
+  top: 160px;
+  align-self: flex-start;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
 }
 
 .rankings-column-compact {

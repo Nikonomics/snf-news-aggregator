@@ -48,14 +48,26 @@ async function main() {
       // Don't exit, try migration anyway
     }
 
-    // Run the deduplication migration
-    const success = await runMigration('001_add_deduplication_fields.sql')
+    // Run migrations in order
+    const migrations = [
+      '001_add_deduplication_fields.sql',
+      '002_create_state_summaries.sql'
+    ]
 
-    if (success) {
+    let allSucceeded = true
+    for (const migration of migrations) {
+      const success = await runMigration(migration)
+      if (!success) {
+        allSucceeded = false
+        break
+      }
+    }
+
+    if (allSucceeded) {
       console.log('\n✅ All migrations completed successfully!')
       process.exit(0)
     } else {
-      console.error('\n❌ Migration failed!')
+      console.error('\n❌ One or more migrations failed!')
       process.exit(1)
     }
   } catch (error) {

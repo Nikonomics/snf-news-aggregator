@@ -12,6 +12,7 @@ import StateDashboard from './components/StateDashboard'
 import StateSelector from './components/StateSelector'
 import StateComparisonMap from './components/StateComparisonMap'
 import Pagination from './components/Pagination'
+import WeeklyInsights from './components/WeeklyInsights'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -297,6 +298,12 @@ function App() {
               Conferences
             </Link>
             <Link
+              to="/insights"
+              className={`nav-tab ${location.pathname === '/insights' || location.pathname.startsWith('/insights/') ? 'active' : ''}`}
+            >
+              Weekly Insights
+            </Link>
+            <Link
               to="/tools"
               className={`nav-tab ${location.pathname === '/tools' ? 'active' : ''}`}
             >
@@ -488,6 +495,10 @@ function App() {
 
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />
+
+        {/* Weekly Insights Routes */}
+        <Route path="/insights" element={<WeeklyInsights />} />
+        <Route path="/insights/:reportId" element={<WeeklyInsights />} />
 
         {/* Tools Route (Placeholder) */}
         <Route path="/tools" element={

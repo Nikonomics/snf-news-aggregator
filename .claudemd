@@ -1,0 +1,69 @@
+# Claude Code Project Rules
+
+## Automatic Documentation System
+
+### File Updates
+This project uses three automatically maintained documentation files:
+
+1. **CONTEXT.md** - Comprehensive project context for new chats
+2. **PROJECT_LOG.md** - Detailed log of actions and decisions
+3. **TODO.md** - Active, prioritized to-do list
+
+### Update Rules
+
+#### CONTEXT.md Updates
+Update whenever there's a significant change to:
+- Project understanding or architecture
+- Tech stack or key dependencies
+- File structure or organization
+- Important design decisions
+- Current phase or status
+
+Must always include:
+- Project name and primary purpose (1-2 sentences)
+- Current project status and phase
+- Tech stack and key dependencies
+- File structure overview
+- Key architecture decisions and rationale
+- How the project works (important context)
+- Quirks, gotchas, or important notes
+- Recent significant changes or progress
+- Current priorities and next steps
+- Blockers or issues
+
+Keep concise but complete - readable in 2-3 minutes.
+
+#### PROJECT_LOG.md Updates
+Update after completing any meaningful task. Track:
+- Date and time of significant actions
+- What was implemented or changed
+- Why decisions were made
+- Problems encountered and solutions
+- Test results and validations
+
+**Never delete entries - only append.**
+
+#### TODO.md Updates
+Update after every conversation turn where tasks are:
+- Discussed
+- Completed
+- Added
+- Blocked
+
+Maintain sections:
+- High priority tasks (at top)
+- In-progress items (with status)
+- Blocked items (with reason)
+- Done section (with completion dates)
+
+Each item should include brief context about why it matters.
+
+**Move completed items to "Done" section rather than deleting.**
+
+### End of Session Protocol
+At the end of each conversation session, ask if a comprehensive update of all three files is needed.
+
+### File Locations
+- `/Users/nikolashulewsky/snf-news-aggregator/CONTEXT.md`
+- `/Users/nikolashulewsky/snf-news-aggregator/PROJECT_LOG.md`
+- `/Users/nikolashulewsky/snf-news-aggregator/TODO.md`

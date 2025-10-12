@@ -23,6 +23,8 @@ import {
 import { generateStateSummary } from './services/stateAnalysis.js'
 import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './services/stateComparison.js'
 import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
+import { getTopStories, getEmergingTrends } from './services/trendAnalysis.js'
+import cron from 'node-cron'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -749,6 +751,298 @@ app.get('/api/articles/stats', async (req, res) => {
       success: false,
       error: 'Failed to fetch statistics',
       message: error.message
+    })
+  }
+})
+
+// Get top stories of the week with trend analysis
+app.get('/api/trends/top-stories', async (req, res) => {
+  try {
+    const {
+      days = 7,
+      limit = 5,
+      minArticles = 2,
+      category,
+      state
+    } = req.query
+
+    const stories = await getTopStories({
+      days: parseInt(days),
+      limit: parseInt(limit),
+      minArticles: parseInt(minArticles),
+      category,
+      state
+    })
+
+    res.json({
+      success: true,
+      timeframe: `${days} days`,
+      stories
+    })
+  } catch (error) {
+    console.error('Error fetching top stories:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch top stories',
+      message: error.message
+    })
+  }
+})
+
+// Get emerging trends
+app.get('/api/trends/emerging', async (req, res) => {
+  try {
+    const { days = 7 } = req.query
+
+    const trends = await getEmergingTrends(parseInt(days))
+
+    res.json({
+      success: true,
+      timeframe: `${days} days`,
+      trends
+    })
+  } catch (error) {
+    console.error('Error fetching emerging trends:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch emerging trends',
+      message: error.message
+    })
+  }
+})
+
+// =================================================================
+// WEEKLY REPORTS API ENDPOINTS
+// =================================================================
+
+// GET /api/weekly-reports - List all weekly reports (paginated)
+app.get('/api/weekly-reports', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const offset = (page - 1) * limit
+
+    const countResult = await db.query('SELECT COUNT(*) FROM weekly_reports')
+    const totalCount = parseInt(countResult.rows[0].count)
+
+    const result = await db.query(`
+      SELECT id, week_start_date, week_end_date, title, created_at
+      FROM weekly_reports
+      ORDER BY week_start_date DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset])
+
+    res.json({
+      success: true,
+      reports: result.rows,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching weekly reports:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// GET /api/weekly-reports/latest - Get latest weekly report
+app.get('/api/weekly-reports/latest', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT id, week_start_date, week_end_date, title, report_data,
+             introduction, editor_note, author_name, author_title, created_at
+      FROM weekly_reports
+      ORDER BY week_start_date DESC
+      LIMIT 1
+    `)
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No weekly reports found'
+      })
+    }
+
+    res.json({
+      success: true,
+      report: result.rows[0]
+    })
+  } catch (error) {
+    console.error('Error fetching latest report:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// GET /api/weekly-reports/:id - Get specific weekly report by ID
+app.get('/api/weekly-reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const result = await db.query(`
+      SELECT id, week_start_date, week_end_date, title, report_data,
+             introduction, editor_note, author_name, author_title, created_at
+      FROM weekly_reports
+      WHERE id = $1
+    `, [id])
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Weekly report not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      report: result.rows[0]
+    })
+  } catch (error) {
+    console.error('Error fetching weekly report:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// POST /api/weekly-reports/generate - Manually generate a weekly report
+app.post('/api/weekly-reports/generate', async (req, res) => {
+  try {
+    console.log('Generating weekly report...')
+
+    // Generate report for the past 7 days
+    const stories = await getTopStories({ days: 7, limit: 5 })
+
+    // Calculate week dates
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 7)
+
+    const formatDate = (date) => date.toISOString().split('T')[0]
+    const weekStartStr = formatDate(startDate)
+    const weekEndStr = formatDate(endDate)
+
+    const title = `Week of ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+
+    // Save to database
+    const result = await db.query(`
+      INSERT INTO weekly_reports (week_start_date, week_end_date, title, report_data)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (week_start_date, week_end_date)
+      DO UPDATE SET
+        report_data = EXCLUDED.report_data,
+        created_at = CURRENT_TIMESTAMP
+      RETURNING id, week_start_date, week_end_date, title, created_at
+    `, [weekStartStr, weekEndStr, title, JSON.stringify({ stories })])
+
+    console.log('✅ Weekly report generated and saved')
+
+    res.json({
+      success: true,
+      message: 'Weekly report generated successfully',
+      report: result.rows[0]
+    })
+  } catch (error) {
+    console.error('Error generating weekly report:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// Admin: Add personalization columns to weekly_reports
+app.post('/api/admin/migrate-weekly-reports-personalization', async (req, res) => {
+  try {
+    console.log('\n🔧 Adding personalization columns to weekly_reports table...')
+
+    await db.query(`
+      ALTER TABLE weekly_reports
+      ADD COLUMN IF NOT EXISTS introduction TEXT,
+      ADD COLUMN IF NOT EXISTS editor_note TEXT,
+      ADD COLUMN IF NOT EXISTS author_name VARCHAR(255) DEFAULT 'Nicolas Hulewsky',
+      ADD COLUMN IF NOT EXISTS author_title VARCHAR(255) DEFAULT 'Healthcare Policy Analyst'
+    `)
+
+    console.log('✅ Personalization columns added successfully')
+
+    res.json({
+      success: true,
+      message: 'Personalization columns added to weekly_reports table'
+    })
+  } catch (error) {
+    console.error('❌ Error adding personalization columns:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// PUT /api/weekly-reports/:id - Update report personalization
+app.put('/api/weekly-reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { introduction, editor_note, author_name, author_title } = req.body
+
+    // Build update query dynamically based on provided fields
+    const updates = []
+    const values = []
+    let paramIndex = 1
+
+    if (introduction !== undefined) {
+      updates.push(`introduction = $${paramIndex++}`)
+      values.push(introduction)
+    }
+    if (editor_note !== undefined) {
+      updates.push(`editor_note = $${paramIndex++}`)
+      values.push(editor_note)
+    }
+    if (author_name !== undefined) {
+      updates.push(`author_name = $${paramIndex++}`)
+      values.push(author_name)
+    }
+    if (author_title !== undefined) {
+      updates.push(`author_title = $${paramIndex++}`)
+      values.push(author_title)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No fields to update'
+      })
+    }
+
+    // Add ID to values array
+    values.push(id)
+
+    const query = `
+      UPDATE weekly_reports
+      SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $${paramIndex}
+      RETURNING id, week_start_date, week_end_date, title, introduction, editor_note, author_name, author_title, created_at, updated_at
+    `
+
+    const result = await db.query(query, values)
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Report not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      message: 'Report updated successfully',
+      report: result.rows[0]
+    })
+  } catch (error) {
+    console.error('Error updating weekly report:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
     })
   }
 })
@@ -1482,6 +1776,41 @@ app.post('/api/admin/cleanup-duplicates', async (req, res) => {
   }
 })
 
+// Admin endpoint: Run weekly reports table migration
+app.post('/api/admin/migrate-weekly-reports', async (req, res) => {
+  try {
+    console.log('Running weekly_reports table migration...')
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS weekly_reports (
+        id SERIAL PRIMARY KEY,
+        week_start_date DATE NOT NULL,
+        week_end_date DATE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        report_data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(week_start_date, week_end_date)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_weekly_reports_dates ON weekly_reports(week_start_date DESC, week_end_date DESC);
+      CREATE INDEX IF NOT EXISTS idx_weekly_reports_created ON weekly_reports(created_at DESC);
+    `)
+
+    console.log('✅ Migration completed successfully')
+
+    res.json({
+      success: true,
+      message: 'Weekly reports table created successfully'
+    })
+  } catch (error) {
+    console.error('Migration error:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // ============================================================
 // LEGISLATION TRACKING API ENDPOINTS
 // ============================================================
@@ -1785,6 +2114,49 @@ async function startServer() {
       console.log(`  - GET  http://localhost:${PORT}/api/states/rankings`)
       console.log(`  - POST http://localhost:${PORT}/api/analyze-article\n`)
     })
+
+    // Schedule weekly report generation every Sunday at 8 PM
+    cron.schedule('0 20 * * 0', async () => {
+      console.log('\n📊 Weekly report scheduled job triggered...')
+      try {
+        const now = new Date()
+        const endDate = new Date(now)
+        const startDate = new Date(now)
+        startDate.setDate(startDate.getDate() - 7)
+
+        const stories = await getTopStories({ days: 7, limit: 5 })
+
+        const title = `Week of ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+
+        const query = `
+          INSERT INTO weekly_reports (week_start_date, week_end_date, title, report_data)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (week_start_date, week_end_date)
+          DO UPDATE SET
+            title = EXCLUDED.title,
+            report_data = EXCLUDED.report_data,
+            created_at = CURRENT_TIMESTAMP
+          RETURNING id
+        `
+
+        const result = await db.query(query, [
+          startDate.toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0],
+          title,
+          JSON.stringify({ stories })
+        ])
+
+        console.log(`✅ Weekly report generated successfully (ID: ${result.rows[0].id})`)
+        console.log(`   Title: ${title}`)
+        console.log(`   Stories: ${stories.length}`)
+      } catch (error) {
+        console.error('❌ Error generating weekly report:', error.message)
+      }
+    }, {
+      timezone: 'America/New_York'
+    })
+
+    console.log('✓ Weekly report scheduler initialized (Sundays at 8 PM ET)')
 
     // Fetch feeds after server starts (non-blocking)
     fetchAllFeeds().then(articles => {

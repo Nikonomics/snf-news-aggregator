@@ -39,15 +39,15 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 
 -- Indexes for common queries
-CREATE INDEX idx_articles_published_date ON articles(published_date DESC);
-CREATE INDEX idx_articles_category ON articles(category);
-CREATE INDEX idx_articles_impact ON articles(impact);
-CREATE INDEX idx_articles_source ON articles(source);
-CREATE INDEX idx_articles_scope ON articles(scope);
-CREATE INDEX idx_articles_states ON articles USING GIN(states);
-CREATE INDEX idx_articles_relevance ON articles(relevance_score DESC);
-CREATE INDEX idx_articles_analysis ON articles USING GIN(analysis);
-CREATE INDEX idx_articles_external_id ON articles(external_id);
+CREATE INDEX IF NOT EXISTS idx_articles_published_date ON articles(published_date DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category);
+CREATE INDEX IF NOT EXISTS idx_articles_impact ON articles(impact);
+CREATE INDEX IF NOT EXISTS idx_articles_source ON articles(source);
+CREATE INDEX IF NOT EXISTS idx_articles_scope ON articles(scope);
+CREATE INDEX IF NOT EXISTS idx_articles_states ON articles USING GIN(states);
+CREATE INDEX IF NOT EXISTS idx_articles_relevance ON articles(relevance_score DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_analysis ON articles USING GIN(analysis);
+CREATE INDEX IF NOT EXISTS idx_articles_external_id ON articles(external_id);
 
 -- Deduplication indexes (added 2025-10-11)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
@@ -56,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_articles_title_trgm ON articles USING gin(title g
 CREATE INDEX IF NOT EXISTS idx_articles_published_date_hash ON articles(published_date, content_hash);
 
 -- Full-text search index
-CREATE INDEX idx_articles_search ON articles USING GIN(
+CREATE INDEX IF NOT EXISTS idx_articles_search ON articles USING GIN(
     to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(summary, ''))
 );
 
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS article_tags (
     PRIMARY KEY (article_id, tag_id)
 );
 
-CREATE INDEX idx_article_tags_article ON article_tags(article_id);
-CREATE INDEX idx_article_tags_tag ON article_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_article_tags_article ON article_tags(article_id);
+CREATE INDEX IF NOT EXISTS idx_article_tags_tag ON article_tags(tag_id);
 
 -- ============================================================
 -- CONFERENCES TABLE
@@ -107,10 +107,10 @@ CREATE TABLE IF NOT EXISTS conferences (
 );
 
 -- Indexes
-CREATE INDEX idx_conferences_date_start ON conferences(date_start);
-CREATE INDEX idx_conferences_state ON conferences(state);
-CREATE INDEX idx_conferences_category ON conferences(category);
-CREATE INDEX idx_conferences_status ON conferences(status);
+CREATE INDEX IF NOT EXISTS idx_conferences_date_start ON conferences(date_start);
+CREATE INDEX IF NOT EXISTS idx_conferences_state ON conferences(state);
+CREATE INDEX IF NOT EXISTS idx_conferences_category ON conferences(category);
+CREATE INDEX IF NOT EXISTS idx_conferences_status ON conferences(status);
 
 -- ============================================================
 -- USER TABLES (for future features)
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS state_summaries (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_state_summaries_state ON state_summaries(state);
-CREATE INDEX idx_state_summaries_updated ON state_summaries(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_state_summaries_state ON state_summaries(state);
+CREATE INDEX IF NOT EXISTS idx_state_summaries_updated ON state_summaries(updated_at DESC);
 
 -- ============================================================
 -- HELPER FUNCTIONS

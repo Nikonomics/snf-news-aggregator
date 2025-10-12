@@ -4,7 +4,7 @@ import { TrendingUp, MapPin, DollarSign, Users, Building2, Star, Calendar } from
 import StateComparisonHeatMap from './StateComparisonHeatMap'
 import './StateComparisonMap.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+const API_BASE_URL = 'https://snf-news-aggregator.onrender.com'
 
 function StateComparisonMap() {
   const navigate = useNavigate()
