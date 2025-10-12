@@ -1,10 +1,14 @@
 .heat-map-container {
-  position: relative;
-  width: 100%;
+  position: sticky;
+  top: 160px;
+  flex: 4 1 0;
+  min-width: max(400px, calc((180px + 180px) * 2));
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+  z-index: 10;
 }
 
 .heat-map-loading {

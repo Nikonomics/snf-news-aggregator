@@ -1,7 +1,7 @@
 .state-comparison-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 0 24px 24px 24px;
 }
 
 .comparison-header {
@@ -126,10 +126,14 @@
   padding: 32px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .us-map {
   width: 100%;
+  max-width: 900px;
   height: auto;
   display: block;
 }
@@ -254,6 +258,37 @@
 
 .description-label {
   font-style: italic;
+}
+
+/* Three-column layout for Map, Rankings, Conferences */
+.three-column-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.rankings-beside-map {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 0 1 180px;
+  min-width: 150px;
+}
+
+.rankings-column-compact {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rankings-column-compact h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
 }
 
 .rankings-section {
@@ -383,6 +418,170 @@
   color: #ef4444;
 }
 
+.content-with-sidebar {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding-top: 24px;
+}
+
+.main-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.main-content-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.left-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Conference section inside three-column layout (Priority 3 - lowest) */
+.conferences-section-inline {
+  flex: 0 1 180px;
+  min-width: 140px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 160px;
+  align-self: flex-start;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.conferences-section {
+  flex: 0 0 196px;
+  min-width: 140px;
+  max-width: 220px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 160px;
+  align-self: flex-start;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.conferences-section h3,
+.conferences-section-inline h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.conferences-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conference-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.conference-card:hover {
+  background: #F3F4F6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.conference-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #4F46E5;
+  border-radius: 4px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.date-month {
+  font-size: 11px;
+}
+
+.date-day {
+  font-size: 11px;
+}
+
+.conference-details {
+  flex: 1;
+}
+
+.conference-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.conference-org {
+  font-size: 11px;
+  color: #6B7280;
+  margin-bottom: 6px;
+}
+
+.conference-location {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.conference-location svg {
+  flex-shrink: 0;
+}
+
+.conference-dates-range {
+  font-size: 10px;
+  color: #6B7280;
+  font-style: italic;
+}
+
+.conference-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: #4F46E5;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.conference-link:hover {
+  background: #4338CA;
+}
+
 @media (max-width: 1024px) {
   .rankings-section {
     grid-template-columns: 1fr;
@@ -420,6 +619,21 @@
   }
 
   .methodology-note {
+    padding: 16px;
+  }
+
+  .content-with-sidebar {
+    flex-direction: column;
+  }
+
+  .main-content-wrapper {
+    flex-direction: column;
+  }
+
+  .conferences-section {
+    width: 100%;
+    position: static;
+    max-height: none;
     padding: 16px;
   }
 }
