@@ -341,13 +341,14 @@ export async function collectFederalRegisterBills(daysBack = 30, minRelevanceSco
 
         const analysis = await analyzeDocumentRelevance(doc);
 
-        // Filter by relevance score
-        if (analysis.relevanceScore >= minRelevanceScore) {
+        // Filter by OVERALL relevance score (weighted: direct 40% + ecosystem 60%)
+        const relevanceScore = analysis.overallRelevance || analysis.relevanceScore || 0;
+        if (relevanceScore >= minRelevanceScore) {
           const bill = convertToDBFormat(doc, analysis);
           bills.push(bill);
-          console.log(`   ✓ Relevance: ${analysis.relevanceScore}/100 - Priority: ${analysis.priority} - INCLUDED`);
+          console.log(`   ✓ Overall: ${relevanceScore}/100 (Direct: ${analysis.directSNFRelevance || 'N/A'}, Ecosystem: ${analysis.ecosystemRelevance || 'N/A'}) - Priority: ${analysis.priority} - INCLUDED`);
         } else {
-          console.log(`   ✗ Relevance: ${analysis.relevanceScore}/100 - FILTERED OUT (below ${minRelevanceScore})`);
+          console.log(`   ✗ Overall: ${relevanceScore}/100 (Direct: ${analysis.directSNFRelevance || 'N/A'}, Ecosystem: ${analysis.ecosystemRelevance || 'N/A'}) - FILTERED OUT (below ${minRelevanceScore})`);
         }
 
         // Small delay to avoid rate limiting

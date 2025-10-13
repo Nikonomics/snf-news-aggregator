@@ -107,3 +107,34 @@ export async function fetchArticleStats() {
     throw error
   }
 }
+
+export async function fetchRegulatoryBills(filters = {}) {
+  try {
+    const params = new URLSearchParams()
+
+    if (filters.source && filters.source !== 'all') {
+      params.append('source', filters.source)
+    }
+    if (filters.priority && filters.priority !== 'all') {
+      params.append('priority', filters.priority)
+    }
+    if (filters.impactType && filters.impactType !== 'all') {
+      params.append('impactType', filters.impactType)
+    }
+    if (filters.hasCommentPeriod && filters.hasCommentPeriod !== 'all') {
+      params.append('hasCommentPeriod', filters.hasCommentPeriod)
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/regulatory/bills?${params.toString()}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching regulatory bills:', error)
+    throw error
+  }
+}

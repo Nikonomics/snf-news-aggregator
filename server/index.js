@@ -894,9 +894,15 @@ async function fetchAllFeeds() {
 app.use(cors())
 app.use(express.json())
 
-// Serve static frontend files in production
+// Serve static frontend files in production (but not /api routes)
 const distPath = join(__dirname, '../dist')
-app.use(express.static(distPath))
+app.use((req, res, next) => {
+  // Skip static file serving for /api routes
+  if (req.path.startsWith('/api')) {
+    return next()
+  }
+  express.static(distPath)(req, res, next)
+})
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -2470,6 +2476,126 @@ app.post('/api/admin/migrate-relevance-tier', async (req, res) => {
   }
 })
 
+// Admin endpoint: Backfill images for articles without image_url
+app.post('/api/admin/backfill-images', async (req, res) => {
+  try {
+    console.log('\n🖼️  Starting image backfill process...')
+
+    // Import image extractor
+    const { fetchOpenGraphImage } = await import('./utils/imageExtractor.js')
+
+    // Query articles without images or with placeholder images
+    const query = `
+      SELECT id, url, title
+      FROM articles
+      WHERE image_url IS NULL OR image_url LIKE '%ui-avatars.com%'
+      ORDER BY published_date DESC
+      LIMIT 100
+    `
+
+    const result = await db.query(query)
+    const articlesWithoutImages = result.rows
+
+    console.log(`📊 Found ${articlesWithoutImages.length} articles to process`)
+
+    if (articlesWithoutImages.length === 0) {
+      return res.json({
+        success: true,
+        message: 'All articles already have real images!',
+        successCount: 0,
+        failureCount: 0,
+        skippedCount: 0
+      })
+    }
+
+    let successCount = 0
+    let failureCount = 0
+    let skippedCount = 0
+    const batchSize = 10
+    const delayBetweenBatches = 2000 // 2 seconds
+
+    // Process in batches
+    for (let i = 0; i < articlesWithoutImages.length; i += batchSize) {
+      const batch = articlesWithoutImages.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      const totalBatches = Math.ceil(articlesWithoutImages.length / batchSize)
+
+      console.log(`📦 Processing batch ${batchNum}/${totalBatches} (articles ${i + 1}-${Math.min(i + batchSize, articlesWithoutImages.length)})`)
+
+      // Process batch in parallel
+      const promises = batch.map(async (article) => {
+        try {
+          // Skip if URL is invalid
+          if (!article.url || !article.url.startsWith('http')) {
+            skippedCount++
+            return { success: false, skipped: true }
+          }
+
+          // Fetch Open Graph image
+          const imageUrl = await fetchOpenGraphImage(article.url)
+
+          if (imageUrl) {
+            // Update database
+            const updateQuery = `
+              UPDATE articles
+              SET image_url = $1, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $2
+            `
+            await db.query(updateQuery, [imageUrl, article.id])
+
+            successCount++
+            console.log(`  ✅ ${article.title.substring(0, 60)}...`)
+            return { success: true }
+          } else {
+            failureCount++
+            console.log(`  ⚠️  No image found: ${article.title.substring(0, 60)}...`)
+            return { success: false }
+          }
+        } catch (error) {
+          failureCount++
+          console.error(`  ❌ Error processing article ${article.id}:`, error.message)
+          return { success: false }
+        }
+      })
+
+      await Promise.all(promises)
+
+      // Delay between batches
+      if (i + batchSize < articlesWithoutImages.length) {
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches))
+      }
+    }
+
+    const successRate = ((successCount / articlesWithoutImages.length) * 100).toFixed(1)
+
+    console.log('\n' + '='.repeat(60))
+    console.log('📊 Backfill Summary:')
+    console.log('='.repeat(60))
+    console.log(`Total articles processed: ${articlesWithoutImages.length}`)
+    console.log(`✅ Successfully added images: ${successCount}`)
+    console.log(`⚠️  No image found: ${failureCount}`)
+    console.log(`⏭️  Skipped (invalid URL): ${skippedCount}`)
+    console.log(`📈 Success rate: ${successRate}%`)
+    console.log('='.repeat(60))
+
+    res.json({
+      success: true,
+      message: 'Image backfill completed',
+      total: articlesWithoutImages.length,
+      successCount,
+      failureCount,
+      skippedCount,
+      successRate: parseFloat(successRate)
+    })
+  } catch (error) {
+    console.error('❌ Fatal error during backfill:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // Admin endpoint: Run weekly reports table migration
 app.post('/api/admin/migrate-weekly-reports', async (req, res) => {
   try {
@@ -2570,6 +2696,57 @@ app.get('/api/bills/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch bill statistics',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/regulatory/bills - Get regulatory bills with ecosystem analysis (optimized for Regulatory Feed)
+app.get('/api/regulatory/bills', async (req, res) => {
+  try {
+    const {
+      source,
+      priority,
+      impactType,
+      hasCommentPeriod
+    } = req.query
+
+    const filters = {
+      page: 1,
+      limit: 1000, // Get all bills for now (we can add pagination later)
+      sortBy: 'ai_relevance_score',
+      sortOrder: 'DESC'
+    }
+
+    // Add filters if provided
+    if (source && source !== 'all') {
+      filters.source = source
+    }
+    if (priority && priority !== 'all') {
+      filters.priority = priority
+    }
+    if (hasCommentPeriod && hasCommentPeriod !== 'all') {
+      filters.hasCommentPeriod = hasCommentPeriod === 'yes'
+    }
+
+    const result = await getBills(filters)
+
+    // Filter by impact type (client-side for now, can move to DB later)
+    let bills = result.bills
+    if (impactType && impactType !== 'all') {
+      bills = bills.filter(bill => bill.impact_type === impactType)
+    }
+
+    res.json({
+      success: true,
+      bills,
+      count: bills.length
+    })
+  } catch (error) {
+    console.error('Error fetching regulatory bills:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch regulatory bills',
       message: error.message
     })
   }
@@ -2787,7 +2964,11 @@ async function startServer() {
 
     // Fallback middleware - serve index.html for all non-API routes (for React Router)
     // This must be last, after all other routes
-    app.use((req, res) => {
+    app.use((req, res, next) => {
+      // Skip fallback for /api routes - they should 404 if not found
+      if (req.path.startsWith('/api')) {
+        return next()
+      }
       res.sendFile(join(distPath, 'index.html'))
     })
 

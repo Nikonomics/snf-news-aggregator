@@ -15,6 +15,7 @@ import Pagination from './components/Pagination'
 import WeeklyInsights from './components/WeeklyInsights'
 import MATracker from './components/MATracker'
 import PriorityFeed from './components/PriorityFeed'
+import RegulatoryFeed from './components/RegulatoryFeed'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -434,81 +435,7 @@ function App() {
         <Route path="/state/:stateCode" element={<StateDashboard />} />
 
         {/* Regulatory Feed Route */}
-        <Route path="/regulatory" element={
-          <main className="app-main">
-            <aside className="sidebar">
-              <FilterPanel
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                stateCounts={stateCounts}
-                filterStats={filterStats}
-              />
-            </aside>
-
-            <div className="content">
-              {error && (
-                <div className="error-banner">
-                  <p>{error}</p>
-                  <button onClick={loadArticles} className="retry-btn">
-                    Retry
-                  </button>
-                </div>
-              )}
-
-              {loading ? (
-                <div className="loading-container">
-                  <div className="spinner-large"></div>
-                  <p>Loading regulatory articles...</p>
-                </div>
-              ) : (
-                <>
-                  <div style={{ marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>Regulatory Feed</h2>
-                    <p style={{ color: '#6b7280', fontSize: '14px' }}>
-                      Stay informed about regulatory changes, policy updates, and compliance requirements affecting SNFs
-                    </p>
-                  </div>
-
-                  <TrendingTags
-                    articles={sortedArticles.filter(a => {
-                      const category = a.category || a.analysis?.category || ''
-                      return category.toLowerCase().includes('regulation') ||
-                             category.toLowerCase().includes('policy') ||
-                             category.toLowerCase().includes('compliance') ||
-                             category.toLowerCase().includes('medicare') ||
-                             category.toLowerCase().includes('medicaid')
-                    })}
-                    onTagClick={handleTagClick}
-                  />
-
-                  <ArticleList
-                    articles={sortedArticles.filter(a => {
-                      const category = a.category || a.analysis?.category || ''
-                      return category.toLowerCase().includes('regulation') ||
-                             category.toLowerCase().includes('policy') ||
-                             category.toLowerCase().includes('compliance') ||
-                             category.toLowerCase().includes('medicare') ||
-                             category.toLowerCase().includes('medicaid')
-                    })}
-                    onAnalyze={setSelectedArticle}
-                    onViewDetails={setSelectedArticleForDetail}
-                    savedArticles={savedArticles}
-                    onToggleSave={toggleSaveArticle}
-                  />
-
-                  <Pagination
-                    pagination={pagination}
-                    onPageChange={handlePageChange}
-                  />
-                </>
-              )}
-            </div>
-          </main>
-        } />
+        <Route path="/regulatory" element={<RegulatoryFeed />} />
 
         {/* M&A Tracker Route */}
         <Route path="/ma-tracker" element={<MATracker />} />

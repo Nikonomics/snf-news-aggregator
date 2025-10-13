@@ -69,8 +69,9 @@ export function extractImageFromHTML(html) {
 /**
  * Fetch and extract Open Graph image from article URL
  * This is a fallback when RSS doesn't provide an image
+ * Enhanced with multiple fallback strategies for higher success rate
  */
-export async function fetchOpenGraphImage(url) {
+export async function fetchOpenGraphImage(url, retryCount = 0) {
   try {
     // Skip Google News redirect URLs - they're slow and won't have og:image
     if (url.includes('news.google.com/rss/articles/')) {
@@ -79,55 +80,114 @@ export async function fetchOpenGraphImage(url) {
 
     // Add timeout to prevent hanging
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout (increased from 5)
+    const timeout = setTimeout(() => controller.abort(), 20000) // 20 second timeout
 
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SNF News Aggregator/1.0)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
       },
       redirect: 'follow' // Follow redirects automatically
     })
 
     clearTimeout(timeout)
 
-    if (!response.ok) return null
+    if (!response.ok) {
+      // Retry once on 5xx errors
+      if (response.status >= 500 && retryCount === 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        return fetchOpenGraphImage(url, retryCount + 1)
+      }
+      return null
+    }
 
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    // Try Open Graph image
-    let ogImage = $('meta[property="og:image"]').attr('content')
+    // Strategy 1: Try Open Graph image (most reliable)
+    let ogImage = $('meta[property="og:image"]').attr('content') ||
+                  $('meta[property="og:image:url"]').attr('content')
     if (ogImage && isValidImageUrl(ogImage)) {
       return makeAbsoluteUrl(ogImage, url)
     }
 
-    // Try Twitter Card image
-    let twitterImage = $('meta[name="twitter:image"]').attr('content')
+    // Strategy 2: Try Twitter Card image
+    let twitterImage = $('meta[name="twitter:image"]').attr('content') ||
+                       $('meta[name="twitter:image:src"]').attr('content') ||
+                       $('meta[property="twitter:image"]').attr('content')
     if (twitterImage && isValidImageUrl(twitterImage)) {
       return makeAbsoluteUrl(twitterImage, url)
     }
 
-    // Try schema.org image
-    const schemaScript = $('script[type="application/ld+json"]').html()
-    if (schemaScript) {
+    // Strategy 3: Try schema.org structured data
+    const schemaScripts = $('script[type="application/ld+json"]')
+    for (let i = 0; i < schemaScripts.length; i++) {
       try {
-        const schema = JSON.parse(schemaScript)
-        if (schema.image) {
-          const imageUrl = typeof schema.image === 'string' ? schema.image : schema.image.url
-          if (imageUrl && isValidImageUrl(imageUrl)) {
-            return makeAbsoluteUrl(imageUrl, url)
+        const schemaText = $(schemaScripts[i]).html()
+        if (!schemaText) continue
+
+        const schema = JSON.parse(schemaText)
+        const schemas = Array.isArray(schema) ? schema : [schema]
+
+        for (const s of schemas) {
+          if (s.image) {
+            const imageUrl = typeof s.image === 'string' ? s.image :
+                           (Array.isArray(s.image) ? s.image[0] : s.image.url)
+            if (imageUrl && typeof imageUrl === 'string' && isValidImageUrl(imageUrl)) {
+              return makeAbsoluteUrl(imageUrl, url)
+            }
           }
         }
       } catch (e) {
-        // Schema parsing failed, continue
+        // Schema parsing failed, continue to next
       }
     }
 
-    // Try finding first prominent image in article
-    const articleImages = $('article img, .article img, .content img, .post img')
-    if (articleImages.length > 0) {
-      const src = articleImages.first().attr('src')
+    // Strategy 4: Try link rel="image_src"
+    const linkImage = $('link[rel="image_src"]').attr('href')
+    if (linkImage && isValidImageUrl(linkImage)) {
+      return makeAbsoluteUrl(linkImage, url)
+    }
+
+    // Strategy 5: Try finding featured/hero image in article
+    const heroImages = $(
+      'article img.featured, ' +
+      'article img.hero, ' +
+      '.article-image img, ' +
+      '.featured-image img, ' +
+      '.post-thumbnail img, ' +
+      '.entry-image img, ' +
+      'figure.featured img, ' +
+      '.article-hero img'
+    )
+    if (heroImages.length > 0) {
+      const src = heroImages.first().attr('src') || heroImages.first().attr('data-src')
+      if (src && isValidImageUrl(src)) {
+        return makeAbsoluteUrl(src, url)
+      }
+    }
+
+    // Strategy 6: Try first image in article content (but filter out small icons/logos)
+    const articleImages = $('article img, .article img, .content img, .post-content img, main img')
+    for (let i = 0; i < Math.min(articleImages.length, 3); i++) {
+      const img = $(articleImages[i])
+      const src = img.attr('src') || img.attr('data-src')
+      const width = img.attr('width')
+      const height = img.attr('height')
+
+      // Skip small images (likely icons/logos)
+      if (width && height && (parseInt(width) < 200 || parseInt(height) < 150)) {
+        continue
+      }
+
+      // Skip images with icon/logo in class name
+      const imgClass = img.attr('class') || ''
+      if (imgClass.match(/icon|logo|avatar|thumbnail/i)) {
+        continue
+      }
+
       if (src && isValidImageUrl(src)) {
         return makeAbsoluteUrl(src, url)
       }
@@ -137,6 +197,10 @@ export async function fetchOpenGraphImage(url) {
   } catch (error) {
     if (error.name === 'AbortError') {
       console.log(`⏱️  Timeout fetching image from ${url}`)
+    } else if (retryCount === 0 && error.message.includes('fetch')) {
+      // Retry once on network errors
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      return fetchOpenGraphImage(url, retryCount + 1)
     } else {
       console.error(`Error fetching Open Graph image from ${url}:`, error.message)
     }
@@ -252,7 +316,7 @@ function generatePlaceholderImage(title = 'News') {
  * Main function: Extract image with fallback strategy
  * 1. Try RSS feed image
  * 2. Fall back to Open Graph scraping
- * 3. Fall back to placeholder image (ALWAYS returns an image)
+ * 3. Return null if no image found (placeholder handled by frontend)
  */
 export async function getArticleImage(feedItem, articleUrl, articleTitle = 'News') {
   // Try RSS feed first (fast, most relevant)
@@ -267,6 +331,6 @@ export async function getArticleImage(feedItem, articleUrl, articleTitle = 'News
     return ogImage
   }
 
-  // Always return a placeholder image as final fallback
-  return generatePlaceholderImage(articleTitle)
+  // Return null if no image found - frontend will show placeholder
+  return null
 }
