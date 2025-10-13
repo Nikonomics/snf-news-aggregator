@@ -2596,6 +2596,136 @@ app.post('/api/admin/backfill-images', async (req, res) => {
   }
 })
 
+// Admin endpoint: Clear placeholder images and backfill with real images
+app.post('/api/admin/clear-and-backfill-images', async (req, res) => {
+  try {
+    console.log('\n🖼️  Starting clear & backfill process...')
+
+    // Step 1: Clear placeholder images
+    console.log('\n📋 Step 1: Clearing placeholder images...')
+    const clearResult = await db.query(`
+      UPDATE articles
+      SET image_url = NULL
+      WHERE image_url LIKE '%ui-avatars.com%'
+      RETURNING id
+    `)
+    console.log(`✓ Cleared ${clearResult.rowCount} placeholder images`)
+
+    // Step 2: Get articles without images
+    console.log('\n📋 Step 2: Finding articles without images...')
+    const query = `
+      SELECT id, url, title
+      FROM articles
+      WHERE image_url IS NULL
+      ORDER BY published_date DESC
+      LIMIT 100
+    `
+    const result = await db.query(query)
+    const articlesWithoutImages = result.rows
+
+    console.log(`📊 Found ${articlesWithoutImages.length} articles to process`)
+
+    if (articlesWithoutImages.length === 0) {
+      return res.json({
+        success: true,
+        message: 'All articles already have real images!',
+        clearedCount: clearResult.rowCount,
+        successCount: 0,
+        failureCount: 0,
+        skippedCount: 0
+      })
+    }
+
+    // Step 3: Backfill images
+    console.log('\n📋 Step 3: Backfilling images...')
+    const { fetchOpenGraphImage } = await import('./utils/imageExtractor.js')
+
+    let successCount = 0
+    let failureCount = 0
+    let skippedCount = 0
+    const batchSize = 10
+    const delayBetweenBatches = 2000
+
+    for (let i = 0; i < articlesWithoutImages.length; i += batchSize) {
+      const batch = articlesWithoutImages.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      const totalBatches = Math.ceil(articlesWithoutImages.length / batchSize)
+
+      console.log(`📦 Processing batch ${batchNum}/${totalBatches} (articles ${i + 1}-${Math.min(i + batchSize, articlesWithoutImages.length)})`)
+
+      const promises = batch.map(async (article) => {
+        try {
+          if (!article.url || !article.url.startsWith('http')) {
+            skippedCount++
+            return { success: false, skipped: true }
+          }
+
+          const imageUrl = await fetchOpenGraphImage(article.url)
+
+          if (imageUrl) {
+            const updateQuery = `
+              UPDATE articles
+              SET image_url = $1, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $2
+            `
+            await db.query(updateQuery, [imageUrl, article.id])
+
+            successCount++
+            console.log(`  ✅ ${article.title.substring(0, 60)}...`)
+            return { success: true }
+          } else {
+            failureCount++
+            console.log(`  ⚠️  No image found: ${article.title.substring(0, 60)}...`)
+            return { success: false }
+          }
+        } catch (error) {
+          failureCount++
+          console.error(`  ❌ Error processing article ${article.id}:`, error.message)
+          return { success: false }
+        }
+      })
+
+      await Promise.all(promises)
+
+      if (i + batchSize < articlesWithoutImages.length) {
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches))
+      }
+    }
+
+    const successRate = articlesWithoutImages.length > 0
+      ? ((successCount / articlesWithoutImages.length) * 100).toFixed(1)
+      : 0
+
+    console.log('\n' + '='.repeat(60))
+    console.log('📊 Clear & Backfill Summary:')
+    console.log('='.repeat(60))
+    console.log(`Placeholders cleared: ${clearResult.rowCount}`)
+    console.log(`Total articles processed: ${articlesWithoutImages.length}`)
+    console.log(`✅ Successfully added images: ${successCount}`)
+    console.log(`⚠️  No image found: ${failureCount}`)
+    console.log(`⏭️  Skipped (invalid URL): ${skippedCount}`)
+    console.log(`📈 Success rate: ${successRate}%`)
+    console.log('='.repeat(60))
+
+    res.json({
+      success: true,
+      message: 'Clear & backfill completed',
+      clearedCount: clearResult.rowCount,
+      total: articlesWithoutImages.length,
+      successCount,
+      failureCount,
+      skippedCount,
+      successRate: parseFloat(successRate)
+    })
+  } catch (error) {
+    console.error('❌ Fatal error during clear & backfill:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // Admin endpoint: Run weekly reports table migration
 app.post('/api/admin/migrate-weekly-reports', async (req, res) => {
   try {

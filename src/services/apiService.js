@@ -110,7 +110,12 @@ export async function fetchArticleStats() {
 
 export async function fetchRegulatoryBills(filters = {}) {
   try {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams({
+      page: '1',
+      limit: '1000',
+      sortBy: 'ai_relevance_score',
+      sortOrder: 'DESC'
+    })
 
     if (filters.source && filters.source !== 'all') {
       params.append('source', filters.source)
@@ -118,21 +123,29 @@ export async function fetchRegulatoryBills(filters = {}) {
     if (filters.priority && filters.priority !== 'all') {
       params.append('priority', filters.priority)
     }
-    if (filters.impactType && filters.impactType !== 'all') {
-      params.append('impactType', filters.impactType)
-    }
     if (filters.hasCommentPeriod && filters.hasCommentPeriod !== 'all') {
-      params.append('hasCommentPeriod', filters.hasCommentPeriod)
+      params.append('hasCommentPeriod', filters.hasCommentPeriod === 'yes' ? 'true' : 'false')
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/regulatory/bills?${params.toString()}`)
+    const response = await fetch(`${API_BASE_URL}/api/bills?${params.toString()}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
     const data = await response.json()
-    return data
+
+    // Filter by impact type client-side if needed
+    let bills = data.bills || []
+    if (filters.impactType && filters.impactType !== 'all') {
+      bills = bills.filter(bill => bill.impact_type === filters.impactType)
+    }
+
+    return {
+      success: true,
+      bills,
+      count: bills.length
+    }
   } catch (error) {
     console.error('Error fetching regulatory bills:', error)
     throw error
