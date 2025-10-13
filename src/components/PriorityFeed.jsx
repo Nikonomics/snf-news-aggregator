@@ -3,6 +3,8 @@ import { Zap, AlertCircle, Clock, TrendingUp } from 'lucide-react'
 import HeroArticleCard from './HeroArticleCard'
 import CompactArticleCard from './CompactArticleCard'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+
 function PriorityFeed() {
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,7 +21,7 @@ function PriorityFeed() {
   const fetchPriorityArticles = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:3001/api/articles/priority?limit=20')
+      const response = await fetch(`${API_BASE_URL}/api/articles/priority?limit=20`)
       const data = await response.json()
 
       if (data.success) {
@@ -83,18 +85,20 @@ function PriorityFeed() {
     )
   }
 
-  // Separate articles by urgency level
-  const criticalArticles = articles.filter(a => (a.analysis?.urgencyScore || 0) >= 80)
+  // Separate articles by urgency level (use adjusted score if available)
+  const getScore = (article) => article.adjusted_urgency_score || article.analysis?.urgencyScore || 0
+
+  const criticalArticles = articles.filter(a => getScore(a) >= 80)
   const highUrgency = articles.filter(a => {
-    const score = a.analysis?.urgencyScore || 0
+    const score = getScore(a)
     return score >= 60 && score < 80
   })
   const moderateUrgency = articles.filter(a => {
-    const score = a.analysis?.urgencyScore || 0
+    const score = getScore(a)
     return score >= 40 && score < 60
   })
   const standardUrgency = articles.filter(a => {
-    const score = a.analysis?.urgencyScore || 0
+    const score = getScore(a)
     return score >= 20 && score < 40
   })
 
@@ -149,43 +153,32 @@ function PriorityFeed() {
               <p style={{ fontSize: '0.9em', color: '#6b7280', margin: '4px 0 0 0' }}>Requires immediate attention and action</p>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {criticalArticles.map((article, index) => (
-              <div key={article.id} style={{ position: 'relative' }}>
-                {index === 0 ? (
-                  <HeroArticleCard
-                    article={article}
-                    isSaved={savedArticles?.includes(article.url)}
-                    onToggleSave={toggleSaveArticle}
-                  />
-                ) : (
+          <div>
+            {/* First 3 cards - full size */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              {criticalArticles.slice(0, 3).map(article => (
+                <CompactArticleCard
+                  key={article.id}
+                  article={article}
+                  isSaved={savedArticles?.includes(article.url)}
+                  onToggleSave={toggleSaveArticle}
+                />
+              ))}
+            </div>
+            {/* Remaining cards - 1/3 size (3 columns) */}
+            {criticalArticles.length > 3 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {criticalArticles.slice(3).map(article => (
                   <CompactArticleCard
+                    key={article.id}
                     article={article}
                     isSaved={savedArticles?.includes(article.url)}
                     onToggleSave={toggleSaveArticle}
+                    mini={true}
                   />
-                )}
-                {/* Urgency Badge Overlay */}
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  padding: '6px 12px',
-                  backgroundColor: '#dc2626',
-                  color: 'white',
-                  borderRadius: '6px',
-                  fontWeight: '700',
-                  fontSize: '0.85em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
-                }}>
-                  <Zap size={14} />
-                  {article.analysis?.urgencyScore || 'N/A'}
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -200,33 +193,32 @@ function PriorityFeed() {
               <p style={{ fontSize: '0.9em', color: '#6b7280', margin: '4px 0 0 0' }}>Important updates requiring timely action</p>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '16px' }}>
-            {highUrgency.map(article => (
-              <div key={article.id} style={{ position: 'relative' }}>
+          <div>
+            {/* First 3 cards - full size */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              {highUrgency.slice(0, 3).map(article => (
                 <CompactArticleCard
+                  key={article.id}
                   article={article}
                   isSaved={savedArticles?.includes(article.url)}
                   onToggleSave={toggleSaveArticle}
                 />
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  padding: '6px 12px',
-                  backgroundColor: '#ea580c',
-                  color: 'white',
-                  borderRadius: '6px',
-                  fontWeight: '700',
-                  fontSize: '0.85em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <Zap size={14} />
-                  {article.analysis?.urgencyScore || 'N/A'}
-                </div>
+              ))}
+            </div>
+            {/* Remaining cards - 1/3 size (3 columns) */}
+            {highUrgency.length > 3 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {highUrgency.slice(3).map(article => (
+                  <CompactArticleCard
+                    key={article.id}
+                    article={article}
+                    isSaved={savedArticles?.includes(article.url)}
+                    onToggleSave={toggleSaveArticle}
+                    mini={true}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -241,32 +233,32 @@ function PriorityFeed() {
               <p style={{ fontSize: '0.9em', color: '#6b7280', margin: '4px 0 0 0' }}>Review within the next few days</p>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
-            {moderateUrgency.map(article => (
-              <div key={article.id} style={{ position: 'relative' }}>
+          <div>
+            {/* First 3 cards - full size */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              {moderateUrgency.slice(0, 3).map(article => (
                 <CompactArticleCard
+                  key={article.id}
                   article={article}
                   isSaved={savedArticles?.includes(article.url)}
                   onToggleSave={toggleSaveArticle}
                 />
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  padding: '6px 12px',
-                  backgroundColor: '#f59e0b',
-                  color: 'white',
-                  borderRadius: '6px',
-                  fontWeight: '700',
-                  fontSize: '0.85em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  {article.analysis?.urgencyScore || 'N/A'}
-                </div>
+              ))}
+            </div>
+            {/* Remaining cards - 1/3 size (3 columns) */}
+            {moderateUrgency.length > 3 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {moderateUrgency.slice(3).map(article => (
+                  <CompactArticleCard
+                    key={article.id}
+                    article={article}
+                    isSaved={savedArticles?.includes(article.url)}
+                    onToggleSave={toggleSaveArticle}
+                    mini={true}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -282,26 +274,12 @@ function PriorityFeed() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
             {standardUrgency.map(article => (
-              <div key={article.id} style={{ position: 'relative' }}>
-                <CompactArticleCard
-                  article={article}
-                  isSaved={savedArticles?.includes(article.url)}
-                  onToggleSave={toggleSaveArticle}
-                />
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  padding: '6px 12px',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  borderRadius: '6px',
-                  fontWeight: '700',
-                  fontSize: '0.85em'
-                }}>
-                  {article.analysis?.urgencyScore || 'N/A'}
-                </div>
-              </div>
+              <CompactArticleCard
+                key={article.id}
+                article={article}
+                isSaved={savedArticles?.includes(article.url)}
+                onToggleSave={toggleSaveArticle}
+              />
             ))}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Calendar, Tag, ExternalLink, Bookmark, MapPin, Star, Sparkles, ChevronRight } from 'lucide-react'
+import { Calendar, Tag, ExternalLink, Bookmark, MapPin, Star, Sparkles, ChevronRight, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 
@@ -16,7 +16,7 @@ const cleanTitle = (title) => {
   return cleaned
 }
 
-function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave }) {
+function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onToggleSave, mini = false }) {
   const [showFullAnalysis, setShowFullAnalysis] = useState(false)
 
   const getImpactColor = (impact) => {
@@ -28,42 +28,163 @@ function CompactArticleCard({ article, onAnalyze, onViewDetails, isSaved, onTogg
     }
   }
 
+  // Get short summary - what actually happened in plain language
+  const getShortSummary = () => {
+    // Look for contextual/factual insights that explain what happened
+    const insights = article.analysis?.keyInsights || []
+
+    // Find an insight that describes facts/events (avoid abstract implications)
+    const factualInsight = insights.find(insight => {
+      const lower = insight.toLowerCase()
+      // Look for insights that contain concrete details (who, what, where, when)
+      return (
+        insight.length > 30 &&
+        !lower.includes('signal') &&
+        !lower.includes('established') &&
+        !lower.includes('precedent') &&
+        !lower.includes('liability') &&
+        !lower.includes('require') &&
+        !lower.includes('implications') &&
+        !lower.includes('limited') &&
+        !lower.includes('truncated') &&
+        !lower.includes('this means')
+      )
+    })
+
+    if (factualInsight) {
+      const cleaned = factualInsight.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim()
+      return cleaned.length > 120 ? cleaned.substring(0, 117) + '...' : cleaned
+    }
+
+    // Fallback to summary field (but skip if it's just the title)
+    const summary = article.summary || article.description || ''
+    const cleaned = summary.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim()
+
+    // Don't show summary if it's identical or too similar to title
+    const cleanedTitle = cleanTitle(article.title).toLowerCase()
+    if (cleaned.toLowerCase().includes(cleanedTitle) && cleaned.length < cleanedTitle.length + 50) {
+      return '' // Skip summary if it's just repeating the title
+    }
+
+    return cleaned.length > 120 ? cleaned.substring(0, 117) + '...' : cleaned
+  }
+
+  // Get top 3 implications/why-it-matters insights (skip factual summary, focus on implications)
+  const getKeyBullets = () => {
+    if (!article.analysis?.keyInsights) return []
+
+    // Filter for implication-focused insights (not factual descriptions)
+    const implicationInsights = article.analysis.keyInsights.filter(insight => {
+      const lower = insight.toLowerCase()
+      return (
+        !lower.includes('limited') &&
+        !lower.includes('truncated') &&
+        !lower.includes('unavailable') &&
+        // Look for insights that explain implications/importance
+        (lower.includes('signal') ||
+         lower.includes('established') ||
+         lower.includes('precedent') ||
+         lower.includes('liability') ||
+         lower.includes('require') ||
+         lower.includes('risk') ||
+         lower.includes('impact') ||
+         lower.includes('critical') ||
+         lower.includes('must') ||
+         insight.length > 50) // Longer insights tend to be more detailed implications
+      )
+    })
+
+    return implicationInsights.slice(0, 3)
+  }
+
+  const keyBullets = getKeyBullets()
+
+  // Get urgency score
+  const urgencyScore = article.adjusted_urgency_score || article.analysis?.urgencyScore || 0
+
   return (
     <>
       {/* Compact Article Card */}
-      <div className="compact-card" onClick={() => setShowFullAnalysis(true)}>
-        {/* Thumbnail */}
-        <div className="compact-thumbnail">
-          <Tag size={24} className="compact-thumbnail-icon" />
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: mini ? '6px' : '8px',
+        padding: mini ? '10px' : '14px',
+        marginBottom: mini ? '0' : '12px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        border: '1px solid #e5e7eb',
+        cursor: 'pointer',
+        position: 'relative'
+      }} onClick={() => setShowFullAnalysis(true)}>
+
+        {/* Header: Source, Date, and Urgency Score */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: mini ? '4px' : '8px', fontSize: mini ? '0.7em' : '0.8em', color: '#6b7280', marginBottom: mini ? '4px' : '6px' }}>
+          <span style={{ fontWeight: '600', color: '#374151' }}>{article.source}</span>
+          <span>•</span>
+          <span>{format(new Date(article.date || article.published_date), 'MMM d')}</span>
+          <span>•</span>
+          <span style={{
+            padding: '2px 4px',
+            backgroundColor: urgencyScore >= 80 ? '#dc2626' : urgencyScore >= 60 ? '#ea580c' : urgencyScore >= 40 ? '#f59e0b' : '#6b7280',
+            color: 'white',
+            borderRadius: '3px',
+            fontWeight: '700',
+            fontSize: '0.9em'
+          }}>
+            {Math.round(urgencyScore)}
+          </span>
         </div>
 
-        <div className="compact-content">
-          {/* Source and timestamp */}
-          <div className="compact-source-row">
-            <div className="compact-source-badge">
-              <div className="compact-source-icon">{article.source.charAt(0).toUpperCase()}</div>
-              <span className="compact-source-name">{article.source}</span>
-            </div>
-            <span className="compact-time">{format(new Date(article.date || article.published_date), 'MMM d')}</span>
-          </div>
+        {/* Title */}
+        <h3 style={{
+          margin: '0 0 4px 0',
+          fontSize: mini ? '0.85em' : '1em',
+          fontWeight: '700',
+          color: '#111827',
+          lineHeight: '1.3'
+        }}>
+          {cleanTitle(article.title)}
+        </h3>
 
-          {/* Headline only (no preview snippet) */}
-          <h3 className="compact-headline">{cleanTitle(article.title)}</h3>
+        {/* Short Summary - hide in mini mode */}
+        {!mini && getShortSummary() && (
+          <p style={{
+            margin: '0 0 10px 0',
+            fontSize: '0.85em',
+            color: '#4b5563',
+            lineHeight: '1.5'
+          }}>
+            {getShortSummary()}
+          </p>
+        )}
 
-          {/* Metadata badges - compact */}
-          <div className="compact-metadata">
-            <span
-              className="compact-badge compact-badge-impact"
-              style={{ backgroundColor: getImpactColor(article.impact) }}
-            >
-              {article.impact.toUpperCase()}
-            </span>
-            {article.relevance_score && (
-              <span className="compact-badge compact-badge-relevance">
-                {article.relevance_score}
-              </span>
+        {/* Why This Matters - show only first bullet in mini mode */}
+        {keyBullets.length > 0 && (
+          <div style={{ marginBottom: mini ? '4px' : '6px' }}>
+            {!mini && (
+              <div style={{ fontSize: '0.75em', fontWeight: '600', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
+                Why This Matters:
+              </div>
             )}
+            <ul style={{ margin: 0, paddingLeft: mini ? '14px' : '18px', fontSize: mini ? '0.75em' : '0.85em', color: '#374151', lineHeight: '1.4' }}>
+              {(mini ? keyBullets.slice(0, 1) : keyBullets).map((bullet, i) => (
+                <li key={i} style={{ marginBottom: '2px' }}>{bullet}</li>
+              ))}
+            </ul>
           </div>
+        )}
+
+        {/* Footer: Category Badge */}
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{
+            padding: mini ? '2px 6px' : '3px 8px',
+            backgroundColor: '#eff6ff',
+            color: '#1e40af',
+            borderRadius: '3px',
+            fontSize: mini ? '0.65em' : '0.7em',
+            fontWeight: '600'
+          }}>
+            {article.category || 'General'}
+          </span>
         </div>
       </div>
 
