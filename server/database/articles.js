@@ -36,8 +36,8 @@ export async function insertArticle(article) {
   const query = `
     INSERT INTO articles (
       external_id, title, summary, url, source, published_date,
-      category, impact, relevance_score, scope, states, analysis, image_url
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      category, impact, relevance_score, scope, states, analysis, image_url, relevance_tier
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     ON CONFLICT (external_id) DO UPDATE SET
       title = EXCLUDED.title,
       summary = EXCLUDED.summary,
@@ -48,6 +48,7 @@ export async function insertArticle(article) {
       states = EXCLUDED.states,
       analysis = EXCLUDED.analysis,
       image_url = EXCLUDED.image_url,
+      relevance_tier = EXCLUDED.relevance_tier,
       updated_at = CURRENT_TIMESTAMP
     RETURNING id
   `

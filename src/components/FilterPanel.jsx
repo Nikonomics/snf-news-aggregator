@@ -16,17 +16,25 @@ function FilterPanel({ filters, onFilterChange, searchTerm, onSearchChange, sort
   }
 
   // Get categories dynamically from filterStats, or use defaults
+  // Always ensure M&A is included even if no articles exist yet
+  const allCategories = [
+    'All',
+    'Regulatory',
+    'Finance',
+    'M&A',
+    'Operations',
+    'Workforce',
+    'Quality',
+    'Technology'
+  ]
+
   const categories = filterStats?.categories
-    ? ['All', ...Object.keys(filterStats.categories).sort()]
-    : [
-      'All',
-      'Regulatory',
-      'Finance',
-      'Operations',
-      'Workforce',
-      'Quality',
-      'Technology'
-    ]
+    ? ['All', ...new Set([...Object.keys(filterStats.categories), 'M&A']).values()].sort((a, b) => {
+        if (a === 'All') return -1
+        if (b === 'All') return 1
+        return a.localeCompare(b)
+      })
+    : allCategories
 
   const impacts = ['all', 'high', 'medium', 'low']
 

@@ -1,0 +1,36 @@
+[
+  {
+    "bill_number": "FR-2025-14679",
+    "title": "Medicare Program; Prospective Payment System and Consolidated Billing for Skilled Nursing Facilities; Updates to the Quality Reporting Program for Federal Fiscal Year 2026",
+    "summary": "This final rule finalizes changes and updates to the policies and payment rates used under the Skilled Nursing Facility (SNF) Prospective Payment System (PPS) for fiscal year 2026. This final rule also updates the requirements for the SNF Quality Reporting Program and the SNF Value-Based Purchasing Program.",
+    "full_text_url": "https://www.federalregister.gov/documents/2025/08/04/2025-14679/medicare-program-prospective-payment-system-and-consolidated-billing-for-skilled-nursing-facilities",
+    "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2025-08-04/pdf/2025-14679.pdf",
+    "source": "federal_register",
+    "jurisdiction": "federal",
+    "state": null,
+    "agencies": [
+      "Health and Human Services Department",
+      "Centers for Medicare & Medicaid Services"
+    ],
+    "document_type": "Rule",
+    "publication_date": "2025-08-04",
+    "comment_deadline": null,
+    "effective_date": null,
+    "ai_relevance_score": 95,
+    "priority": "critical",
+    "categories": [
+      "Reimbursement",
+      "Quality",
+      "Compliance",
+      "Finance"
+    ],
+    "financial_impact_description": "Unknown",
+    "financial_impact_pbpy": null,
+    "has_comment_period": true,
+    "action_required": true,
+    "affected_operators": "All Medicare-certified SNFs are affected, as this rule governs the primary payment system for skilled nursing services. Facilities with higher Medicare census and those participating in quality programs will see the most significant operational and financial impacts.",
+    "key_impact": "This rule directly impacts SNF reimbursement rates, payment methodologies, and quality reporting requirements for FY 2026, affecting both revenue streams and compliance obligations. SNFs must understand new payment rates, updated quality measures, and value-based purchasing program changes to maintain financial viability and avoid penalties.",
+    "status": "published",
+    "last_updated": "2025-10-13T01:28:38.335Z"
+  }
+]

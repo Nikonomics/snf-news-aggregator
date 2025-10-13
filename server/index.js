@@ -184,28 +184,80 @@ async function processArticlesWithDeduplication(rssArticles) {
   return uniqueArticles
 }
 
-// Categories mapping based on keywords
+// Refined category taxonomy
+// Tier 1 (High): Strategic intelligence - full AI analysis
+// Tier 2 (Medium): Tactical insights - lighter AI analysis
+// Tier 3 (Low): Community interest - minimal/no AI analysis
+
 const categorizeArticle = (title, content) => {
   const text = `${title} ${content}`.toLowerCase()
 
-  if (text.includes('regulation') || text.includes('cms') || text.includes('compliance') ||
-      text.includes('survey') || text.includes('law') || text.includes('legal')) {
+  // Check for community fluff first (should be filtered out)
+  if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat|ribbon cutting/)) {
+    if (!text.match(/ceo|cfo|administrator|president|founder|industry leader/)) {
+      return 'Community Interest'
+    }
+  }
+
+  // M&A gets priority check (before Finance) since acquisition keywords might also match financial terms
+  if (text.includes('acquisition') || text.includes('merger') || text.includes('acquired') ||
+      text.includes('buyout') || text.includes('acquires') || text.includes('m&a') ||
+      text.includes('consolidation') || text.includes('private equity') || text.includes('pe firm') ||
+      text.includes('takeover') || text.includes('deal') && (text.includes('billion') || text.includes('million'))) {
+    return 'Market Intelligence'
+  } else if (text.includes('regulation') || text.includes('cms') || text.includes('compliance') ||
+      text.includes('survey') || text.includes('law') || text.includes('legal') ||
+      text.includes('penalty') || text.includes('fine') || text.includes('deficiency')) {
     return 'Regulatory'
   } else if (text.includes('medicare') || text.includes('medicaid') || text.includes('reimbursement') ||
-             text.includes('payment') || text.includes('financial') || text.includes('cost')) {
-    return 'Finance'
+             text.includes('payment') || text.includes('rate cut') || text.includes('rate increase') ||
+             text.includes('bankruptcy') || text.includes('closure') || text.includes('financial')) {
+    return 'Financial'
   } else if (text.includes('staff') || text.includes('workforce') || text.includes('hiring') ||
-             text.includes('turnover') || text.includes('wage')) {
+             text.includes('turnover') || text.includes('wage') || text.includes('staffing ratio') ||
+             text.includes('minimum staffing') || text.includes('union')) {
     return 'Workforce'
   } else if (text.includes('quality') || text.includes('star rating') || text.includes('infection') ||
-             text.includes('safety') || text.includes('outcomes')) {
+             text.includes('safety') || text.includes('outcomes') || text.includes('clinical')) {
     return 'Quality'
   } else if (text.includes('technology') || text.includes('software') || text.includes('digital') ||
              text.includes('telehealth') || text.includes('ai') || text.includes('artificial intelligence')) {
     return 'Technology'
+  } else if (text.match(/workshop|program|best practice|training|education/) &&
+             !text.match(/obituary|pet|craft|party/)) {
+    return 'Best Practices'
   } else {
     return 'Operations'
   }
+}
+
+// Determine relevance tier based on category and content
+const determineRelevanceTier = (title, content, category) => {
+  const text = `${title} ${content}`.toLowerCase()
+
+  // Low tier: Community fluff
+  if (category === 'Community Interest') return 'low'
+  if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat|ribbon cutting|grand opening/)) {
+    return 'low'
+  }
+
+  // High tier: Strategic intelligence
+  const highTierCategories = ['Regulatory', 'Financial', 'Market Intelligence']
+  if (highTierCategories.includes(category)) return 'high'
+
+  const highTierKeywords = [
+    'cms', 'medicare', 'medicaid', 'regulation', 'survey', 'deficiency',
+    'penalty', 'fine', 'star rating', 'reimbursement', 'staffing ratio',
+    'minimum staffing', 'bankruptcy', 'acquisition', 'merger', 'closure',
+    'rate cut', 'rate increase', 'mandate', 'deadline'
+  ]
+
+  for (const keyword of highTierKeywords) {
+    if (text.includes(keyword)) return 'high'
+  }
+
+  // Everything else is medium tier
+  return 'medium'
 }
 
 // Determine impact level based on keywords
@@ -282,6 +334,68 @@ const calculateRelevanceScore = (title, content) => {
 async function analyzeArticleWithAI(article) {
   try {
     console.log(`Analyzing new article: ${article.title}`);
+
+    // Determine relevance tier if not already set
+    if (!article.relevance_tier) {
+      article.relevance_tier = determineRelevanceTier(
+        article.title,
+        article.summary || article.content || '',
+        article.category
+      );
+      console.log(`  → Auto-assigned tier: ${article.relevance_tier}`);
+    }
+
+    // Skip expensive AI analysis for low-tier articles (community fluff)
+    if (article.relevance_tier === 'low') {
+      console.log(`  → Skipping full AI analysis for low-tier article (cost savings)`);
+      return {
+        keyInsights: [
+          "Community interest article with minimal operational relevance"
+        ],
+        complianceTimeline: {
+          commentDeadline: "N/A",
+          effectiveDate: "N/A",
+          prepTime: "N/A",
+          criticalDates: []
+        },
+        financialImpact: "No significant financial impact on SNF operations.",
+        whoNeedsToKnow: [],
+        actionItems: {
+          immediate: [],
+          shortTerm: [],
+          longTerm: []
+        },
+        risks: [],
+        relevanceReasoning: "Low-relevance community content (pet parade, obituary, local event, etc.)",
+        scope: "Local",
+        state: "N/A",
+        entities: {
+          organizations: [],
+          regulations: [],
+          people: [],
+          financialFigures: []
+        },
+        topicTags: ["Community Interest"],
+        temporalSignals: {
+          isRecurring: false,
+          precedents: [],
+          cyclicality: "ad-hoc",
+          leadTime: "none"
+        },
+        impactFactors: {
+          facilityTypes: [],
+          bedSizes: [],
+          payorMix: [],
+          geography: [],
+          ownershipTypes: []
+        },
+        connections: {
+          relatedTopics: [],
+          causeAndEffect: "N/A",
+          marketForces: []
+        }
+      };
+    }
 
     // Detect if this is an opinion/commentary piece
     const titleLower = article.title.toLowerCase();
@@ -397,6 +511,84 @@ Requirements:
    - scope: Must be exactly one of: "National", "State", "Regional", or "Local"
    - state: Two-letter state code(s) if state-specific, or "N/A"
 
+9. **Urgency Score** (0-100): How time-sensitive is this? Consider:
+   - 90-100: Immediate action required (comment periods closing, breaking regulatory changes)
+   - 70-89: Important within next 30 days (upcoming deadlines, significant policy shifts)
+   - 40-69: Monitor and plan (emerging trends, medium-term changes)
+   - 20-39: Informational, no immediate action (industry updates, long-term trends)
+   - 0-19: Low priority (opinions, general news, minor updates)
+
+10. **Article Type**: Classify as exactly one of:
+   - "Breaking News": Time-sensitive news, enforcement actions, major announcements
+   - "Regulatory Update": CMS rules, state regulations, compliance requirements
+   - "Policy Analysis": Deep dives into policy implications
+   - "Financial/Market": Reimbursement, M&A, financial performance, market trends
+   - "Operational Guidance": Best practices, implementation strategies
+   - "Opinion/Commentary": Opinion pieces, editorials, thought leadership
+   - "Industry Trend": General market trends, future predictions
+
+11. **Implementation Complexity**: Rate as "Low", "Medium", or "High" based on:
+   - Low: Informational only, no implementation needed
+   - Medium: Some operational changes, training, or policy updates required
+   - High: Significant operational overhaul, capital investment, or major compliance effort
+
+12. **Competitive Intelligence**: Briefly note (1-2 sentences):
+   - Which operators/competitors are mentioned or affected?
+   - How might this create competitive advantages or disadvantages?
+   - Are specific chains/companies positioned better/worse?
+   If not applicable, use "N/A"
+
+13. **Strategic Implications**: Beyond immediate impact, what are the 2nd and 3rd order effects? (1-2 sentences)
+   - How might this change competitive dynamics?
+   - What downstream operational or strategic shifts might be needed?
+   If not applicable, use "N/A"
+
+14. **M&A Details** (ONLY for articles about mergers, acquisitions, or sales):
+   If this article is about a merger, acquisition, joint venture, or facility sale, extract:
+   - acquirer: Full company name of the buyer (e.g., "Genesis HealthCare", "Ensign Group", "Omega Healthcare Investors")
+   - target: Name of facility/company being acquired (e.g., "Sunrise Senior Living", "5 facilities in Ohio")
+   - dealValue: Transaction value (e.g., "$45 million", "Undisclosed", "N/A if not mentioned")
+   - dealType: One of: "Acquisition", "Merger", "Joint Venture", "Asset Sale", "Portfolio Sale"
+   - facilityCount: Number of facilities involved (integer, or null if not mentioned)
+   - states: Array of state codes where facilities are located (e.g., ["PA", "OH", "MI"])
+   - acquirerType: One of: "Public Company", "Private Equity", "REIT", "Non-Profit", "Family Office", "Unknown"
+   - sellerType: One of: "Public Company", "Private Equity", "REIT", "Non-Profit", "Family Office", "Individual Owner", "Unknown"
+   - strategicRationale: Brief (1 sentence) explanation of why this deal matters strategically
+
+   If NOT an M&A article, omit this field entirely (do not include null or empty object)
+
+15. **Structured Entities** (for cross-article pattern recognition):
+   Extract key entities mentioned:
+   - organizations: Array of organization names (e.g., ["CMS", "California Dept of Health", "AHCA", "Genesis HealthCare"])
+   - regulations: Array of specific regulations mentioned (e.g., ["42 CFR 483.70", "AB 1502", "SNF PPS Final Rule 2025"])
+   - people: Array of key people mentioned with titles (e.g., [{"name": "Jane Smith", "title": "CMS Administrator"}])
+   - financialFigures: Array of specific dollar amounts or percentages with context (e.g., [{"amount": "$15.50", "context": "per patient per day"}, {"amount": "12%", "context": "Medicare rate increase"}])
+
+16. **Topic Tags** (for clustering and pattern detection):
+   Assign 3-5 specific topic tags from this list:
+   ["Staffing", "Reimbursement", "Quality Measures", "Survey/Enforcement", "Minimum Staffing Ratios",
+    "Medicare Advantage", "Medicaid Rates", "5-Star Ratings", "Financial Performance", "Bankruptcy/Closure",
+    "Technology/Innovation", "Workforce Development", "Regulatory Compliance", "M&A Activity", "Market Trends",
+    "COVID-19", "Infection Control", "Resident Rights", "Clinical Operations", "Private Equity"]
+
+17. **Temporal Signals** (for trend prediction):
+   - isRecurring: true/false - Has this type of event happened before?
+   - precedents: Array of similar past events (e.g., ["Similar rate cut in Q3 2024", "NY implemented same policy in 2023"])
+   - cyclicality: "annual" | "quarterly" | "ad-hoc" | "unknown"
+   - leadTime: How much advance warning typically exists for this type of change? (e.g., "90 days", "6 months", "none")
+
+18. **Impact Factors** (who is most affected):
+   - facilityTypes: Array from ["SNF", "ALF", "Memory Care", "CCRC", "All Post-Acute"]
+   - bedSizes: Array from ["<50 beds", "50-100 beds", "100-200 beds", "200+ beds", "All sizes"]
+   - payorMix: Array from ["High Medicaid", "High Medicare", "High Private Pay", "Mixed", "All"]
+   - geography: Array from ["Urban", "Suburban", "Rural", "All"]
+   - ownershipTypes: Array from ["Chain-owned", "Independent", "Non-Profit", "For-Profit", "All"]
+
+19. **Cross-Article Connections** (for meta-analysis):
+   - relatedTopics: Array of 2-3 related topics this connects to (e.g., ["reimbursement-pressure", "staffing-crisis", "quality-metrics"])
+   - causeAndEffect: Describe if this is a cause or effect of another trend (1 sentence, or "N/A")
+   - marketForces: Array of market dynamics at play (e.g., ["consolidation", "margin-compression", "labor-shortage", "regulatory-burden"])
+
 JSON Structure:
 {
   "keyInsights": ["concise insight 1", "concise insight 2"],
@@ -420,7 +612,48 @@ JSON Structure:
   ],
   "relevanceReasoning": "Direct, concise explanation of why this matters",
   "scope": "National|State|Regional|Local",
-  "state": "XX or N/A"
+  "state": "XX or N/A",
+  "urgencyScore": 0-100,
+  "articleType": "Breaking News|Regulatory Update|Policy Analysis|Financial/Market|Operational Guidance|Opinion/Commentary|Industry Trend",
+  "implementationComplexity": "Low|Medium|High",
+  "competitiveIntelligence": "Brief competitive analysis or N/A",
+  "strategicImplications": "2nd and 3rd order effects or N/A",
+  "maDetails": {
+    "acquirer": "Company Name",
+    "target": "Facility/Company Name",
+    "dealValue": "$XX million or Undisclosed",
+    "dealType": "Acquisition|Merger|Joint Venture|Asset Sale|Portfolio Sale",
+    "facilityCount": 5,
+    "states": ["PA", "OH"],
+    "acquirerType": "Public Company|Private Equity|REIT|Non-Profit|Family Office|Unknown",
+    "sellerType": "Public Company|Private Equity|REIT|Non-Profit|Family Office|Individual Owner|Unknown",
+    "strategicRationale": "Brief explanation"
+  },
+  "entities": {
+    "organizations": ["CMS", "Genesis HealthCare"],
+    "regulations": ["42 CFR 483.70"],
+    "people": [{"name": "Jane Smith", "title": "CMS Administrator"}],
+    "financialFigures": [{"amount": "$15.50", "context": "per patient per day"}]
+  },
+  "topicTags": ["Reimbursement", "Staffing", "Quality Measures"],
+  "temporalSignals": {
+    "isRecurring": true,
+    "precedents": ["Similar event in Q3 2024"],
+    "cyclicality": "annual",
+    "leadTime": "90 days"
+  },
+  "impactFactors": {
+    "facilityTypes": ["SNF"],
+    "bedSizes": ["100-200 beds"],
+    "payorMix": ["High Medicaid"],
+    "geography": ["Urban"],
+    "ownershipTypes": ["For-Profit"]
+  },
+  "connections": {
+    "relatedTopics": ["reimbursement-pressure", "staffing-crisis"],
+    "causeAndEffect": "This rate cut will increase agency staffing costs",
+    "marketForces": ["margin-compression", "labor-shortage"]
+  }
 }
 
 Return ONLY the JSON object. No markdown. No extra text.`;
@@ -512,20 +745,22 @@ async function fetchAllFeeds() {
       }
 
       // Extract image from RSS feed (fast, no HTTP requests)
-      const imageUrl = await getArticleImage(item, item.link)
+      const imageUrl = await getArticleImage(item, item.link, cleanTitle)
 
+      const category = categorizeArticle(cleanTitle, cleanContent)
       const article = {
         id: articleId++,
         title: cleanTitle,
         summary: cleanContent,
         date: item.isoDate || item.pubDate,
         source: actualSource,
-        category: categorizeArticle(cleanTitle, cleanContent),
+        category: category,
         impact: determineImpact(cleanTitle, cleanContent),
-        tags: extractTags(cleanTitle, cleanContent, categorizeArticle(cleanTitle, cleanContent)),
+        tags: extractTags(cleanTitle, cleanContent, category),
         relevanceScore: calculateRelevanceScore(cleanTitle, cleanContent),
         url: item.link,
-        image_url: imageUrl
+        image_url: imageUrl,
+        relevance_tier: determineRelevanceTier(cleanTitle, cleanContent, category)
       }
 
       allArticles.push(article)
@@ -659,6 +894,170 @@ app.get('/api/articles', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch articles',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/articles/priority - Get priority feed (filtered by urgency, type, and relevance)
+app.get('/api/articles/priority', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 15 // Default to top 15 articles
+
+    // Query for priority articles with enhanced filtering
+    const query = `
+      SELECT
+        id, external_id, title, summary, url, source, published_date as date,
+        category, impact, relevance_score, scope, states, analysis,
+        image_url, created_at, updated_at
+      FROM articles
+      WHERE
+        -- Filter out opinion/commentary articles
+        (analysis->>'articleType' IS NULL OR analysis->>'articleType' != 'Opinion/Commentary')
+        -- Exclude low urgency articles (below 20)
+        AND (analysis->>'urgencyScore' IS NULL OR CAST(analysis->>'urgencyScore' AS INTEGER) >= 20)
+        -- Only include National, Regional, or State scope (filter out purely local news)
+        AND (scope IS NULL OR scope IN ('National', 'Regional', 'State'))
+      ORDER BY
+        -- Priority scoring: urgency score (if available), then impact, then date
+        CAST(COALESCE(analysis->>'urgencyScore', '50') AS INTEGER) DESC,
+        CASE impact
+          WHEN 'high' THEN 3
+          WHEN 'medium' THEN 2
+          WHEN 'low' THEN 1
+          ELSE 0
+        END DESC,
+        published_date DESC
+      LIMIT $1
+    `
+
+    const result = await db.query(query, [limit])
+
+    res.json({
+      success: true,
+      articles: result.rows,
+      count: result.rows.length,
+      description: 'Priority feed: Time-sensitive, high-impact articles excluding opinions and local-only news'
+    })
+  } catch (error) {
+    console.error('Error fetching priority articles:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch priority articles',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/ma/dashboard - Get M&A activity dashboard data
+app.get('/api/ma/dashboard', async (req, res) => {
+  try {
+    // Get all M&A articles with extracted details
+    const maArticlesQuery = `
+      SELECT
+        id, title, url, published_date, source,
+        analysis->'maDetails' as ma_details,
+        analysis
+      FROM articles
+      WHERE category = 'M&A'
+        AND analysis->'maDetails' IS NOT NULL
+      ORDER BY published_date DESC
+    `
+
+    const maArticles = await db.query(maArticlesQuery)
+
+    // Aggregate statistics
+    const stats = {
+      totalDeals: maArticles.rows.length,
+      dealsByMonth: {},
+      topAcquirers: {},
+      dealsByType: {},
+      dealsByState: {},
+      acquirerTypes: {},
+      totalFacilities: 0,
+      dealsWithValue: 0,
+      industryLeaders: new Set()
+    }
+
+    // Process each M&A article
+    maArticles.rows.forEach(row => {
+      const maDetails = row.ma_details
+      if (!maDetails) return
+
+      // Extract month for time series
+      const month = new Date(row.published_date).toISOString().slice(0, 7) // YYYY-MM
+      stats.dealsByMonth[month] = (stats.dealsByMonth[month] || 0) + 1
+
+      // Track acquirers
+      if (maDetails.acquirer && maDetails.acquirer !== 'N/A') {
+        stats.topAcquirers[maDetails.acquirer] = (stats.topAcquirers[maDetails.acquirer] || 0) + 1
+        stats.industryLeaders.add(maDetails.acquirer)
+      }
+
+      // Track deal types
+      if (maDetails.dealType) {
+        stats.dealsByType[maDetails.dealType] = (stats.dealsByType[maDetails.dealType] || 0) + 1
+      }
+
+      // Track states
+      if (maDetails.states && Array.isArray(maDetails.states)) {
+        maDetails.states.forEach(state => {
+          stats.dealsByState[state] = (stats.dealsByState[state] || 0) + 1
+        })
+      }
+
+      // Track acquirer types
+      if (maDetails.acquirerType) {
+        stats.acquirerTypes[maDetails.acquirerType] = (stats.acquirerTypes[maDetails.acquirerType] || 0) + 1
+      }
+
+      // Count facilities
+      if (maDetails.facilityCount) {
+        stats.totalFacilities += maDetails.facilityCount
+      }
+
+      // Count deals with disclosed values
+      if (maDetails.dealValue && maDetails.dealValue !== 'Undisclosed' && maDetails.dealValue !== 'N/A') {
+        stats.dealsWithValue++
+      }
+    })
+
+    // Convert top acquirers to sorted array
+    const topAcquirersArray = Object.entries(stats.topAcquirers)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([name, count]) => ({ name, dealCount: count }))
+
+    // Convert industry leaders set to array
+    const industryLeadersArray = Array.from(stats.industryLeaders).sort()
+
+    res.json({
+      success: true,
+      stats: {
+        totalDeals: stats.totalDeals,
+        totalFacilities: stats.totalFacilities,
+        dealsWithValue: stats.dealsWithValue,
+        dealsByMonth: stats.dealsByMonth,
+        dealsByType: stats.dealsByType,
+        dealsByState: stats.dealsByState,
+        acquirerTypes: stats.acquirerTypes,
+        topAcquirers: topAcquirersArray,
+        industryLeaders: industryLeadersArray
+      },
+      recentDeals: maArticles.rows.slice(0, 10).map(row => ({
+        id: row.id,
+        title: row.title,
+        url: row.url,
+        date: row.published_date,
+        source: row.source,
+        maDetails: row.ma_details
+      }))
+    })
+  } catch (error) {
+    console.error('Error fetching M&A dashboard:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch M&A dashboard data',
       message: error.message
     })
   }
@@ -978,6 +1377,110 @@ app.post('/api/admin/add-image-url-column', async (req, res) => {
       success: false,
       error: error.message
     })
+  }
+})
+
+// Admin: Backfill images for articles without image_url
+app.post('/api/admin/backfill-images', async (req, res) => {
+  try {
+    console.log('🖼️  Starting image backfill process...')
+
+    const { force = false } = req.query
+
+    // Query articles without images OR with placeholder images (if force=true)
+    const query = force
+      ? `
+          SELECT id, url, title
+          FROM articles
+          WHERE image_url IS NULL OR image_url LIKE '%ui-avatars.com%'
+          ORDER BY published_date DESC
+        `
+      : `
+          SELECT id, url, title
+          FROM articles
+          WHERE image_url IS NULL
+          ORDER BY published_date DESC
+        `
+
+    const result = await db.query(query)
+    const articlesWithoutImages = result.rows
+
+    console.log(`📊 Found ${articlesWithoutImages.length} articles ${force ? 'to refresh' : 'without images'}`)
+
+    if (articlesWithoutImages.length === 0) {
+      return res.json({ success: true, message: 'All articles already have images!' })
+    }
+
+    let successCount = 0
+    let failureCount = 0
+    let skippedCount = 0
+    const batchSize = 10
+    const delayBetweenBatches = 2000
+
+    // Process in batches
+    for (let i = 0; i < articlesWithoutImages.length; i += batchSize) {
+      const batch = articlesWithoutImages.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      const totalBatches = Math.ceil(articlesWithoutImages.length / batchSize)
+
+      console.log(`📦 Processing batch ${batchNum}/${totalBatches}`)
+
+      // Process batch in parallel
+      const promises = batch.map(async (article) => {
+        try {
+          // Skip invalid URLs
+          if (!article.url || !article.url.startsWith('http')) {
+            skippedCount++
+            return { success: false, skipped: true }
+          }
+
+          // Fetch Open Graph image (pass null for feedItem to force scraping)
+          const imageUrl = await getArticleImage(null, article.url, article.title)
+
+          if (imageUrl) {
+            // Update database
+            const updateQuery = `
+              UPDATE articles
+              SET image_url = $1, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $2
+            `
+            await db.query(updateQuery, [imageUrl, article.id])
+
+            successCount++
+            console.log(`  ✅ ${article.title.substring(0, 60)}...`)
+            return { success: true }
+          } else {
+            failureCount++
+            return { success: false }
+          }
+        } catch (error) {
+          failureCount++
+          console.error(`  ❌ Error processing article ${article.id}:`, error.message)
+          return { success: false }
+        }
+      })
+
+      await Promise.all(promises)
+
+      // Delay between batches
+      if (i + batchSize < articlesWithoutImages.length) {
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches))
+      }
+    }
+
+    const summary = {
+      total: articlesWithoutImages.length,
+      success: successCount,
+      failed: failureCount,
+      skipped: skippedCount,
+      successRate: ((successCount / articlesWithoutImages.length) * 100).toFixed(1)
+    }
+
+    console.log('✅ Backfill complete:', summary)
+    res.json({ success: true, summary })
+  } catch (error) {
+    console.error('❌ Error during backfill:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 
@@ -1549,7 +2052,7 @@ async function refreshArticlesInBackground() {
   try {
     console.log(`[${new Date().toLocaleTimeString()}] Refreshing articles in background...`)
     const articles = await fetchAllFeeds()
-    cache.set('articles', articles)
+    // cache.set('articles', articles) // Cache not needed, using database
     console.log(`[${new Date().toLocaleTimeString()}] ✓ Background refresh complete: ${articles.length} articles`)
   } catch (error) {
     console.error(`[${new Date().toLocaleTimeString()}] Error in background refresh:`, error.message)
@@ -1799,6 +2302,114 @@ app.post('/api/admin/cleanup-duplicates', async (req, res) => {
     })
   } catch (error) {
     console.error('Error cleaning up duplicates:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// Admin endpoint: Add relevance_tier column and update category taxonomy
+app.post('/api/admin/migrate-relevance-tier', async (req, res) => {
+  try {
+    console.log('\n🔄 Starting relevance tier migration...')
+
+    // Step 1: Add relevance_tier column if it doesn't exist
+    console.log('📊 Adding relevance_tier column...')
+    await db.query(`
+      ALTER TABLE articles
+      ADD COLUMN IF NOT EXISTS relevance_tier VARCHAR(10) DEFAULT 'medium'
+    `)
+
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS idx_articles_relevance_tier
+      ON articles(relevance_tier)
+    `)
+
+    console.log('✅ Column added successfully')
+
+    // Step 2: Get category distribution
+    const categoryStats = await db.query(`
+      SELECT category, COUNT(*) as count
+      FROM articles
+      GROUP BY category
+      ORDER BY count DESC
+    `)
+
+    console.log('\n📈 Current category distribution:')
+    categoryStats.rows.forEach(row => {
+      console.log(`  ${row.category}: ${row.count}`)
+    })
+
+    // Step 3: Auto-tier articles based on simple heuristics
+    console.log('\n🤖 Auto-tiering articles based on content signals...')
+
+    // High tier: Regulatory, financial, compliance keywords
+    const highTierUpdate = await db.query(`
+      UPDATE articles
+      SET relevance_tier = 'high'
+      WHERE relevance_tier = 'medium'
+      AND (
+        category IN ('Regulatory', 'Financial', 'Compliance')
+        OR title ILIKE ANY(ARRAY[
+          '%CMS%', '%medicare%', '%medicaid%', '%regulation%', '%survey%',
+          '%deficiency%', '%penalty%', '%fine%', '%star rating%', '%reimbursement%',
+          '%staffing ratio%', '%minimum staffing%', '%bankruptcy%', '%acquisition%',
+          '%merger%', '%layoff%', '%closure%', '%rate cut%', '%rate increase%'
+        ])
+      )
+    `)
+
+    // Low tier: Community fluff
+    const lowTierUpdate = await db.query(`
+      UPDATE articles
+      SET relevance_tier = 'low'
+      WHERE relevance_tier = 'medium'
+      AND (
+        title ILIKE ANY(ARRAY[
+          '%obituary%', '%pet parade%', '%craft fair%', '%holiday party%',
+          '%bingo%', '%birthday celebrat%', '%anniversary%', '%ribbon cutting%',
+          '%grand opening%', '%open house%', '%talent show%'
+        ])
+        OR (
+          title ~* 'obituary'
+          AND NOT title ~* 'ceo|cfo|administrator|president|founder|industry leader'
+        )
+      )
+    `)
+
+    console.log(`  ✅ Tier high: ${highTierUpdate.rowCount} articles`)
+    console.log(`  ✅ Tier medium: (default, remaining articles)`)
+    console.log(`  ✅ Tier low: ${lowTierUpdate.rowCount} articles`)
+
+    // Step 4: Get final tier distribution
+    const tierStats = await db.query(`
+      SELECT relevance_tier, COUNT(*) as count
+      FROM articles
+      GROUP BY relevance_tier
+      ORDER BY
+        CASE relevance_tier
+          WHEN 'high' THEN 1
+          WHEN 'medium' THEN 2
+          WHEN 'low' THEN 3
+        END
+    `)
+
+    console.log('\n📊 Final tier distribution:')
+    tierStats.rows.forEach(row => {
+      console.log(`  ${row.relevance_tier}: ${row.count}`)
+    })
+
+    res.json({
+      success: true,
+      message: 'Relevance tier migration completed',
+      categoryStats: categoryStats.rows,
+      tierStats: tierStats.rows,
+      highTierCount: highTierUpdate.rowCount,
+      lowTierCount: lowTierUpdate.rowCount
+    })
+  } catch (error) {
+    console.error('Error in relevance tier migration:', error)
     res.status(500).json({
       success: false,
       error: error.message
@@ -2190,8 +2801,8 @@ async function startServer() {
 
     // Fetch feeds after server starts (non-blocking)
     fetchAllFeeds().then(articles => {
-      cache.set('articles', articles)
-      console.log(`✓ Articles cached: ${articles.length}`)
+      // cache.set('articles', articles) // Cache not needed, using database
+      console.log(`✓ Initial fetch complete: ${articles.length} articles`)
 
       // Set up automatic refresh interval
       setInterval(refreshArticlesInBackground, REFRESH_INTERVAL_MS)

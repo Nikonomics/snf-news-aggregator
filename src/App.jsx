@@ -13,6 +13,8 @@ import StateSelector from './components/StateSelector'
 import StateComparisonMap from './components/StateComparisonMap'
 import Pagination from './components/Pagination'
 import WeeklyInsights from './components/WeeklyInsights'
+import MATracker from './components/MATracker'
+import PriorityFeed from './components/PriorityFeed'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -280,6 +282,12 @@ function App() {
               News Feed
             </Link>
             <Link
+              to="/priority"
+              className={`nav-tab ${location.pathname === '/priority' ? 'active' : ''}`}
+            >
+              Priority Feed
+            </Link>
+            <Link
               to="/state-comparison"
               className={`nav-tab ${location.pathname === '/state-comparison' || location.pathname.startsWith('/state/') ? 'active' : ''}`}
             >
@@ -290,6 +298,12 @@ function App() {
               className={`nav-tab ${location.pathname === '/regulatory' ? 'active' : ''}`}
             >
               Regulatory Feed
+            </Link>
+            <Link
+              to="/ma-tracker"
+              className={`nav-tab ${location.pathname === '/ma-tracker' ? 'active' : ''}`}
+            >
+              M&A Tracker
             </Link>
             <Link
               to="/conferences"
@@ -410,6 +424,9 @@ function App() {
           </main>
         } />
 
+        {/* Priority Feed Route */}
+        <Route path="/priority" element={<PriorityFeed />} />
+
         {/* State Comparison Map Route */}
         <Route path="/state-comparison" element={<StateComparisonMap />} />
 
@@ -492,6 +509,9 @@ function App() {
             </div>
           </main>
         } />
+
+        {/* M&A Tracker Route */}
+        <Route path="/ma-tracker" element={<MATracker />} />
 
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />

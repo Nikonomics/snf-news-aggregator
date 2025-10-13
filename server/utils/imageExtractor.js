@@ -72,15 +72,21 @@ export function extractImageFromHTML(html) {
  */
 export async function fetchOpenGraphImage(url) {
   try {
+    // Skip Google News redirect URLs - they're slow and won't have og:image
+    if (url.includes('news.google.com/rss/articles/')) {
+      return null
+    }
+
     // Add timeout to prevent hanging
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout (increased from 5)
 
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SNF News Aggregator/1.0)'
-      }
+      },
+      redirect: 'follow' // Follow redirects automatically
     })
 
     clearTimeout(timeout)
@@ -195,11 +201,60 @@ function makeAbsoluteUrl(imageUrl, baseUrl) {
 }
 
 /**
+ * Generate a placeholder image for articles without images
+ * Uses a simple gradient based on the article title
+ */
+function generatePlaceholderImage(title = 'News') {
+  // Use first letter of title
+  const letter = title.charAt(0).toUpperCase()
+
+  // Generate color based on first letter (consistent hashing)
+  const charCode = letter.charCodeAt(0)
+  const hue = (charCode * 137.508) % 360 // Golden angle for nice distribution
+
+  // Convert HSL to RGB for hex color
+  const h = hue / 360
+  const s = 0.7 // 70% saturation for vibrant colors
+  const l = 0.5 // 50% lightness for good contrast
+
+  let r, g, b
+  if (s === 0) {
+    r = g = b = l
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1/6) return p + (q - p) * 6 * t
+      if (t < 1/2) return q
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+      return p
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    r = hue2rgb(p, q, h + 1/3)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1/3)
+  }
+
+  // Convert to hex
+  const toHex = (x) => {
+    const hex = Math.round(x * 255).toString(16)
+    return hex.length === 1 ? '0' + hex : hex
+  }
+  const bgColor = toHex(r) + toHex(g) + toHex(b)
+
+  // Use placeholder image service with custom colors
+  // Using ui-avatars.com which generates images with letters
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(letter)}&size=400&background=${bgColor}&color=fff&bold=true&format=png`
+}
+
+/**
  * Main function: Extract image with fallback strategy
  * 1. Try RSS feed image
  * 2. Fall back to Open Graph scraping
+ * 3. Fall back to placeholder image (ALWAYS returns an image)
  */
-export async function getArticleImage(feedItem, articleUrl) {
+export async function getArticleImage(feedItem, articleUrl, articleTitle = 'News') {
   // Try RSS feed first (fast, most relevant)
   const feedImage = extractImageFromFeed(feedItem)
   if (feedImage) {
@@ -212,6 +267,6 @@ export async function getArticleImage(feedItem, articleUrl) {
     return ogImage
   }
 
-  // No image found
-  return null
+  // Always return a placeholder image as final fallback
+  return generatePlaceholderImage(articleTitle)
 }

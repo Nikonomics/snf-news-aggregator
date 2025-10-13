@@ -84,6 +84,9 @@ function ArticleList({ articles, onAnalyze, onViewDetails, savedArticles, onTogg
             // Reimbursement second
             if (categoryA.toLowerCase().includes('reimburs')) return -1
             if (categoryB.toLowerCase().includes('reimburs')) return 1
+            // M&A third
+            if (categoryA.toLowerCase() === 'm&a') return -1
+            if (categoryB.toLowerCase() === 'm&a') return 1
             // Then alphabetical
             return categoryA.localeCompare(categoryB)
           })
