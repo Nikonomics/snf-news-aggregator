@@ -74,7 +74,8 @@ export async function insertArticle(article) {
     scope,
     article.analysis?.state ? [article.analysis.state] : null,
     article.analysis || null,
-    article.image_url || null
+    article.image_url || null,
+    article.relevance_tier || 'medium'
   ]
 
   try {

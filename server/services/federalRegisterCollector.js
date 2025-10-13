@@ -108,15 +108,21 @@ export async function fetchFederalRegisterDocuments(daysBack = 30) {
 }
 
 /**
- * Analyze document with AI for SNF relevance
+ * Analyze document with AI for SNF relevance INCLUDING ecosystem impacts
  * @param {Object} document - Federal Register document
  * @returns {Promise<Object>} Analysis result with relevance score and details
  */
 export async function analyzeDocumentRelevance(document) {
   try {
-    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs).
+    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Your goal is to identify BOTH direct SNF impacts AND strategic ecosystem impacts that will affect SNF operations even if SNFs aren't explicitly mentioned.
 
-Analyze this Federal Register document for relevance to SNF operators:
+CRITICAL CONTEXT: SNF operators need to understand:
+- How changes in OTHER settings (hospitals, IRFs, home health) affect patient flow TO/FROM SNFs
+- How competitive payment changes affect which patients SNFs get (or lose)
+- How payer behavior changes upstream affect SNF operations downstream
+- How regulations in other settings signal future SNF regulations
+
+Analyze this Federal Register document:
 
 Title: ${document.title}
 Agency: ${document.agencies ? document.agencies.map(a => a.name).join(', ') : 'N/A'}
@@ -125,54 +131,101 @@ Publication Date: ${document.publication_date}
 Abstract: ${document.abstract || 'Not provided'}
 Comment Deadline: ${document.comments_close_on || 'N/A'}
 
-Requirements:
+ANALYSIS REQUIREMENTS:
 
-1. **Relevance Score** (0-100): How relevant is this to SNF operators?
-   - 90-100: Critical impact on SNF operations, compliance, or finances
-   - 70-89: Significant impact requiring attention and likely action
-   - 50-69: Moderate relevance, affects some SNFs or specific situations
-   - 30-49: Limited relevance, peripheral impact
-   - 0-29: Minimal to no relevance to SNFs
+1. **Direct SNF Relevance** (0-100): Does this explicitly mention or regulate SNFs?
+   - 90-100: Direct SNF regulations (PPS, quality, staffing, etc.)
+   - 50-89: Mentions SNFs in broader post-acute context
+   - 0-49: No direct SNF mentions
 
-2. **Priority Level**: "critical", "high", "medium", or "low"
-   - critical: Immediate action required, major compliance or financial impact
-   - high: Important, requires planning and preparation
-   - medium: Worth monitoring, may require future action
-   - low: Informational only
+2. **Ecosystem Relevance** (0-100): How does this affect SNFs through the healthcare ecosystem?
+   Consider:
+   - COMPETITIVE DYNAMICS: IRF/LTCH/Home Health payment changes → patient steering
+   - PATIENT FLOW: Hospital penalties → admission patterns, discharge destination pressure
+   - PAYER BEHAVIOR: MA/ACO changes → utilization management, network strategies
+   - WORKFORCE: Wage/staffing rules in other settings → SNF cost pressure coming
+   - PAYMENT PHILOSOPHY: CMS methodology changes → signals future SNF changes
 
-3. **Key Impact** (2-3 sentences): What does this mean for SNF operators? Be specific about operational, financial, or compliance implications.
+   Scoring:
+   - 90-100: Major competitive/flow impact affecting >20% of SNF patients/revenue
+   - 70-89: Significant impact on specific patient segments or payer relationships
+   - 50-69: Moderate strategic impact, requires monitoring
+   - 30-49: Minor indirect effect
+   - 0-29: No ecosystem impact
 
-4. **Affected Operators** (1-2 sentences): Which SNFs are most affected? (e.g., size, location, payor mix, ownership type)
+3. **Overall Relevance** = (Direct * 0.4) + (Ecosystem * 0.6)
+   We weight ecosystem impacts MORE because operators can find direct regs elsewhere. Our value is surfacing non-obvious strategic intelligence.
 
-5. **Financial Impact**: Estimate if possible. Use "High cost" / "Moderate cost" / "Low cost" / "Revenue positive" / "Neutral" / "Unknown"
+4. **Impact Type** (select primary type):
+   - "Direct Regulation": Explicitly regulates SNFs
+   - "Competitive Dynamics": Affects competitors (IRF, LTCH, home health, hospice)
+   - "Patient Flow": Changes upstream (hospital) or downstream (discharge) patterns
+   - "Payer Behavior": MA, ACO, bundled payment, prior auth changes
+   - "Workforce/Operations": Labor, staffing, technology, safety regulations
+   - "Payment Philosophy": CMS methodology signals for future SNF changes
 
-6. **Action Required**: true/false - Does this require SNFs to take action (respond to comment period, change operations, update policies)?
+5. **Priority Level**: "critical", "high", "medium", "watch-list", or "low"
+   - critical: overallRelevance ≥ 85 OR ecosystemRelevance ≥ 90
+   - high: overallRelevance 70-84
+   - medium: overallRelevance 50-69
+   - watch-list: overallRelevance 35-49 (track for future relevance)
+   - low: overallRelevance < 35
 
-7. **Comment Period**: true/false - Is there an active comment period SNFs should respond to?
+6. **Ecosystem Impact Details** (if ecosystemRelevance > 40):
+   Provide specific strategic intelligence:
+   - competitorEffect: How does this change competitive positioning?
+   - patientFlowEffect: How does this affect admissions/discharges?
+   - payerSignal: What does this reveal about payer strategy?
+   - timingSignal: Is this a leading indicator of future SNF changes?
 
-8. **Categories**: Assign 2-4 categories from: ["Reimbursement", "Staffing", "Quality", "Compliance", "Survey", "Technology", "Safety", "Clinical", "Finance", "Enforcement", "Other"]
+7. **Key Impact** (3-4 sentences): Explain BOTH direct and ecosystem impacts. Be specific about strategic implications, not just descriptive.
 
-9. **Summary** (3-4 sentences): Plain English explanation of what this document does and why SNF operators should care.
+8. **Affected Operators** (2-3 sentences): Who is most affected and WHY? Consider payor mix, acuity level, geography, competitive environment.
+
+9. **Financial Impact**: Be specific. Options: "High cost", "Moderate cost", "Low cost", "Revenue positive", "Revenue pressure", "Competitive threat", "Neutral", "Unknown"
+
+10. **Action Required**: true/false - Does this require SNF action (comment, strategy change, preparation)?
+
+11. **Strategic Actions** (if actionRequired = true):
+    List 2-4 specific strategic, financial, or operational actions operators should take.
+
+12. **Categories**: Assign 2-4 from: ["Reimbursement", "Staffing", "Quality", "Compliance", "Survey", "Technology", "Safety", "Clinical", "Finance", "Enforcement", "Competitive Intelligence", "Market Strategy", "Payer Relations"]
+
+13. **Summary** (4-5 sentences): Plain English. Explain what this does AND why SNF operators should care even if it's not directly about SNFs.
 
 CRITICAL: Respond with ONLY valid JSON. No text before or after. Start with { and end with }.
 
 JSON Structure:
 {
-  "relevanceScore": 85,
-  "priority": "high",
-  "keyImpact": "Brief description of impact",
-  "affectedOperators": "Description of who is affected",
-  "financialImpact": "High cost",
+  "directSNFRelevance": 25,
+  "ecosystemRelevance": 75,
+  "overallRelevance": 55,
+  "impactType": "Competitive Dynamics",
+  "priority": "medium",
+  "keyImpact": "Detailed explanation of direct AND ecosystem impacts",
+  "ecosystemImpact": {
+    "competitorEffect": "IRF rates increase 3.2% vs SNF 2.8% = patient steering to IRFs for profitable rehab cases",
+    "patientFlowEffect": "Hospitals incentivized to discharge complex rehab to IRFs, leaving SNFs with medical-only patients",
+    "payerSignal": "CMS prioritizing rehab outcomes over medical management in payment methodology",
+    "timingSignal": "This IRF change typically signals SNF methodology changes in 12-18 months"
+  },
+  "affectedOperators": "High Medicare, rehab-focused SNFs in competitive markets with nearby IRFs will see volume pressure on stroke, joint replacement, and trauma admissions",
+  "financialImpact": "Competitive threat",
   "actionRequired": true,
+  "strategicActions": [
+    "Model census impact if IRF captures 15% of current rehab volume",
+    "Develop outcomes benchmarking vs local IRFs to retain hospital referrals",
+    "Identify clinical niches where SNF has advantage over IRF (medically complex rehab)"
+  ],
   "commentPeriod": false,
-  "categories": ["Reimbursement", "Quality"],
-  "summary": "Plain English summary",
-  "reasoning": "1-2 sentences explaining the relevance score"
+  "categories": ["Competitive Intelligence", "Market Strategy", "Finance"],
+  "summary": "Plain English explanation including WHY this matters to SNFs even if not directly mentioned",
+  "reasoning": "2-3 sentences explaining the relevance scores and strategic intelligence value"
 }`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
+      max_tokens: 3000,
       temperature: 0.3,
       messages: [{
         role: 'user',
@@ -228,10 +281,17 @@ export function convertToDBFormat(doc, analysis) {
     comment_deadline: doc.comments_close_on || null,
     effective_date: doc.effective_on || null,
 
-    // AI Analysis fields
-    ai_relevance_score: analysis.relevanceScore,
+    // AI Analysis fields - NEW ecosystem scoring
+    ai_relevance_score: analysis.overallRelevance || analysis.relevanceScore, // Use overallRelevance if available
+    direct_relevance_score: analysis.directSNFRelevance || null,
+    ecosystem_relevance_score: analysis.ecosystemRelevance || null,
+    impact_type: analysis.impactType || 'Direct Regulation',
     priority: analysis.priority,
     categories: analysis.categories || [],
+
+    // Ecosystem impact details (store as JSON)
+    ecosystem_impact: analysis.ecosystemImpact || null,
+    strategic_actions: analysis.strategicActions || [],
 
     // Financial impact
     financial_impact_description: analysis.financialImpact,
@@ -254,7 +314,7 @@ export function convertToDBFormat(doc, analysis) {
 /**
  * Main collection function - fetch, analyze, and return bills
  * @param {number} daysBack - Number of days to look back
- * @param {number} minRelevanceScore - Minimum relevance score to include (default: 50)
+ * @param {number} minRelevanceScore - Minimum OVERALL relevance score to include (default: 50)
  * @returns {Promise<Array>} Array of bills ready for database insertion
  */
 export async function collectFederalRegisterBills(daysBack = 30, minRelevanceScore = 50) {

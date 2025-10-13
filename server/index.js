@@ -231,33 +231,80 @@ const categorizeArticle = (title, content) => {
   }
 }
 
-// Determine relevance tier based on category and content
-const determineRelevanceTier = (title, content, category) => {
-  const text = `${title} ${content}`.toLowerCase()
+// AI-based triage to determine relevance tier (using cheap Claude Haiku)
+async function triageArticleRelevance(article) {
+  const triagePrompt = `You are an expert healthcare policy analyst. Quickly classify this article's relevance to skilled nursing facility (SNF) operators.
 
-  // Low tier: Community fluff
-  if (category === 'Community Interest') return 'low'
-  if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat|ribbon cutting|grand opening/)) {
-    return 'low'
+Article Title: ${article.title}
+Article Summary: ${article.summary || 'N/A'}
+Source: ${article.source}
+
+Classification Task:
+Determine if this article is:
+- **HIGH**: Directly relevant to SNF operations (CMS regulations, Medicare/Medicaid reimbursement, staffing mandates, compliance requirements, quality/star ratings, M&A activity, financial/operational guidance, enforcement actions)
+- **MEDIUM**: Adjacent healthcare content with contextual value (broader healthcare policy, market trends, industry analysis, operational best practices, technology/innovation, workforce trends)
+- **LOW**: Not relevant to SNF operations (community events, obituaries, pet parades, local news, political opinions unrelated to healthcare policy, general news)
+
+CRITICAL: Respond with ONLY a JSON object. No text before or after.
+
+{
+  "relevanceTier": "high|medium|low",
+  "reasoning": "1-2 sentence explanation of why you chose this tier"
+}
+
+Return ONLY the JSON object. No markdown. No extra text.`
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-3-5-20241022', // Cheap, fast model for triage
+        max_tokens: 200,
+        temperature: 0.3,
+        messages: [{
+          role: 'user',
+          content: triagePrompt
+        }]
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Triage API error: ${response.status}`)
+    }
+
+    const result = await response.json()
+    const textContent = result.content[0].text
+
+    // Clean up response
+    let cleanedResponse = textContent.trim()
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/g, '')
+    }
+
+    const triageResult = JSON.parse(cleanedResponse)
+    console.log(`  → AI Triage: ${triageResult.relevanceTier} - ${triageResult.reasoning}`)
+
+    return triageResult.relevanceTier
+
+  } catch (error) {
+    console.error('Triage failed, falling back to keyword-based:', error.message)
+    // Fallback to simple keyword-based triage
+    const text = `${article.title} ${article.summary || ''}`.toLowerCase()
+    if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat/)) {
+      return 'low'
+    }
+    if (text.match(/cms|medicare|medicaid|regulation|reimbursement|staffing|compliance/)) {
+      return 'high'
+    }
+    return 'medium'
   }
-
-  // High tier: Strategic intelligence
-  const highTierCategories = ['Regulatory', 'Financial', 'Market Intelligence']
-  if (highTierCategories.includes(category)) return 'high'
-
-  const highTierKeywords = [
-    'cms', 'medicare', 'medicaid', 'regulation', 'survey', 'deficiency',
-    'penalty', 'fine', 'star rating', 'reimbursement', 'staffing ratio',
-    'minimum staffing', 'bankruptcy', 'acquisition', 'merger', 'closure',
-    'rate cut', 'rate increase', 'mandate', 'deadline'
-  ]
-
-  for (const keyword of highTierKeywords) {
-    if (text.includes(keyword)) return 'high'
-  }
-
-  // Everything else is medium tier
-  return 'medium'
 }
 
 // Determine impact level based on keywords
@@ -335,14 +382,10 @@ async function analyzeArticleWithAI(article) {
   try {
     console.log(`Analyzing new article: ${article.title}`);
 
-    // Determine relevance tier if not already set
+    // PASS 1: AI Triage to determine relevance tier (cheap, fast)
     if (!article.relevance_tier) {
-      article.relevance_tier = determineRelevanceTier(
-        article.title,
-        article.summary || article.content || '',
-        article.category
-      );
-      console.log(`  → Auto-assigned tier: ${article.relevance_tier}`);
+      article.relevance_tier = await triageArticleRelevance(article);
+      console.log(`  → AI Triage assigned tier: ${article.relevance_tier}`);
     }
 
     // Skip expensive AI analysis for low-tier articles (community fluff)
@@ -396,6 +439,9 @@ async function analyzeArticleWithAI(article) {
         }
       };
     }
+
+    // PASS 2: Deep AI Analysis (expensive Claude Sonnet 4, only for high/medium tier)
+    console.log(`  → Running deep analysis (Pass 2) with Claude Sonnet 4`);
 
     // Detect if this is an opinion/commentary piece
     const titleLower = article.title.toLowerCase();
@@ -908,18 +954,25 @@ app.get('/api/articles/priority', async (req, res) => {
     const query = `
       SELECT
         id, external_id, title, summary, url, source, published_date as date,
-        category, impact, relevance_score, scope, states, analysis,
+        category, impact, relevance_score, scope, states, analysis, relevance_tier,
         image_url, created_at, updated_at
       FROM articles
       WHERE
+        -- Only show high and medium relevance tier articles (filter out low-tier noise)
+        relevance_tier IN ('high', 'medium')
         -- Filter out opinion/commentary articles
-        (analysis->>'articleType' IS NULL OR analysis->>'articleType' != 'Opinion/Commentary')
+        AND (analysis->>'articleType' IS NULL OR analysis->>'articleType' != 'Opinion/Commentary')
         -- Exclude low urgency articles (below 20)
         AND (analysis->>'urgencyScore' IS NULL OR CAST(analysis->>'urgencyScore' AS INTEGER) >= 20)
         -- Only include National, Regional, or State scope (filter out purely local news)
         AND (scope IS NULL OR scope IN ('National', 'Regional', 'State'))
       ORDER BY
-        -- Priority scoring: urgency score (if available), then impact, then date
+        -- Priority scoring: tier first, then urgency score, then impact, then date
+        CASE relevance_tier
+          WHEN 'high' THEN 2
+          WHEN 'medium' THEN 1
+          ELSE 0
+        END DESC,
         CAST(COALESCE(analysis->>'urgencyScore', '50') AS INTEGER) DESC,
         CASE impact
           WHEN 'high' THEN 3
@@ -937,7 +990,7 @@ app.get('/api/articles/priority', async (req, res) => {
       success: true,
       articles: result.rows,
       count: result.rows.length,
-      description: 'Priority feed: Time-sensitive, high-impact articles excluding opinions and local-only news'
+      description: 'Priority feed: High/medium tier, time-sensitive articles (AI-filtered for relevance)'
     })
   } catch (error) {
     console.error('Error fetching priority articles:', error)
