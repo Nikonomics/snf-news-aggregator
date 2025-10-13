@@ -25,7 +25,20 @@ import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './se
 import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
 import { getTopStories, getEmergingTrends } from './services/trendAnalysis.js'
 import { getArticleImage } from './utils/imageExtractor.js'
+import {
+  getStateDemographics,
+  getAllStateDemographics,
+  getFacilitiesByState,
+  getFacilityByProviderNumber,
+  searchFacilities,
+  getFacilitiesByChain,
+  getStateMarketMetrics,
+  getStateOverview,
+  getFacilityOwnershipBreakdown,
+  getTopChainsByState
+} from './database/state-data.js'
 import cron from 'node-cron'
+import { startMAAnalysisWorker } from './workflows/ma-analysis-worker.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -557,12 +570,23 @@ Requirements:
    - scope: Must be exactly one of: "National", "State", "Regional", or "Local"
    - state: Two-letter state code(s) if state-specific, or "N/A"
 
-9. **Urgency Score** (0-100): How time-sensitive is this? Consider:
-   - 90-100: Immediate action required (comment periods closing, breaking regulatory changes)
-   - 70-89: Important within next 30 days (upcoming deadlines, significant policy shifts)
-   - 40-69: Monitor and plan (emerging trends, medium-term changes)
-   - 20-39: Informational, no immediate action (industry updates, long-term trends)
-   - 0-19: Low priority (opinions, general news, minor updates)
+9. **Urgency Score** (0-100): Weighted composite score based on impact type and time-sensitivity.
+
+   **Primary Factors (60% of score):**
+   - Regulatory/Compliance Impact (30%): CMS rules, staffing mandates, certification requirements, enforcement actions
+   - Financial Impact (30%): Reimbursement changes, rate cuts/increases, payment model shifts, margin impact >1%
+
+   **Secondary Factors (40% of score):**
+   - Time Sensitivity (25%): Deadlines, comment periods, effective dates, implementation timelines
+   - Operational Disruption (15%): Workflow changes, staffing requirements, care delivery modifications
+
+   **Scoring Guidelines:**
+   - 90-100: Critical regulatory change OR major financial impact (>5% margin effect) + immediate action required
+   - 75-89: Significant regulatory/financial impact with near-term deadline (30-90 days) or breaking enforcement
+   - 60-74: Important regulatory/financial changes with longer timeline (3-12 months) or moderate margin impact (2-5%)
+   - 40-59: Strategic trends, emerging policies, moderate financial impact (<2%), or operational best practices
+   - 20-39: Informational updates, industry analysis, long-term trends, minor operational changes
+   - 0-19: Low priority news, opinion pieces without actionable policy implications, minor updates
 
 10. **Article Type**: Classify as exactly one of:
    - "Breaking News": Time-sensitive news, enforcement actions, major announcements
@@ -589,21 +613,7 @@ Requirements:
    - What downstream operational or strategic shifts might be needed?
    If not applicable, use "N/A"
 
-14. **M&A Details** (ONLY for articles about mergers, acquisitions, or sales):
-   If this article is about a merger, acquisition, joint venture, or facility sale, extract:
-   - acquirer: Full company name of the buyer (e.g., "Genesis HealthCare", "Ensign Group", "Omega Healthcare Investors")
-   - target: Name of facility/company being acquired (e.g., "Sunrise Senior Living", "5 facilities in Ohio")
-   - dealValue: Transaction value (e.g., "$45 million", "Undisclosed", "N/A if not mentioned")
-   - dealType: One of: "Acquisition", "Merger", "Joint Venture", "Asset Sale", "Portfolio Sale"
-   - facilityCount: Number of facilities involved (integer, or null if not mentioned)
-   - states: Array of state codes where facilities are located (e.g., ["PA", "OH", "MI"])
-   - acquirerType: One of: "Public Company", "Private Equity", "REIT", "Non-Profit", "Family Office", "Unknown"
-   - sellerType: One of: "Public Company", "Private Equity", "REIT", "Non-Profit", "Family Office", "Individual Owner", "Unknown"
-   - strategicRationale: Brief (1 sentence) explanation of why this deal matters strategically
-
-   If NOT an M&A article, omit this field entirely (do not include null or empty object)
-
-15. **Structured Entities** (for cross-article pattern recognition):
+14. **Structured Entities** (for cross-article pattern recognition):
    Extract key entities mentioned:
    - organizations: Array of organization names (e.g., ["CMS", "California Dept of Health", "AHCA", "Genesis HealthCare"])
    - regulations: Array of specific regulations mentioned (e.g., ["42 CFR 483.70", "AB 1502", "SNF PPS Final Rule 2025"])
@@ -664,17 +674,6 @@ JSON Structure:
   "implementationComplexity": "Low|Medium|High",
   "competitiveIntelligence": "Brief competitive analysis or N/A",
   "strategicImplications": "2nd and 3rd order effects or N/A",
-  "maDetails": {
-    "acquirer": "Company Name",
-    "target": "Facility/Company Name",
-    "dealValue": "$XX million or Undisclosed",
-    "dealType": "Acquisition|Merger|Joint Venture|Asset Sale|Portfolio Sale",
-    "facilityCount": 5,
-    "states": ["PA", "OH"],
-    "acquirerType": "Public Company|Private Equity|REIT|Non-Profit|Family Office|Unknown",
-    "sellerType": "Public Company|Private Equity|REIT|Non-Profit|Family Office|Individual Owner|Unknown",
-    "strategicRationale": "Brief explanation"
-  },
   "entities": {
     "organizations": ["CMS", "Genesis HealthCare"],
     "regulations": ["42 CFR 483.70"],
@@ -956,37 +955,71 @@ app.get('/api/articles/priority', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 15 // Default to top 15 articles
 
-    // Query for priority articles with enhanced filtering
+    // Query for priority articles with enhanced filtering and time decay
+    // Use a subquery to calculate adjusted_urgency_score first, then filter on it
     const query = `
-      SELECT
-        id, external_id, title, summary, url, source, published_date as date,
-        category, impact, relevance_score, scope, states, analysis, relevance_tier,
-        image_url, created_at, updated_at
-      FROM articles
-      WHERE
-        -- Only show high and medium relevance tier articles (filter out low-tier noise)
-        relevance_tier IN ('high', 'medium')
-        -- Filter out opinion/commentary articles
-        AND (analysis->>'articleType' IS NULL OR analysis->>'articleType' != 'Opinion/Commentary')
-        -- Exclude low urgency articles (below 20)
-        AND (analysis->>'urgencyScore' IS NULL OR CAST(analysis->>'urgencyScore' AS INTEGER) >= 20)
-        -- Only include National, Regional, or State scope (filter out purely local news)
-        AND (scope IS NULL OR scope IN ('National', 'Regional', 'State'))
+      WITH scored_articles AS (
+        SELECT
+          id, external_id, title, summary, url, source, published_date as date,
+          category, impact, relevance_score, scope, states, analysis, relevance_tier,
+          image_url, created_at, updated_at,
+          -- Calculate time-decayed urgency score
+          CAST(COALESCE(analysis->>'urgencyScore', '50') AS INTEGER) *
+            CASE
+              WHEN published_date >= CURRENT_DATE - INTERVAL '7 days' THEN 1.0
+              WHEN published_date >= CURRENT_DATE - INTERVAL '30 days' THEN 0.7
+              WHEN published_date >= CURRENT_DATE - INTERVAL '90 days' THEN 0.4
+              ELSE 0.1
+            END AS adjusted_urgency_score
+        FROM articles
+        WHERE
+          -- Only show high and medium relevance tier articles (filter out low-tier noise)
+          relevance_tier IN ('high', 'medium')
+          -- Filter out opinion/commentary articles
+          AND (analysis->>'articleType' IS NULL OR analysis->>'articleType' != 'Opinion/Commentary')
+          -- Only include National, Regional, or State scope (filter out purely local news)
+          AND (scope IS NULL OR scope IN ('National', 'Regional', 'State'))
+          -- Filter out articles older than 90 days (stale news)
+          AND published_date >= CURRENT_DATE - INTERVAL '90 days'
+      ),
+      filtered_articles AS (
+        SELECT *
+        FROM scored_articles
+        WHERE
+          -- Apply time-decayed urgency threshold (must be >= 20 after decay)
+          adjusted_urgency_score >= 20
+      ),
+      deduplicated_articles AS (
+        SELECT DISTINCT ON (title) *
+        FROM filtered_articles
+        ORDER BY
+          title,
+          -- For duplicate titles, prefer higher priority source and newer article
+          CASE relevance_tier
+            WHEN 'high' THEN 2
+            WHEN 'medium' THEN 1
+            ELSE 0
+          END DESC,
+          adjusted_urgency_score DESC,
+          date DESC
+      )
+      SELECT *
+      FROM deduplicated_articles
       ORDER BY
-        -- Priority scoring: tier first, then urgency score, then impact, then date
+        -- Final sort for display: tier first, then urgency, then impact, then date
         CASE relevance_tier
           WHEN 'high' THEN 2
           WHEN 'medium' THEN 1
           ELSE 0
         END DESC,
-        CAST(COALESCE(analysis->>'urgencyScore', '50') AS INTEGER) DESC,
+        adjusted_urgency_score DESC,
         CASE impact
           WHEN 'high' THEN 3
           WHEN 'medium' THEN 2
           WHEN 'low' THEN 1
           ELSE 0
         END DESC,
-        published_date DESC
+        date DESC
       LIMIT $1
     `
 
@@ -996,7 +1029,7 @@ app.get('/api/articles/priority', async (req, res) => {
       success: true,
       articles: result.rows,
       count: result.rows.length,
-      description: 'Priority feed: High/medium tier, time-sensitive articles (AI-filtered for relevance)'
+      description: 'Priority feed: High/medium tier, time-sensitive articles with recency weighting (AI-filtered for relevance)'
     })
   } catch (error) {
     console.error('Error fetching priority articles:', error)
@@ -1011,23 +1044,99 @@ app.get('/api/articles/priority', async (req, res) => {
 // GET /api/ma/dashboard - Get M&A activity dashboard data
 app.get('/api/ma/dashboard', async (req, res) => {
   try {
-    // Get all M&A articles with extracted details
+    // Extract filter parameters
+    const {
+      dateFrom,
+      dateTo,
+      states,
+      dealType,
+      acquirer,
+      limit = 500
+    } = req.query
+
+    // Build WHERE clauses
+    const whereClauses = [
+      "category = 'M&A'",
+      "analysis->'maDetails' IS NOT NULL",
+      "analysis->'maDetails'->>'acquirer' != 'Unknown'",  // Filter out deals with unknown acquirers
+      "analysis->'maDetails'->>'acquirer' IS NOT NULL"
+    ]
+    const queryParams = []
+    let paramCount = 1
+
+    // Date filters
+    if (dateFrom) {
+      whereClauses.push(`published_date >= $${paramCount}`)
+      queryParams.push(dateFrom)
+      paramCount++
+    }
+    if (dateTo) {
+      whereClauses.push(`published_date <= $${paramCount}`)
+      queryParams.push(dateTo)
+      paramCount++
+    }
+
+    // State filter (check if any of the selected states match)
+    if (states) {
+      const stateArray = Array.isArray(states) ? states : [states]
+      whereClauses.push(`analysis->'maDetails'->'states' ?| ARRAY[${stateArray.map((_, i) => `$${paramCount + i}`).join(',')}]`)
+      queryParams.push(...stateArray)
+      paramCount += stateArray.length
+    }
+
+    // Deal type filter
+    if (dealType) {
+      whereClauses.push(`analysis->'maDetails'->>'dealType' = $${paramCount}`)
+      queryParams.push(dealType)
+      paramCount++
+    }
+
+    // Acquirer filter (case-insensitive partial match)
+    if (acquirer) {
+      whereClauses.push(`LOWER(analysis->'maDetails'->>'acquirer') LIKE LOWER($${paramCount})`)
+      queryParams.push(`%${acquirer}%`)
+      paramCount++
+    }
+
+    // Get M&A articles with filters
     const maArticlesQuery = `
       SELECT
         id, title, url, published_date, source,
         analysis->'maDetails' as ma_details,
         analysis
       FROM articles
-      WHERE category = 'M&A'
-        AND analysis->'maDetails' IS NOT NULL
+      WHERE ${whereClauses.join(' AND ')}
       ORDER BY published_date DESC
+      LIMIT $${paramCount}
     `
 
-    const maArticles = await db.query(maArticlesQuery)
+    queryParams.push(parseInt(limit))
+    const maArticles = await db.query(maArticlesQuery, queryParams)
+
+    // Deduplicate deals by acquirer+target combination
+    // Keep only the most recent article for each unique deal
+    const dealsMap = new Map()
+    maArticles.rows.forEach(row => {
+      const maDetails = row.ma_details
+      if (!maDetails) return
+
+      // Normalize merger partners by sorting (handles "A merges with B" vs "B merges with A")
+      const companies = [maDetails.acquirer, maDetails.target].sort()
+      const dealKey = `${companies[0]}::${companies[1]}`.toLowerCase()
+      const existingDeal = dealsMap.get(dealKey)
+
+      // Keep the most recent article for this deal
+      if (!existingDeal || new Date(row.published_date) > new Date(existingDeal.published_date)) {
+        dealsMap.set(dealKey, row)
+      }
+    })
+
+    // Convert back to array of unique deals
+    const uniqueDeals = Array.from(dealsMap.values())
 
     // Aggregate statistics
     const stats = {
-      totalDeals: maArticles.rows.length,
+      totalDeals: uniqueDeals.length,
       dealsByMonth: {},
       topAcquirers: {},
       dealsByType: {},
@@ -1038,8 +1147,8 @@ app.get('/api/ma/dashboard', async (req, res) => {
       industryLeaders: new Set()
     }
 
-    // Process each M&A article
-    maArticles.rows.forEach(row => {
+    // Process each unique M&A deal
+    uniqueDeals.forEach(row => {
       const maDetails = row.ma_details
       if (!maDetails) return
 
@@ -1103,7 +1212,7 @@ app.get('/api/ma/dashboard', async (req, res) => {
         topAcquirers: topAcquirersArray,
         industryLeaders: industryLeadersArray
       },
-      recentDeals: maArticles.rows.slice(0, 10).map(row => ({
+      recentDeals: uniqueDeals.map(row => ({
         id: row.id,
         title: row.title,
         url: row.url,
@@ -1117,6 +1226,92 @@ app.get('/api/ma/dashboard', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch M&A dashboard data',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/ma/acquirer-leaderboard - YTD leaderboard of acquirers by beds acquired
+app.get('/api/ma/acquirer-leaderboard', async (req, res) => {
+  try {
+    // Get all M&A deals from current year
+    const currentYear = new Date().getFullYear()
+    const query = `
+      SELECT
+        id, title, published_date,
+        analysis->'maDetails' as ma_details
+      FROM articles
+      WHERE category = 'M&A'
+        AND EXTRACT(YEAR FROM published_date) = $1
+        AND analysis->'maDetails' IS NOT NULL
+        AND analysis->'maDetails'->>'acquirer' != 'Unknown'
+        AND analysis->'maDetails'->>'acquirer' IS NOT NULL
+      ORDER BY published_date DESC
+    `
+
+    const result = await db.query(query, [currentYear])
+
+    // Aggregate by acquirer
+    const acquirerStats = {}
+
+    result.rows.forEach(row => {
+      const maDetails = row.ma_details
+      if (!maDetails) return
+
+      const acquirer = maDetails.acquirer
+      if (!acquirer || acquirer === 'Unknown') return
+
+      // Initialize acquirer stats if not exists
+      if (!acquirerStats[acquirer]) {
+        acquirerStats[acquirer] = {
+          acquirer,
+          totalBeds: 0,
+          totalFacilities: 0,
+          dealCount: 0,
+          deals: []
+        }
+      }
+
+      // Add deal data
+      const totalBeds = maDetails.totalBeds || 0
+      const facilityCount = maDetails.facilityCount || 0
+
+      acquirerStats[acquirer].totalBeds += totalBeds
+      acquirerStats[acquirer].totalFacilities += facilityCount
+      acquirerStats[acquirer].dealCount += 1
+      acquirerStats[acquirer].deals.push({
+        id: row.id,
+        title: row.title,
+        date: row.published_date,
+        target: maDetails.target,
+        dealValue: maDetails.dealValue,
+        totalBeds: totalBeds,
+        facilityCount: facilityCount,
+        states: maDetails.states || []
+      })
+    })
+
+    // Convert to array and sort by total beds
+    const leaderboard = Object.values(acquirerStats)
+      .filter(a => a.totalBeds > 0)  // Only include acquirers with bed data
+      .sort((a, b) => b.totalBeds - a.totalBeds)
+
+    res.json({
+      success: true,
+      year: currentYear,
+      leaderboard,
+      summary: {
+        totalAcquirers: leaderboard.length,
+        totalBeds: leaderboard.reduce((sum, a) => sum + a.totalBeds, 0),
+        totalFacilities: leaderboard.reduce((sum, a) => sum + a.totalFacilities, 0),
+        totalDeals: leaderboard.reduce((sum, a) => sum + a.dealCount, 0)
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching acquirer leaderboard:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch acquirer leaderboard',
       message: error.message
     })
   }
@@ -1962,6 +2157,253 @@ app.get('/api/states/rankings', (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching state rankings:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// ============================================================
+// STATE DEMOGRAPHICS & FACILITIES API ENDPOINTS
+// ============================================================
+
+// GET /api/states/demographics - Get demographics for all states
+app.get('/api/states/demographics', async (req, res) => {
+  try {
+    const demographics = await getAllStateDemographics()
+    res.json({
+      success: true,
+      demographics
+    })
+  } catch (error) {
+    console.error('Error fetching state demographics:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/demographics - Get demographics for a specific state
+app.get('/api/state/:stateCode/demographics', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const demographics = await getStateDemographics(stateCode)
+
+    if (!demographics) {
+      return res.status(404).json({
+        success: false,
+        error: 'Demographics not found for this state'
+      })
+    }
+
+    res.json({
+      success: true,
+      demographics
+    })
+  } catch (error) {
+    console.error('Error fetching state demographics:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/facilities - Get all facilities for a state
+app.get('/api/state/:stateCode/facilities', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const {
+      active = 'true',
+      minRating,
+      ownershipType,
+      chain,
+      limit = '1000',
+      offset = '0'
+    } = req.query
+
+    const options = {
+      active: active === 'true',
+      minRating: minRating ? parseInt(minRating) : null,
+      ownershipType: ownershipType || null,
+      chain: chain || null,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    }
+
+    const facilities = await getFacilitiesByState(stateCode, options)
+
+    res.json({
+      success: true,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error fetching facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/facilities/:providerNumber - Get a specific facility by provider number
+app.get('/api/facilities/:providerNumber', async (req, res) => {
+  try {
+    const { providerNumber } = req.params
+    const facility = await getFacilityByProviderNumber(providerNumber)
+
+    if (!facility) {
+      return res.status(404).json({
+        success: false,
+        error: 'Facility not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      facility
+    })
+  } catch (error) {
+    console.error('Error fetching facility:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/facilities/search - Search facilities by name or organization
+app.get('/api/facilities/search', async (req, res) => {
+  try {
+    const { q, state } = req.query
+
+    if (!q) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query (q) is required'
+      })
+    }
+
+    const facilities = await searchFacilities(q, state)
+
+    res.json({
+      success: true,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error searching facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/chain/:chainName/facilities - Get facilities by chain/parent org
+app.get('/api/chain/:chainName/facilities', async (req, res) => {
+  try {
+    const { chainName } = req.params
+    const { state } = req.query
+
+    const facilities = await getFacilitiesByChain(chainName, state)
+
+    res.json({
+      success: true,
+      chainName,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error fetching chain facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/market-metrics - Get market metrics for a state
+app.get('/api/state/:stateCode/market-metrics', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const metrics = await getStateMarketMetrics(stateCode)
+
+    if (!metrics) {
+      return res.status(404).json({
+        success: false,
+        error: 'Market metrics not found for this state'
+      })
+    }
+
+    res.json({
+      success: true,
+      metrics
+    })
+  } catch (error) {
+    console.error('Error fetching market metrics:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/overview - Get comprehensive state overview
+app.get('/api/state/:stateCode/overview', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const overview = await getStateOverview(stateCode)
+
+    res.json({
+      success: true,
+      ...overview
+    })
+  } catch (error) {
+    console.error('Error fetching state overview:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/ownership-breakdown - Get ownership breakdown for a state
+app.get('/api/state/:stateCode/ownership-breakdown', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const breakdown = await getFacilityOwnershipBreakdown(stateCode)
+
+    res.json({
+      success: true,
+      ownership: breakdown
+    })
+  } catch (error) {
+    console.error('Error fetching ownership breakdown:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/top-chains - Get top chains by market share in a state
+app.get('/api/state/:stateCode/top-chains', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const { limit = '10' } = req.query
+
+    const chains = await getTopChainsByState(stateCode, parseInt(limit))
+
+    res.json({
+      success: true,
+      chains
+    })
+  } catch (error) {
+    console.error('Error fetching top chains:', error)
     res.status(500).json({
       success: false,
       error: error.message
@@ -3152,6 +3594,9 @@ async function startServer() {
       console.log(`  - POST http://localhost:${PORT}/api/analyze-article\n`)
     })
 
+    // Start M&A Analysis Worker (runs every hour to analyze new M&A articles)
+    startMAAnalysisWorker()
+
     // Schedule weekly report generation every Sunday at 8 PM
     cron.schedule('0 20 * * 0', async () => {
       console.log('\n📊 Weekly report scheduled job triggered...')
@@ -3194,6 +3639,42 @@ async function startServer() {
     })
 
     console.log('✓ Weekly report scheduler initialized (Sundays at 8 PM ET)')
+
+    // Schedule daily Federal Register collection at 6 AM ET
+    cron.schedule('0 6 * * *', async () => {
+      console.log('\n📋 Daily Federal Register collection job triggered...')
+      try {
+        const { collectFederalRegisterBills } = await import('./services/federalRegisterCollector.js')
+        const { insertBill, getBills } = await import('./database/bills.js')
+
+        // Get existing bills to avoid re-analysis
+        const existingBills = await getBills({ source: 'federal_register', limit: 1000 })
+        const existingBillNumbers = new Set(existingBills.bills.map(b => b.bill_number))
+
+        // Collect new bills (last 30 days, min score 50)
+        const bills = await collectFederalRegisterBills(30, 50, existingBillNumbers)
+
+        // Insert new bills
+        let insertedCount = 0
+        for (const bill of bills) {
+          try {
+            await insertBill(bill)
+            insertedCount++
+          } catch (error) {
+            console.error(`   Error inserting ${bill.bill_number}: ${error.message}`)
+          }
+        }
+
+        console.log(`✅ Federal Register collection complete`)
+        console.log(`   New bills inserted: ${insertedCount}`)
+      } catch (error) {
+        console.error('❌ Error in Federal Register collection:', error.message)
+      }
+    }, {
+      timezone: 'America/New_York'
+    })
+
+    console.log('✓ Federal Register collection scheduler initialized (Daily at 6 AM ET)')
 
     // Fetch feeds after server starts (non-blocking)
     fetchAllFeeds().then(articles => {
