@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { TrendingUp, Building2, DollarSign, MapPin, Calendar, ExternalLink, Users, PieChart } from 'lucide-react'
 import { format } from 'date-fns'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
+
 function MATracker() {
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -14,7 +16,7 @@ function MATracker() {
   const fetchMADashboard = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:3001/api/ma/dashboard')
+      const response = await fetch(`${API_BASE_URL}/api/ma/dashboard`)
       const data = await response.json()
 
       if (data.success) {
@@ -260,10 +262,12 @@ function MATracker() {
                     {deal.maDetails.acquirer} acquires {deal.maDetails.target}
                   </h3>
                   <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.85em', color: '#6b7280' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Calendar size={14} />
-                      {format(new Date(deal.published_date), 'MMM d, yyyy')}
-                    </div>
+                    {deal.published_date && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={14} />
+                        {format(new Date(deal.published_date), 'MMM d, yyyy')}
+                      </div>
+                    )}
                     {deal.maDetails.dealType && (
                       <div style={{ padding: '2px 8px', backgroundColor: '#dbeafe', color: '#1e40af', borderRadius: '4px', fontWeight: '500' }}>
                         {deal.maDetails.dealType}

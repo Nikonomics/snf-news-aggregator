@@ -25,62 +25,48 @@ async function main() {
     console.log(`  Min relevance score: ${minRelevanceScore}`);
     console.log('='.repeat(70) + '\n');
 
-    // Step 1: Collect bills from Federal Register
-    const bills = await collectFederalRegisterBills(daysBack, minRelevanceScore);
-
-    if (bills.length === 0) {
-      console.log('No bills to insert.');
-      process.exit(0);
-    }
-
-    // Step 2: Check existing bills to avoid duplicates
+    // Step 1: Get existing bills from database FIRST
     console.log('📊 Checking for existing bills in database...\n');
     const existingBills = await getBills({ source: 'federal_register', limit: 1000 });
     const existingBillNumbers = new Set(existingBills.bills.map(b => b.bill_number));
+    console.log(`   Found ${existingBills.bills.length} existing Federal Register bills\n`);
 
-    // Step 3: Filter out duplicates
-    const newBills = bills.filter(bill => !existingBillNumbers.has(bill.bill_number));
-    const duplicateCount = bills.length - newBills.length;
+    // Step 2: Collect bills from Federal Register (with deduplication BEFORE AI analysis)
+    const bills = await collectFederalRegisterBills(daysBack, minRelevanceScore, existingBillNumbers);
 
-    console.log(`   Found ${existingBills.bills.length} existing Federal Register bills`);
-    console.log(`   Duplicates filtered: ${duplicateCount}`);
-    console.log(`   New bills to insert: ${newBills.length}\n`);
-
-    if (newBills.length === 0) {
-      console.log('✓ No new bills to insert. All bills already in database.\n');
+    if (bills.length === 0) {
+      console.log('✓ No new bills to insert.\n');
       process.exit(0);
     }
 
-    // Step 4: Insert new bills into database
+    // Step 3: Insert new bills into database
     console.log('💾 Inserting new bills into database...\n');
     let insertedCount = 0;
     let errorCount = 0;
 
-    for (const bill of newBills) {
+    for (const bill of bills) {
       try {
         await insertBill(bill);
         insertedCount++;
-        console.log(`   ✓ [${insertedCount}/${newBills.length}] ${bill.bill_number}: ${bill.title.substring(0, 80)}...`);
+        console.log(`   ✓ [${insertedCount}/${bills.length}] ${bill.bill_number}: ${bill.title.substring(0, 80)}...`);
       } catch (error) {
         errorCount++;
         console.error(`   ✗ Error inserting ${bill.bill_number}: ${error.message}`);
       }
     }
 
-    // Step 5: Summary
+    // Step 4: Summary
     console.log('\n' + '='.repeat(70));
     console.log('  COLLECTION SUMMARY');
     console.log('='.repeat(70));
-    console.log(`  Total bills collected: ${bills.length}`);
-    console.log(`  Duplicates skipped: ${duplicateCount}`);
     console.log(`  Successfully inserted: ${insertedCount}`);
     console.log(`  Errors: ${errorCount}`);
     console.log('='.repeat(70) + '\n');
 
-    // Step 6: Show sample of inserted bills
+    // Step 5: Show sample of inserted bills
     if (insertedCount > 0) {
       console.log('📋 Sample of inserted bills:\n');
-      newBills.slice(0, 5).forEach((bill, idx) => {
+      bills.slice(0, 5).forEach((bill, idx) => {
         console.log(`${idx + 1}. ${bill.bill_number} - ${bill.title}`);
         console.log(`   Priority: ${bill.priority} | Relevance: ${bill.ai_relevance_score}/100`);
         console.log(`   Comment Deadline: ${bill.comment_deadline || 'N/A'}`);

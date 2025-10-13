@@ -234,7 +234,16 @@ export default function RegulatoryFeed() {
                       )}
                     </div>
 
-                    <h3 className="bill-title">{bill.title}</h3>
+                    <h3 className="bill-title">
+                      {bill.title.length > 120 ? bill.title.substring(0, 120) + '...' : bill.title}
+                    </h3>
+
+                    {/* Why Operators Should Care */}
+                    {bill.key_impact && (
+                      <div className="key-impact-preview">
+                        <strong>Why this matters:</strong> {bill.key_impact.length > 200 ? bill.key_impact.substring(0, 200) + '...' : bill.key_impact}
+                      </div>
+                    )}
 
                     <div className="bill-meta">
                       <span>{bill.source?.replace('_', ' ').toUpperCase()}</span>
@@ -336,7 +345,13 @@ export default function RegulatoryFeed() {
                         <h4>Strategic Actions</h4>
                         <ul className="strategic-actions-list">
                           {bill.strategic_actions.map((action, idx) => (
-                            <li key={idx}>{action}</li>
+                            <li key={idx}>
+                              {typeof action === 'string' ? action : (
+                                <>
+                                  <strong>{action.timeframe}:</strong> {action.action}
+                                </>
+                              )}
+                            </li>
                           ))}
                         </ul>
                       </div>

@@ -2,10 +2,14 @@ import pg from 'pg'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import dotenv from 'dotenv'
 
 const { Pool } = pg
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '../.env') })
 
 // Database connection pool
 const pool = new Pool({

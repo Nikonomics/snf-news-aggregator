@@ -13,7 +13,7 @@ import StateSelector from './components/StateSelector'
 import StateComparisonMap from './components/StateComparisonMap'
 import Pagination from './components/Pagination'
 import WeeklyInsights from './components/WeeklyInsights'
-import MATracker from './components/MATracker'
+import MATrackerEnhanced from './components/MATrackerEnhanced'
 import PriorityFeed from './components/PriorityFeed'
 import RegulatoryFeed from './components/RegulatoryFeed'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
@@ -438,7 +438,7 @@ function App() {
         <Route path="/regulatory" element={<RegulatoryFeed />} />
 
         {/* M&A Tracker Route */}
-        <Route path="/ma-tracker" element={<MATracker />} />
+        <Route path="/ma-tracker" element={<MATrackerEnhanced />} />
 
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />

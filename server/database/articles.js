@@ -179,12 +179,34 @@ export async function getArticles(options = {}) {
   }
 
   if (search) {
-    conditions.push(`
+    // Enhanced search: title, summary, category, source, states, and AI analysis content
+    conditions.push(`(
+      -- Full-text search on title and summary (highest priority)
       to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(summary, '')) @@
       plainto_tsquery('english', $${paramCount})
-    `)
-    values.push(search)
-    paramCount++
+      OR
+      -- Search in category (case-insensitive)
+      LOWER(category) LIKE LOWER($${paramCount + 1})
+      OR
+      -- Search in source (case-insensitive)
+      LOWER(source) LIKE LOWER($${paramCount + 1})
+      OR
+      -- Search in states array (case-insensitive)
+      EXISTS (
+        SELECT 1 FROM unnest(states) AS state
+        WHERE LOWER(state) LIKE LOWER($${paramCount + 1})
+      )
+      OR
+      -- Search in AI analysis JSON (keyInsights and actionableItems)
+      to_tsvector('english',
+        COALESCE(analysis->>'keyInsights', '') || ' ' ||
+        COALESCE(analysis->>'actionableItems', '') || ' ' ||
+        COALESCE(analysis->>'riskFactors', '') || ' ' ||
+        COALESCE(analysis->>'complianceImplications', '')
+      ) @@ plainto_tsquery('english', $${paramCount})
+    )`)
+    values.push(search, `%${search}%`)
+    paramCount += 2
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
@@ -194,19 +216,43 @@ export async function getArticles(options = {}) {
   const countResult = await db.query(countQuery, values)
   const totalCount = parseInt(countResult.rows[0].count)
 
-  // Data query
-  const dataQuery = `
-    SELECT
-      id, external_id, title, summary, url, source, published_date as date,
-      category, impact, relevance_score, scope, states, analysis,
-      image_url, created_at, updated_at
-    FROM articles
-    ${whereClause}
-    ORDER BY published_date DESC
-    LIMIT $${paramCount} OFFSET $${paramCount + 1}
-  `
+  // Data query with relevance ranking when searching
+  let dataQuery
+  if (search) {
+    // Add extra parameters for relevance ranking
+    dataQuery = `
+      SELECT
+        id, external_id, title, summary, url, source, published_date as date,
+        category, impact, relevance_score, scope, states, analysis,
+        image_url, created_at, updated_at,
+        -- Calculate relevance rank (higher is better)
+        (
+          CASE WHEN LOWER(title) LIKE LOWER($${paramCount + 2}) THEN 100 ELSE 0 END +
+          CASE WHEN to_tsvector('english', title) @@ plainto_tsquery('english', $${paramCount + 3}) THEN 50 ELSE 0 END +
+          CASE WHEN to_tsvector('english', summary) @@ plainto_tsquery('english', $${paramCount + 3}) THEN 25 ELSE 0 END +
+          CASE WHEN LOWER(category) LIKE LOWER($${paramCount + 2}) THEN 20 ELSE 0 END +
+          CASE WHEN EXISTS (SELECT 1 FROM unnest(states) AS state WHERE LOWER(state) LIKE LOWER($${paramCount + 2})) THEN 15 ELSE 0 END
+        ) as search_rank
+      FROM articles
+      ${whereClause}
+      ORDER BY search_rank DESC, published_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `
+    values.push(limit, offset, `%${search}%`, search)
+  } else {
+    dataQuery = `
+      SELECT
+        id, external_id, title, summary, url, source, published_date as date,
+        category, impact, relevance_score, scope, states, analysis,
+        image_url, created_at, updated_at
+      FROM articles
+      ${whereClause}
+      ORDER BY published_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `
+    values.push(limit, offset)
+  }
 
-  values.push(limit, offset)
   const dataResult = await db.query(dataQuery, values)
 
   const totalPages = Math.ceil(totalCount / limit)

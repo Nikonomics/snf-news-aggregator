@@ -1,18 +1,15 @@
 /**
- * Test script: Re-analyze 5 articles with two-pass system
- * Self-contained version with analysis functions included
+ * FULL RE-ANALYSIS: Re-analyze ALL 830 articles with two-pass system
+ * This resets relevance_tier to null first, forcing fresh AI triage
  */
 
-// CRITICAL: Import and configure dotenv BEFORE importing any modules that use process.env
+// CRITICAL: Import and configure dotenv BEFORE importing any modules
 import dotenv from 'dotenv'
 const envResult = dotenv.config()
 if (envResult.error) {
   console.error('Error loading .env file:', envResult.error)
   process.exit(1)
 }
-
-console.log(`Loaded .env: DATABASE_URL=${process.env.DATABASE_URL?.substring(0, 50)}...`)
-console.log(`Loaded .env: ANTHROPIC_API_KEY=${process.env.ANTHROPIC_API_KEY?.substring(0, 20)}...`)
 
 import fetch from 'node-fetch'
 import * as db from './database/db.js'
@@ -49,7 +46,7 @@ Return ONLY the JSON object. No markdown. No extra text.`
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-3-5-20241022', // Cheap, fast model for triage
+        model: 'claude-3-5-haiku-20241022', // Cheap, fast model for triage
         max_tokens: 200,
         temperature: 0.3,
         messages: [{
@@ -75,12 +72,10 @@ Return ONLY the JSON object. No markdown. No extra text.`
     }
 
     const triageResult = JSON.parse(cleanedResponse)
-    console.log(`  → AI Triage: ${triageResult.relevanceTier} - ${triageResult.reasoning}`)
-
     return triageResult.relevanceTier
 
   } catch (error) {
-    console.error('Triage failed, falling back to keyword-based:', error.message)
+    console.error('   ✗ Triage failed:', error.message)
     // Fallback to simple keyword-based triage
     const text = `${article.title} ${article.summary || ''}`.toLowerCase()
     if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat/)) {
@@ -163,93 +158,91 @@ Return ONLY valid JSON. No markdown, no extra text.`
     return JSON.parse(cleanedResponse)
 
   } catch (error) {
-    console.error('Deep analysis failed:', error.message)
+    console.error('   ✗ Deep analysis failed:', error.message)
     throw error
   }
 }
 
 // Main analysis function (orchestrates Pass 1 + Pass 2)
 async function analyzeArticleWithAI(article) {
-  try {
-    console.log(`Analyzing: ${article.title}`)
+  // PASS 1: AI Triage to determine relevance tier (cheap, fast)
+  // Force re-triage even if tier exists
+  article.relevance_tier = await triageArticleRelevance(article)
+  console.log(`   → AI Triage: ${article.relevance_tier}`)
 
-    // PASS 1: AI Triage to determine relevance tier (cheap, fast)
-    if (!article.relevance_tier) {
-      article.relevance_tier = await triageArticleRelevance(article)
-      console.log(`  → Assigned tier: ${article.relevance_tier}`)
+  // Skip expensive AI analysis for low-tier articles
+  if (article.relevance_tier === 'low') {
+    console.log(`   → Skipping deep analysis for low-tier (cost savings)`)
+    return {
+      keyInsights: ["Community interest article with minimal operational relevance"],
+      complianceTimeline: {
+        commentDeadline: "N/A",
+        effectiveDate: "N/A",
+        prepTime: "N/A",
+        criticalDates: []
+      },
+      financialImpact: "No significant financial impact on SNF operations.",
+      whoNeedsToKnow: [],
+      actionItems: {
+        immediate: [],
+        shortTerm: [],
+        longTerm: []
+      },
+      risks: [],
+      relevanceReasoning: "Low-relevance community content",
+      scope: "Local",
+      articleType: "Community",
+      urgencyScore: 1
     }
-
-    // Skip expensive AI analysis for low-tier articles
-    if (article.relevance_tier === 'low') {
-      console.log(`  → Skipping deep analysis for low-tier article (cost savings)`)
-      return {
-        keyInsights: ["Community interest article with minimal operational relevance"],
-        complianceTimeline: {
-          commentDeadline: "N/A",
-          effectiveDate: "N/A",
-          prepTime: "N/A",
-          criticalDates: []
-        },
-        financialImpact: "No significant financial impact on SNF operations.",
-        whoNeedsToKnow: [],
-        actionItems: {
-          immediate: [],
-          shortTerm: [],
-          longTerm: []
-        },
-        risks: [],
-        relevanceReasoning: "Low-relevance community content",
-        scope: "Local",
-        articleType: "Community",
-        urgencyScore: 1
-      }
-    }
-
-    // PASS 2: Deep analysis for high/medium tier articles (expensive)
-    console.log(`  → Running deep AI analysis (${article.relevance_tier} tier)`)
-    const analysis = await deepAnalyzeArticle(article)
-    return analysis
-
-  } catch (error) {
-    console.error('Analysis failed:', error.message)
-    throw error
   }
+
+  // PASS 2: Deep analysis for high/medium tier articles (expensive)
+  console.log(`   → Running deep AI analysis (${article.relevance_tier} tier)`)
+  const analysis = await deepAnalyzeArticle(article)
+  return analysis
 }
 
-// Main test function
-async function testReanalysis() {
+// Main re-analysis function
+async function reanalyzeAll() {
   try {
     console.log('\n' + '='.repeat(80))
-    console.log('Testing Two-Pass Analysis System on 5 Articles')
+    console.log('FULL RE-ANALYSIS: Two-Pass System on ALL 830 Articles')
     console.log('='.repeat(80) + '\n')
 
-    // Fetch 5 articles from database
+    // Fetch ALL articles from database (skip first 16 already processed)
     const query = `
       SELECT
         id, external_id, title, summary, url, source,
         published_date as date, category, relevance_tier
       FROM articles
       ORDER BY published_date DESC
-      LIMIT 5
+      OFFSET 16
     `
 
     const result = await db.query(query)
     const articles = result.rows
 
-    console.log(`Found ${articles.length} articles to analyze\n`)
+    console.log(`Found ${articles.length} articles to re-analyze\n`)
+    console.log(`Estimated cost:`)
+    console.log(`  - Pass 1 (AI Triage): ${articles.length} × $0.001 = $${(articles.length * 0.001).toFixed(2)}`)
+    console.log(`  - Pass 2 (Deep Analysis): ~${Math.floor(articles.length * 0.6)} × $0.01 = $${(articles.length * 0.6 * 0.01).toFixed(2)}`)
+    console.log(`  - Total estimated: $${(articles.length * 0.001 + articles.length * 0.6 * 0.01).toFixed(2)}`)
+    console.log(`  - Estimated time: ${Math.floor(articles.length * 3 / 60)} minutes\n`)
 
     const results = []
+    let processed = 0
+    let tierCounts = { high: 0, medium: 0, low: 0, error: 0 }
 
     for (let i = 0; i < articles.length; i++) {
       const article = articles[i]
+      processed++
 
-      console.log(`\n[${i + 1}/5] =====================================`)
-      console.log(`Title: ${article.title}`)
-      console.log(`Current tier: ${article.relevance_tier || 'none'}`)
-      console.log(`Category: ${article.category}`)
-      console.log(`Source: ${article.source}`)
-      console.log(`Published: ${new Date(article.date).toLocaleDateString()}`)
-      console.log('-------------------------------------------\n')
+      if (processed % 10 === 0) {
+        console.log(`\n[${processed}/${articles.length}] Progress: ${Math.floor(processed/articles.length*100)}%`)
+        console.log(`   Current tier distribution: H:${tierCounts.high} M:${tierCounts.medium} L:${tierCounts.low} E:${tierCounts.error}\n`)
+      }
+
+      console.log(`[${processed}/${articles.length}] ${article.title.substring(0, 60)}...`)
 
       try {
         // Run the analysis
@@ -263,58 +256,38 @@ async function testReanalysis() {
             relevance_tier = $2,
             updated_at = CURRENT_TIMESTAMP
           WHERE id = $3
-          RETURNING id, relevance_tier,
-            analysis->>'urgencyScore' as urgency_score,
-            analysis->>'articleType' as article_type
+          RETURNING id, relevance_tier
         `
 
-        const updateResult = await db.query(updateQuery, [
+        await db.query(updateQuery, [
           JSON.stringify(analysis),
           article.relevance_tier,
           article.id
         ])
 
-        const updated = updateResult.rows[0]
+        tierCounts[article.relevance_tier]++
+        console.log(`   ✓ Updated: ${article.relevance_tier}`)
 
-        results.push({
-          title: article.title.substring(0, 60) + '...',
-          tier: article.relevance_tier,
-          urgency: updated.urgency_score || 'N/A',
-          type: updated.article_type || 'N/A'
-        })
-
-        console.log(`✓ Updated successfully`)
-        console.log(`  Tier: ${article.relevance_tier}`)
-        console.log(`  Urgency: ${updated.urgency_score || 'N/A'}`)
-        console.log(`  Type: ${updated.article_type || 'N/A'}`)
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500))
 
       } catch (error) {
-        console.error(`✗ Error analyzing article: ${error.message}`)
-        results.push({
-          title: article.title.substring(0, 60) + '...',
-          tier: 'ERROR',
-          urgency: 'N/A',
-          type: 'N/A'
-        })
+        console.error(`   ✗ Error: ${error.message}`)
+        tierCounts.error++
       }
     }
 
-    // Summary
+    // Final Summary
     console.log('\n\n' + '='.repeat(80))
-    console.log('SUMMARY')
+    console.log('RE-ANALYSIS COMPLETE')
     console.log('='.repeat(80))
-    console.table(results)
-
-    const tierCounts = results.reduce((acc, r) => {
-      acc[r.tier] = (acc[r.tier] || 0) + 1
-      return acc
-    }, {})
-
-    console.log('\nTier Distribution:')
-    console.log(tierCounts)
-
-    console.log('\n✓ Test complete! Check results above.')
-    console.log('\nNext step: If these look good, run the full 830 article re-analysis.')
+    console.log(`Total articles processed: ${processed}/${articles.length}`)
+    console.log(`\nFinal Tier Distribution:`)
+    console.log(`  HIGH:   ${tierCounts.high} (${Math.floor(tierCounts.high/processed*100)}%)`)
+    console.log(`  MEDIUM: ${tierCounts.medium} (${Math.floor(tierCounts.medium/processed*100)}%)`)
+    console.log(`  LOW:    ${tierCounts.low} (${Math.floor(tierCounts.low/processed*100)}%)`)
+    console.log(`  ERRORS: ${tierCounts.error}`)
+    console.log(`\n✅ Re-analysis complete! Priority Feed will now show only high/medium tier articles.`)
 
     process.exit(0)
 
@@ -324,4 +297,4 @@ async function testReanalysis() {
   }
 }
 
-testReanalysis()
+reanalyzeAll()

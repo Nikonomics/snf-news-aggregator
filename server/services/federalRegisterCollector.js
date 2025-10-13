@@ -114,7 +114,7 @@ export async function fetchFederalRegisterDocuments(daysBack = 30) {
  */
 export async function analyzeDocumentRelevance(document) {
   try {
-    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs). Your goal is to identify BOTH direct SNF impacts AND strategic ecosystem impacts that will affect SNF operations even if SNFs aren't explicitly mentioned.
+    const prompt = `You are an expert healthcare policy analyst specializing in skilled nursing facilities (SNFs) running on 1-2% margins. Your goal is to identify BOTH direct SNF impacts AND strategic ecosystem impacts that will affect SNF operations even if SNFs aren't explicitly mentioned.
 
 CRITICAL CONTEXT: SNF operators need to understand:
 - How changes in OTHER settings (hospitals, IRFs, home health) affect patient flow TO/FROM SNFs
@@ -153,8 +153,8 @@ ANALYSIS REQUIREMENTS:
    - 30-49: Minor indirect effect
    - 0-29: No ecosystem impact
 
-3. **Overall Relevance** = (Direct * 0.4) + (Ecosystem * 0.6)
-   We weight ecosystem impacts MORE because operators can find direct regs elsewhere. Our value is surfacing non-obvious strategic intelligence.
+3. **Overall Relevance** = (Direct * 0.7) + (Ecosystem * 0.3)
+   - ONLY include bills with Overall Relevance >= 50
 
 4. **Impact Type** (select primary type):
    - "Direct Regulation": Explicitly regulates SNFs
@@ -182,16 +182,78 @@ ANALYSIS REQUIREMENTS:
 
 8. **Affected Operators** (2-3 sentences): Who is most affected and WHY? Consider payor mix, acuity level, geography, competitive environment.
 
-9. **Financial Impact**: Be specific. Options: "High cost", "Moderate cost", "Low cost", "Revenue positive", "Revenue pressure", "Competitive threat", "Neutral", "Unknown"
+9. **Financial Impact**: Be SPECIFIC with numbers. For a 100-bed facility, estimate:
+   - Per-bed or per-patient-day costs if applicable
+   - One-time vs. ongoing costs
+   - Revenue impact (e.g., "$X per patient per day", "2-3% margin pressure", "$Xk annual cost")
+   If no direct financial impact, state "No direct financial impact - [brief reason]"
 
 10. **Action Required**: true/false - Does this require SNF action (comment, strategy change, preparation)?
 
 11. **Strategic Actions** (if actionRequired = true):
-    List 2-4 specific strategic, financial, or operational actions operators should take.
+    List 2-4 SPECIFIC actions with timeframes. Examples:
+    - "Model census impact if IRF captures 15% of current rehab volume by Q1 2026"
+    - "Review MA contracts for prior auth language by November 30"
+    - "Budget $X for compliance training by effective date"
 
-12. **Categories**: Assign 2-4 from: ["Reimbursement", "Staffing", "Quality", "Compliance", "Survey", "Technology", "Safety", "Clinical", "Finance", "Enforcement", "Competitive Intelligence", "Market Strategy", "Payer Relations"]
+12. **Compliance Timeline**:
+    - commentDeadline: Exact date from document or "N/A"
+    - effectiveDate: Exact date from document or "N/A"
+    - prepTime: Estimated prep time needed (e.g., "90 days", "6 months") or "N/A"
+    - criticalDates: Array of key dates with context, or empty array
 
-13. **Summary** (4-5 sentences): Plain English. Explain what this does AND why SNF operators should care even if it's not directly about SNFs.
+13. **Implementation Complexity**: "Low", "Medium", or "High"
+    - Low: Informational only, minimal action needed
+    - Medium: Some operational changes, training, policy updates
+    - High: Major operational overhaul, capital investment, significant compliance effort
+
+14. **Urgency Score** (0-100): Weighted composite score based on impact type and time-sensitivity.
+
+    **Primary Factors (60% of score):**
+    - Regulatory/Compliance Impact (30%): CMS rules, certification requirements, enforcement policies
+    - Financial Impact (30%): Reimbursement changes, rate adjustments, payment reforms, margin impact >1%
+
+    **Secondary Factors (40% of score):**
+    - Time Sensitivity (25%): Comment period deadlines, effective dates, implementation timelines
+    - Operational Disruption (15%): Staffing requirements, workflow changes, documentation burdens
+
+    **Scoring Guidelines:**
+    - 90-100: Critical regulatory rule OR major financial impact (>5% margin) + immediate action/comment deadline
+    - 75-89: Significant regulatory/financial impact with near-term deadline (30-90 days)
+    - 60-74: Important regulatory/financial changes with longer timeline (3-12 months) or 2-5% margin impact
+    - 40-59: Proposed rules, advance notices, moderate impact (<2%)
+    - 20-39: General notices, informational documents, long-term policy discussions
+    - 0-19: Low priority notices, minor administrative updates
+
+15. **Impact Factors** (who is most affected):
+    - facilityTypes: Array from ["SNF", "ALF", "Memory Care", "CCRC", "All Post-Acute"]
+    - bedSizes: Array from ["<50 beds", "50-100 beds", "100-200 beds", "200+ beds", "All sizes"]
+    - payorMix: Array from ["High Medicaid", "High Medicare", "High Private Pay", "Mixed", "All"]
+    - geography: Array from ["Urban", "Suburban", "Rural", "All"]
+    - ownershipTypes: Array from ["Chain-owned", "Independent", "Non-Profit", "For-Profit", "All"]
+
+16. **Structured Entities** (for pattern recognition):
+    - organizations: Array of mentioned orgs (e.g., ["CMS", "AHCA", "Genesis HealthCare"])
+    - regulations: Array of specific regs cited (e.g., ["42 CFR 483.70", "SNF PPS Final Rule 2026"])
+    - financialFigures: Array with context (e.g., [{"amount": "2.8%", "context": "Medicare rate increase FY2026"}])
+
+17. **Temporal Signals**:
+    - isRecurring: true/false - Annual regulation? (e.g., PPS updates)
+    - precedents: Array of similar past events (e.g., ["Similar IRF rate differential in FY2025"])
+    - cyclicality: "annual" | "quarterly" | "ad-hoc" | "unknown"
+    - leadTime: Typical advance warning (e.g., "90 days", "6 months", "none")
+
+18. **Market Forces**: Array of dynamics at play (e.g., ["margin-compression", "patient-steering", "consolidation", "labor-shortage", "regulatory-burden"])
+
+19. **Competitive Intelligence** (1-2 sentences):
+    Which operators/chains are mentioned or positioned better/worse? How does this create competitive advantages/disadvantages? Or "N/A" if not applicable.
+
+20. **Strategic Implications** (2-3 sentences):
+    Beyond immediate impact, what are the 2nd and 3rd order effects? How might this change competitive dynamics or require downstream operational shifts?
+
+21. **Categories**: Assign 2-4 from: ["Reimbursement", "Staffing", "Quality", "Compliance", "Survey", "Technology", "Safety", "Clinical", "Finance", "Enforcement", "Competitive Intelligence", "Market Strategy", "Payer Relations"]
+
+22. **Summary** (4-5 sentences): Plain English. Explain what this does AND why SNF operators should care even if it's not directly about SNFs.
 
 CRITICAL: Respond with ONLY valid JSON. No text before or after. Start with { and end with }.
 
@@ -210,15 +272,47 @@ JSON Structure:
     "timingSignal": "This IRF change typically signals SNF methodology changes in 12-18 months"
   },
   "affectedOperators": "High Medicare, rehab-focused SNFs in competitive markets with nearby IRFs will see volume pressure on stroke, joint replacement, and trauma admissions",
-  "financialImpact": "Competitive threat",
+  "financialImpact": "For 100-bed facility: ~$180k annual revenue loss if IRF captures 15% of rehab volume ($50 lower per-patient-day x 10 beds x 365 days)",
   "actionRequired": true,
   "strategicActions": [
-    "Model census impact if IRF captures 15% of current rehab volume",
-    "Develop outcomes benchmarking vs local IRFs to retain hospital referrals",
-    "Identify clinical niches where SNF has advantage over IRF (medically complex rehab)"
+    "Model census impact if IRF captures 15% of current rehab volume by Q1 2026",
+    "Develop outcomes benchmarking vs local IRFs to retain hospital referrals by December 2025",
+    "Identify clinical niches where SNF has advantage over IRF (medically complex rehab) by November 2025"
   ],
+  "complianceTimeline": {
+    "commentDeadline": "MM/DD/YYYY or N/A",
+    "effectiveDate": "10/01/2025",
+    "prepTime": "90 days",
+    "criticalDates": ["10/01/2025: New rates effective", "12/31/2025: First quarterly impact visible"]
+  },
+  "implementationComplexity": "Medium",
+  "urgencyScore": 65,
+  "impactFactors": {
+    "facilityTypes": ["SNF"],
+    "bedSizes": ["50-100 beds", "100-200 beds"],
+    "payorMix": ["High Medicare"],
+    "geography": ["Urban", "Suburban"],
+    "ownershipTypes": ["For-Profit", "Chain-owned"]
+  },
+  "entities": {
+    "organizations": ["CMS", "AHCA"],
+    "regulations": ["42 CFR 412 Subpart P"],
+    "financialFigures": [
+      {"amount": "3.2%", "context": "IRF rate increase FY2026"},
+      {"amount": "2.8%", "context": "SNF rate increase FY2026"}
+    ]
+  },
+  "temporalSignals": {
+    "isRecurring": true,
+    "precedents": ["Similar IRF rate differential in FY2025 led to 8% volume shift"],
+    "cyclicality": "annual",
+    "leadTime": "90 days"
+  },
+  "marketForces": ["margin-compression", "patient-steering", "competitive-intensity"],
+  "competitiveIntelligence": "Large chains with co-located IRF and SNF units can optimize patient placement; independent SNFs lose referral leverage",
+  "strategicImplications": "Sustained IRF rate advantages will force SNFs to either develop specialized clinical programs or accept lower-acuity, lower-margin patients. May accelerate SNF-IRF consolidation.",
   "commentPeriod": false,
-  "categories": ["Competitive Intelligence", "Market Strategy", "Finance"],
+  "categories": ["Competitive Intelligence", "Market Strategy", "Finance", "Reimbursement"],
   "summary": "Plain English explanation including WHY this matters to SNFs even if not directly mentioned",
   "reasoning": "2-3 sentences explaining the relevance scores and strategic intelligence value"
 }`;
@@ -268,7 +362,7 @@ export function convertToDBFormat(doc, analysis) {
     bill_number: billNumber,
     title: doc.title,
     summary: doc.abstract || analysis.summary,
-    full_text_url: doc.html_url,
+    url: doc.html_url,  // Changed from full_text_url to url
     pdf_url: doc.pdf_url,
     source: 'federal_register',
     jurisdiction: 'federal',
@@ -305,6 +399,17 @@ export function convertToDBFormat(doc, analysis) {
     affected_operators: analysis.affectedOperators,
     key_impact: analysis.keyImpact,
 
+    // Enhanced analysis fields (from article prompt)
+    urgency_score: analysis.urgencyScore || null,
+    implementation_complexity: analysis.implementationComplexity || null,
+    competitive_intelligence: analysis.competitiveIntelligence || null,
+    strategic_implications: analysis.strategicImplications || null,
+    impact_factors: analysis.impactFactors || null,
+    entities: analysis.entities || null,
+    temporal_signals: analysis.temporalSignals || null,
+    market_forces: analysis.marketForces || null,
+    compliance_timeline: analysis.complianceTimeline || null,
+
     // Status tracking
     status: doc.comments_close_on ? 'comment_period' : 'published',
     last_updated: new Date().toISOString()
@@ -315,9 +420,10 @@ export function convertToDBFormat(doc, analysis) {
  * Main collection function - fetch, analyze, and return bills
  * @param {number} daysBack - Number of days to look back
  * @param {number} minRelevanceScore - Minimum OVERALL relevance score to include (default: 50)
+ * @param {Set<string>} existingBillNumbers - Set of existing bill numbers to skip (optional)
  * @returns {Promise<Array>} Array of bills ready for database insertion
  */
-export async function collectFederalRegisterBills(daysBack = 30, minRelevanceScore = 50) {
+export async function collectFederalRegisterBills(daysBack = 30, minRelevanceScore = 50, existingBillNumbers = new Set()) {
   try {
     console.log('\n🚀 Starting Federal Register bill collection...\n');
 
@@ -329,15 +435,33 @@ export async function collectFederalRegisterBills(daysBack = 30, minRelevanceSco
       return [];
     }
 
-    // Step 2: Analyze each document with AI
-    console.log(`🤖 Analyzing ${documents.length} documents with AI...\n`);
+    // Step 2: Filter out already-analyzed documents BEFORE AI analysis
+    const newDocuments = documents.filter(doc => {
+      const billNumber = `FR-${doc.document_number}`;
+      return !existingBillNumbers.has(billNumber);
+    });
+
+    const duplicateCount = documents.length - newDocuments.length;
+
+    console.log(`📊 Deduplication check:`);
+    console.log(`   Total documents fetched: ${documents.length}`);
+    console.log(`   Already in database: ${duplicateCount}`);
+    console.log(`   New documents to analyze: ${newDocuments.length}\n`);
+
+    if (newDocuments.length === 0) {
+      console.log('✅ No new documents to analyze. All documents already in database.\n');
+      return [];
+    }
+
+    // Step 3: Analyze ONLY new documents with AI
+    console.log(`🤖 Analyzing ${newDocuments.length} NEW documents with AI...\n`);
     const bills = [];
     let analyzedCount = 0;
 
-    for (const doc of documents) {
+    for (const doc of newDocuments) {
       try {
         analyzedCount++;
-        console.log(`[${analyzedCount}/${documents.length}] Analyzing: ${doc.title.substring(0, 80)}...`);
+        console.log(`[${analyzedCount}/${newDocuments.length}] Analyzing: ${doc.title.substring(0, 80)}...`);
 
         const analysis = await analyzeDocumentRelevance(doc);
 
@@ -362,7 +486,8 @@ export async function collectFederalRegisterBills(daysBack = 30, minRelevanceSco
 
     console.log(`\n✅ Collection complete!`);
     console.log(`   Total documents fetched: ${documents.length}`);
-    console.log(`   Documents analyzed: ${analyzedCount}`);
+    console.log(`   Documents skipped (already in DB): ${duplicateCount}`);
+    console.log(`   New documents analyzed: ${analyzedCount}`);
     console.log(`   Bills meeting criteria (score >= ${minRelevanceScore}): ${bills.length}\n`);
 
     return bills;

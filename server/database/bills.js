@@ -27,14 +27,23 @@ export async function insertBill(bill) {
       has_comment_period, comment_deadline, comment_url, effective_date,
       priority, passage_likelihood, tracking_enabled,
       topics, snf_keywords_matched,
-      analyzed_at, last_checked_at, analysis
+      analyzed_at, last_checked_at, analysis,
+      direct_relevance_score, ecosystem_relevance_score, impact_type,
+      ecosystem_impact, strategic_actions, affected_operators, key_impact,
+      financial_impact_description, action_required, publication_date,
+      categories, agencies,
+      urgency_score, implementation_complexity, competitive_intelligence,
+      strategic_implications, impact_factors, entities, temporal_signals,
+      market_forces, compliance_timeline
     )
     VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
       $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
       $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
       $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-      $41, $42
+      $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
+      $51, $52, $53, $54, $55, $56, $57, $58, $59, $60,
+      $61, $62, $63
     )
     RETURNING id
   `
@@ -81,7 +90,30 @@ export async function insertBill(bill) {
     bill.snf_keywords_matched || null,
     bill.analyzed_at || null,
     new Date(),
-    bill.analysis ? JSON.stringify(bill.analysis) : null
+    bill.analysis ? JSON.stringify(bill.analysis) : null,
+    // New ecosystem fields
+    bill.direct_relevance_score || null,
+    bill.ecosystem_relevance_score || null,
+    bill.impact_type || null,
+    bill.ecosystem_impact ? JSON.stringify(bill.ecosystem_impact) : null,
+    bill.strategic_actions ? JSON.stringify(bill.strategic_actions) : null,
+    bill.affected_operators || null,
+    bill.key_impact || null,
+    bill.financial_impact_description || null,
+    bill.action_required || false,
+    bill.publication_date || null,
+    bill.categories ? JSON.stringify(bill.categories) : null,
+    bill.agencies ? JSON.stringify(bill.agencies) : null,
+    // Enhanced analysis fields
+    bill.urgency_score || null,
+    bill.implementation_complexity || null,
+    bill.competitive_intelligence || null,
+    bill.strategic_implications || null,
+    bill.impact_factors ? JSON.stringify(bill.impact_factors) : null,
+    bill.entities ? JSON.stringify(bill.entities) : null,
+    bill.temporal_signals ? JSON.stringify(bill.temporal_signals) : null,
+    bill.market_forces ? JSON.stringify(bill.market_forces) : null,
+    bill.compliance_timeline ? JSON.stringify(bill.compliance_timeline) : null
   ]
 
   const result = await db.query(query, values)
