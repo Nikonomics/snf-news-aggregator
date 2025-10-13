@@ -2660,20 +2660,52 @@ app.post('/api/admin/clear-and-backfill-images', async (req, res) => {
             return { success: false, skipped: true }
           }
 
-          const imageUrl = await fetchOpenGraphImage(article.url)
+          let urlToScrape = article.url
+
+          // If it's a Google News redirect URL, follow it to get the real article URL
+          if (article.url.includes('news.google.com/rss/articles/')) {
+            try {
+              const redirectResponse = await fetch(article.url, {
+                method: 'HEAD',
+                redirect: 'follow',
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+              })
+              urlToScrape = redirectResponse.url
+              console.log(`  🔗 Resolved redirect: ${urlToScrape.substring(0, 50)}...`)
+            } catch (redirectError) {
+              console.log(`  ⚠️  Could not resolve redirect for: ${article.title.substring(0, 50)}...`)
+              failureCount++
+              return { success: false }
+            }
+          }
+
+          const imageUrl = await fetchOpenGraphImage(urlToScrape)
 
           if (imageUrl) {
+            // Update both image_url and url (store the real article URL, not Google redirect)
             const updateQuery = `
               UPDATE articles
-              SET image_url = $1, updated_at = CURRENT_TIMESTAMP
-              WHERE id = $2
+              SET image_url = $1, url = $2, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $3
             `
-            await db.query(updateQuery, [imageUrl, article.id])
+            await db.query(updateQuery, [imageUrl, urlToScrape, article.id])
 
             successCount++
             console.log(`  ✅ ${article.title.substring(0, 60)}...`)
             return { success: true }
           } else {
+            // Even if no image found, update the URL to the real article URL
+            if (urlToScrape !== article.url) {
+              const updateQuery = `
+                UPDATE articles
+                SET url = $1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $2
+              `
+              await db.query(updateQuery, [urlToScrape, article.id])
+            }
+
             failureCount++
             console.log(`  ⚠️  No image found: ${article.title.substring(0, 60)}...`)
             return { success: false }
