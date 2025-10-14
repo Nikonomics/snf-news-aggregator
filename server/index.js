@@ -287,7 +287,7 @@ Return ONLY the JSON object. No markdown. No extra text.`
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-3-5-20241022', // Cheap, fast model for triage
+        model: 'claude-3-5-haiku-20241022', // Cheap, fast model for triage
         max_tokens: 200,
         temperature: 0.3,
         messages: [{
