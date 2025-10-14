@@ -28,12 +28,23 @@ import { getArticleImage } from './utils/imageExtractor.js'
 import {
   getStateDemographics,
   getAllStateDemographics,
+  getCountyDemographics,
+  getCountiesByState,
+  getAllCountyDemographics,
+  getFacilitiesByCounty,
+  getFacilitiesByCountyFips,
+  getCountyFacilitySummary,
+  getStateCountyFacilitySummaries,
+  getFacilitiesWithCountyDemographics,
   getFacilitiesByState,
   getFacilityByProviderNumber,
   searchFacilities,
   getFacilitiesByChain,
   getStateMarketMetrics,
   getStateOverview,
+  getComprehensiveStateAnalysis,
+  getAllStatesComparison,
+  getStateRankings,
   getFacilityOwnershipBreakdown,
   getTopChainsByState
 } from './database/state-data.js'
@@ -804,8 +815,7 @@ async function fetchAllFeeds() {
         tags: extractTags(cleanTitle, cleanContent, category),
         relevanceScore: calculateRelevanceScore(cleanTitle, cleanContent),
         url: item.link,
-        image_url: imageUrl,
-        relevance_tier: determineRelevanceTier(cleanTitle, cleanContent, category)
+        image_url: imageUrl
       }
 
       allArticles.push(article)
@@ -1312,6 +1322,146 @@ app.get('/api/ma/acquirer-leaderboard', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch acquirer leaderboard',
+      message: error.message
+    })
+  }
+})
+
+// GET /api/ma/companies - Get all companies mentioned in M&A articles
+app.get('/api/ma/companies', async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT
+        analysis->'maDetails'->>'acquirer' as acquirer,
+        analysis->'maDetails'->>'target' as target,
+        published_date
+      FROM articles
+      WHERE category = 'M&A'
+        AND analysis->'maDetails' IS NOT NULL
+      ORDER BY published_date DESC
+    `
+
+    const result = await db.query(query)
+
+    // Build unique company list with metadata
+    const companyMap = new Map()
+
+    result.rows.forEach(row => {
+      const acquirer = row.acquirer
+      const target = row.target
+      const date = row.published_date
+
+      // Process acquirer
+      if (acquirer && acquirer !== 'Unknown') {
+        if (!companyMap.has(acquirer)) {
+          companyMap.set(acquirer, {
+            name: acquirer,
+            role: ['acquirer'],
+            deal_count: 0,
+            recent_activity: date
+          })
+        }
+        const company = companyMap.get(acquirer)
+        company.deal_count++
+        if (!company.role.includes('acquirer')) {
+          company.role.push('acquirer')
+        }
+        if (new Date(date) > new Date(company.recent_activity)) {
+          company.recent_activity = date
+        }
+      }
+
+      // Process target
+      if (target && target !== 'Unknown') {
+        if (!companyMap.has(target)) {
+          companyMap.set(target, {
+            name: target,
+            role: ['target'],
+            deal_count: 0,
+            recent_activity: date
+          })
+        }
+        const company = companyMap.get(target)
+        company.deal_count++
+        if (!company.role.includes('target')) {
+          company.role.push('target')
+        }
+        if (new Date(date) > new Date(company.recent_activity)) {
+          company.recent_activity = date
+        }
+      }
+    })
+
+    // Helper function to determine if a name is likely a company vs. asset description
+    const isLikelyCompanyName = (name) => {
+      const lower = name.toLowerCase()
+
+      // Exclude if it contains numbers followed by common asset terms
+      const assetPatterns = [
+        /^\d+[\s-]*(bed|facility|facilities|building|property|properties|communities|community|portfolio)/i,
+        /^more than \d+/i,
+        /beds? (across|in|at)/i,
+        /(midtown|downtown|multiple|various|several|undisclosed).*(building|facility|facilities|properties|portfolio)/i,
+        /(nursing home|skilled nursing|assisted living|senior (housing|living)).*(facility|facilities|portfolio|properties)/i,
+        /(office|headquarters).*(building)/i,
+        /state.*(hospital|facility|facilities)/i,
+        /formerly? .*(seniors|senior|nursing)/i,
+        /(merger|acquisition).*(not specified|unspecified|unnamed)/i
+      ]
+
+      // Check if matches asset description patterns
+      for (const pattern of assetPatterns) {
+        if (pattern.test(name)) {
+          return false
+        }
+      }
+
+      // Exclude generic/descriptive phrases
+      const genericTerms = [
+        'unknown',
+        'unspecified',
+        'unnamed',
+        'not specified',
+        'not named',
+        'article discusses'
+      ]
+
+      if (genericTerms.some(term => lower.includes(term))) {
+        return false
+      }
+
+      // If name starts with a number and is long, likely an asset description
+      if (/^\d+/.test(name) && name.length > 30) {
+        return false
+      }
+
+      return true
+    }
+
+    // Convert to array, filter out asset descriptions, add IDs, and sort
+    const companies = Array.from(companyMap.values())
+      .filter(company => isLikelyCompanyName(company.name))
+      .map((company, index) => ({
+        id: index + 1,
+        ...company
+      }))
+      .sort((a, b) => new Date(b.recent_activity) - new Date(a.recent_activity))
+
+    res.json({
+      success: true,
+      companies,
+      summary: {
+        total_companies: companies.length,
+        acquirers: companies.filter(c => c.role.includes('acquirer')).length,
+        targets: companies.filter(c => c.role.includes('target')).length,
+        both: companies.filter(c => c.role.includes('acquirer') && c.role.includes('target')).length
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching companies:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch companies',
       message: error.message
     })
   }
@@ -2124,10 +2274,10 @@ app.get('/api/state/:stateCode/dashboard', async (req, res) => {
 })
 
 // GET /api/states/comparison - Get all states with scores
-app.get('/api/states/comparison', (req, res) => {
+app.get('/api/states/comparison', async (req, res) => {
   try {
     const metric = req.query.metric || 'overall'
-    const states = getStatesByMetric(metric)
+    const states = await getAllStatesComparison(metric)
 
     res.json({
       success: true,
@@ -2145,15 +2295,20 @@ app.get('/api/states/comparison', (req, res) => {
 })
 
 // GET /api/states/rankings - Get top and bottom performers
-app.get('/api/states/rankings', (req, res) => {
+app.get('/api/states/rankings', async (req, res) => {
   try {
+    const rankings = await getStateRankings()
     const count = parseInt(req.query.count) || 10
-    const rankings = getTopBottomStates(count)
+
+    // Split into top and bottom
+    const top10 = rankings.slice(0, count)
+    const bottom10 = rankings.slice(-count).reverse()
 
     res.json({
       success: true,
-      top10: rankings.top10,
-      bottom10: rankings.bottom10
+      top10: top10,
+      bottom10: bottom10,
+      all: rankings
     })
   } catch (error) {
     console.error('Error fetching state rankings:', error)
@@ -2211,6 +2366,32 @@ app.get('/api/state/:stateCode/demographics', async (req, res) => {
   }
 })
 
+// GET /api/state/:stateCode/analysis - Get comprehensive state analysis
+app.get('/api/state/:stateCode/analysis', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const analysis = await getComprehensiveStateAnalysis(stateCode)
+
+    if (!analysis.stateName) {
+      return res.status(404).json({
+        success: false,
+        error: 'State not found or data not available'
+      })
+    }
+
+    res.json({
+      success: true,
+      data: analysis
+    })
+  } catch (error) {
+    console.error('Error fetching comprehensive state analysis:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // GET /api/state/:stateCode/facilities - Get all facilities for a state
 app.get('/api/state/:stateCode/facilities', async (req, res) => {
   try {
@@ -2242,6 +2423,174 @@ app.get('/api/state/:stateCode/facilities', async (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/counties/demographics - Get all county demographics
+app.get('/api/counties/demographics', async (req, res) => {
+  try {
+    const counties = await getAllCountyDemographics()
+    res.json({
+      success: true,
+      counties,
+      count: counties.length
+    })
+  } catch (error) {
+    console.error('Error fetching county demographics:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/counties - Get counties for a specific state
+app.get('/api/state/:stateCode/counties', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const counties = await getCountiesByState(stateCode)
+    res.json({
+      success: true,
+      counties,
+      count: counties.length
+    })
+  } catch (error) {
+    console.error('Error fetching counties for state:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/county/:countyFips/demographics - Get demographics for specific county
+app.get('/api/county/:countyFips/demographics', async (req, res) => {
+  try {
+    const { countyFips } = req.params
+    const demographics = await getCountyDemographics(countyFips)
+
+    if (!demographics) {
+      return res.status(404).json({
+        success: false,
+        error: 'County not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      demographics
+    })
+  } catch (error) {
+    console.error('Error fetching county demographics:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/county/:countyName/facilities - Get facilities for county by name
+app.get('/api/state/:stateCode/county/:countyName/facilities', async (req, res) => {
+  try {
+    const { stateCode, countyName } = req.params
+    const facilities = await getFacilitiesByCounty(stateCode, countyName)
+    res.json({
+      success: true,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error fetching facilities by county:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/county/:countyFips/facilities - Get facilities for county by FIPS
+app.get('/api/county/:countyFips/facilities', async (req, res) => {
+  try {
+    const { countyFips } = req.params
+    const facilities = await getFacilitiesByCountyFips(countyFips)
+    res.json({
+      success: true,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error fetching facilities by county FIPS:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/county/:countyFips/summary - Get county facility summary with demographics
+app.get('/api/county/:countyFips/summary', async (req, res) => {
+  try {
+    const { countyFips } = req.params
+    const summary = await getCountyFacilitySummary(countyFips)
+
+    if (!summary) {
+      return res.status(404).json({
+        success: false,
+        error: 'County not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      summary
+    })
+  } catch (error) {
+    console.error('Error fetching county summary:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/state/:stateCode/counties/summaries - Get county summaries for a state
+app.get('/api/state/:stateCode/counties/summaries', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const summaries = await getStateCountyFacilitySummaries(stateCode)
+    res.json({
+      success: true,
+      summaries,
+      count: summaries.length
+    })
+  } catch (error) {
+    console.error('Error fetching state county summaries:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/facilities/with-demographics - Get facilities enriched with county demographics
+app.get('/api/facilities/with-demographics', async (req, res) => {
+  try {
+    const { stateCode, limit = '100' } = req.query
+    const facilities = await getFacilitiesWithCountyDemographics(
+      stateCode || null,
+      parseInt(limit)
+    )
+    res.json({
+      success: true,
+      facilities,
+      count: facilities.length
+    })
+  } catch (error) {
+    console.error('Error fetching facilities with demographics:', error)
     res.status(500).json({
       success: false,
       error: error.message

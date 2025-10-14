@@ -361,6 +361,7 @@ export async function getStateMarketMetrics(stateCode) {
  * Calculate and update market metrics for a state
  */
 export async function calculateStateMarketMetrics(stateCode) {
+  const upperStateCode = stateCode.toUpperCase()
   const query = `
     INSERT INTO state_market_metrics (
       state_code,
@@ -388,7 +389,7 @@ export async function calculateStateMarketMetrics(stateCode) {
       calculation_date
     )
     SELECT
-      $1 as state_code,
+      $1::text as state_code,
       COUNT(*) as total_facilities,
       COUNT(*) FILTER (WHERE ownership_type = 'For profit') as for_profit_facilities,
       COUNT(*) FILTER (WHERE ownership_type = 'Non-profit') as nonprofit_facilities,
@@ -509,6 +510,319 @@ export async function getTopChainsByState(stateCode, limit = 10) {
   return result.rows
 }
 
+/**
+ * Get comprehensive state analysis data combining demographics, market metrics, and national comparisons
+ */
+export async function getComprehensiveStateAnalysis(stateCode) {
+  const upperStateCode = stateCode.toUpperCase()
+
+  // Get demographics
+  const demographics = await getStateDemographics(upperStateCode)
+
+  // Get market metrics
+  const marketMetrics = await getStateMarketMetrics(upperStateCode)
+
+  // Get star rating distributions
+  const starDistribution = await pool.query(
+    `SELECT
+      COUNT(*) FILTER (WHERE overall_rating = 5) as five_star_count,
+      COUNT(*) FILTER (WHERE overall_rating = 1) as one_star_count,
+      COUNT(*) as total_facilities
+    FROM snf_facilities
+    WHERE state = $1 AND active = true`,
+    [upperStateCode]
+  )
+
+  // Get national averages for comparison
+  const nationalAverages = await pool.query(
+    `WITH national_totals AS (
+      SELECT
+        SUM(total_beds) as total_beds,
+        AVG(occupancy_rate) as avg_occupancy,
+        AVG(overall_rating) as avg_rating,
+        AVG(health_deficiencies) as avg_deficiencies,
+        AVG(total_beds) as avg_beds_per_facility,
+        COUNT(*) FILTER (WHERE multi_facility_chain = true) as chain_facilities,
+        COUNT(*) FILTER (WHERE overall_rating = 5) as five_star_facilities,
+        COUNT(*) FILTER (WHERE overall_rating = 1) as one_star_facilities,
+        COUNT(*) as total_facilities
+      FROM snf_facilities
+      WHERE active = true
+    ),
+    pop_totals AS (
+      SELECT SUM(population_65_plus) as total_pop_65_plus
+      FROM state_demographics
+    )
+    SELECT
+      nt.avg_occupancy as national_avg_occupancy,
+      nt.avg_rating as national_avg_rating,
+      nt.avg_deficiencies as national_avg_deficiencies,
+      nt.avg_beds_per_facility as national_avg_beds_per_facility,
+      nt.total_beds::numeric / NULLIF(pt.total_pop_65_plus, 0) * 1000 as national_beds_per_1000_seniors,
+      (nt.chain_facilities::numeric / nt.total_facilities * 100) as national_chain_ownership_percent,
+      (nt.five_star_facilities::numeric / nt.total_facilities * 100) as national_five_star_percent,
+      (nt.one_star_facilities::numeric / nt.total_facilities * 100) as national_one_star_percent
+    FROM national_totals nt, pop_totals pt`
+  )
+
+  // Get regional averages for comparison
+  const regionalAverages = await pool.query(
+    `SELECT
+      rs.cms_region,
+      rs.cms_region_name,
+      rs.avg_overall_rating as regional_avg_rating,
+      rs.avg_occupancy_rate as regional_avg_occupancy,
+      rs.avg_deficiencies as regional_avg_deficiencies,
+      rs.beds_per_1000_seniors as regional_beds_per_1000_seniors
+    FROM regional_market_stats rs
+    JOIN state_demographics sd ON rs.cms_region = sd.cms_region
+    WHERE sd.state_code = $1`,
+    [upperStateCode]
+  )
+
+  // Get biggest operators by facilities
+  const biggestByFacilities = await pool.query(
+    `SELECT
+      ownership_chain as operator_name,
+      COUNT(*) as facility_count,
+      SUM(total_beds) as total_beds
+    FROM snf_facilities
+    WHERE state = $1 AND active = true AND ownership_chain IS NOT NULL
+    GROUP BY ownership_chain
+    ORDER BY facility_count DESC
+    LIMIT 1`,
+    [upperStateCode]
+  )
+
+  // Get biggest operators by beds
+  const biggestByBeds = await pool.query(
+    `SELECT
+      ownership_chain as operator_name,
+      COUNT(*) as facility_count,
+      SUM(total_beds) as total_beds
+    FROM snf_facilities
+    WHERE state = $1 AND active = true AND ownership_chain IS NOT NULL
+    GROUP BY ownership_chain
+    ORDER BY total_beds DESC
+    LIMIT 1`,
+    [upperStateCode]
+  )
+
+  const stats = starDistribution.rows[0]
+  const national = nationalAverages.rows[0]
+  const regional = regionalAverages.rows[0] || {}
+  const topOperatorByFacilities = biggestByFacilities.rows[0] || null
+  const topOperatorByBeds = biggestByBeds.rows[0] || null
+
+  // Calculate percentages and comparisons
+  const fiveStarPercent = stats.total_facilities > 0
+    ? (stats.five_star_count / stats.total_facilities * 100)
+    : 0
+
+  const oneStarPercent = stats.total_facilities > 0
+    ? (stats.one_star_count / stats.total_facilities * 100)
+    : 0
+
+  const chainOwnershipPercent = marketMetrics?.total_facilities > 0
+    ? (marketMetrics.chain_owned_facilities / marketMetrics.total_facilities * 100)
+    : 0
+
+  // Calculate beds per 1000 seniors
+  const bedsPerThousandSeniors = demographics?.population_65_plus > 0 && marketMetrics?.total_beds
+    ? (marketMetrics.total_beds / demographics.population_65_plus * 1000)
+    : 0
+
+  return {
+    stateCode: upperStateCode,
+    stateName: demographics?.state_name,
+    cmsRegion: demographics?.cms_region || null,
+    cmsRegionName: demographics?.cms_region_name || null,
+
+    demographics: {
+      population65Plus: demographics?.population_65_plus || 0,
+      population85Plus: demographics?.population_85_plus || 0,
+      percent65Plus: demographics?.percent_65_plus || 0,
+      percent85Plus: demographics?.percent_85_plus || 0,
+      projected65Plus2030: demographics?.projected_65_plus_2030 || 0,
+      projected85Plus2030: demographics?.projected_85_plus_2030 || 0
+    },
+
+    quality: {
+      avgOverallRating: marketMetrics?.avg_overall_rating || 0,
+      avgOverallRatingVsNational: marketMetrics?.avg_overall_rating
+        ? ((marketMetrics.avg_overall_rating - national.national_avg_rating) / national.national_avg_rating * 100)
+        : 0,
+      avgOverallRatingVsRegional: marketMetrics?.avg_overall_rating && regional.regional_avg_rating
+        ? ((marketMetrics.avg_overall_rating - regional.regional_avg_rating) / regional.regional_avg_rating * 100)
+        : 0,
+      nationalAvgRating: parseFloat(national.national_avg_rating) || 0,
+      regionalAvgRating: parseFloat(regional.regional_avg_rating) || 0,
+
+      avgDeficiencies: marketMetrics?.avg_health_deficiencies || 0,
+      avgDeficienciesVsNational: marketMetrics?.avg_health_deficiencies
+        ? ((marketMetrics.avg_health_deficiencies - national.national_avg_deficiencies) / national.national_avg_deficiencies * 100)
+        : 0,
+      avgDeficienciesVsRegional: marketMetrics?.avg_health_deficiencies && regional.regional_avg_deficiencies
+        ? ((marketMetrics.avg_health_deficiencies - regional.regional_avg_deficiencies) / regional.regional_avg_deficiencies * 100)
+        : 0,
+      nationalAvgDeficiencies: parseFloat(national.national_avg_deficiencies) || 0,
+      regionalAvgDeficiencies: parseFloat(regional.regional_avg_deficiencies) || 0,
+
+      fiveStarPercent: fiveStarPercent,
+      fiveStarCount: parseInt(stats.five_star_count) || 0,
+      nationalFiveStarPercent: parseFloat(national.national_five_star_percent) || 0,
+
+      oneStarPercent: oneStarPercent,
+      oneStarCount: parseInt(stats.one_star_count) || 0,
+      nationalOneStarPercent: parseFloat(national.national_one_star_percent) || 0,
+
+      avgHealthInspectionRating: marketMetrics?.avg_health_inspection_rating || 0,
+      avgStaffingRating: marketMetrics?.avg_staffing_rating || 0
+    },
+
+    market: {
+      totalFacilities: marketMetrics?.total_facilities || 0,
+      totalBeds: marketMetrics?.total_beds || 0,
+      avgBedsPerFacility: marketMetrics?.total_facilities > 0
+        ? (marketMetrics.total_beds / marketMetrics.total_facilities)
+        : 0,
+      nationalAvgBedsPerFacility: parseFloat(national.national_avg_beds_per_facility) || 0,
+      avgBedsVsNational: marketMetrics?.total_facilities > 0 && national.national_avg_beds_per_facility
+        ? (((marketMetrics.total_beds / marketMetrics.total_facilities) - national.national_avg_beds_per_facility) / national.national_avg_beds_per_facility * 100)
+        : 0,
+
+      avgOccupancyRate: marketMetrics?.average_occupancy_rate || 0,
+      avgOccupancyVsNational: marketMetrics?.average_occupancy_rate
+        ? ((marketMetrics.average_occupancy_rate - national.national_avg_occupancy) / national.national_avg_occupancy * 100)
+        : 0,
+      avgOccupancyVsRegional: marketMetrics?.average_occupancy_rate && regional.regional_avg_occupancy
+        ? ((marketMetrics.average_occupancy_rate - regional.regional_avg_occupancy) / regional.regional_avg_occupancy * 100)
+        : 0,
+      nationalAvgOccupancy: parseFloat(national.national_avg_occupancy) || 0,
+      regionalAvgOccupancy: parseFloat(regional.regional_avg_occupancy) || 0,
+
+      bedsPerThousandSeniors: bedsPerThousandSeniors,
+      bedsPerThousandSeniorsVsNational: bedsPerThousandSeniors && national.national_beds_per_1000_seniors
+        ? ((bedsPerThousandSeniors - national.national_beds_per_1000_seniors) / national.national_beds_per_1000_seniors * 100)
+        : 0,
+      bedsPerThousandSeniorsVsRegional: bedsPerThousandSeniors && regional.regional_beds_per_1000_seniors
+        ? ((bedsPerThousandSeniors - regional.regional_beds_per_1000_seniors) / regional.regional_beds_per_1000_seniors * 100)
+        : 0,
+      nationalBedsPerThousandSeniors: parseFloat(national.national_beds_per_1000_seniors) || 0,
+      regionalBedsPerThousandSeniors: parseFloat(regional.regional_beds_per_1000_seniors) || 0,
+
+      chainOwnershipPercent: chainOwnershipPercent,
+      chainOwnershipPercentVsNational: chainOwnershipPercent && national.national_chain_ownership_percent
+        ? ((chainOwnershipPercent - national.national_chain_ownership_percent) / national.national_chain_ownership_percent * 100)
+        : 0,
+      nationalChainOwnershipPercent: parseFloat(national.national_chain_ownership_percent) || 0,
+      chainOwnedFacilities: marketMetrics?.chain_owned_facilities || 0,
+      independentFacilities: marketMetrics?.independent_facilities || 0,
+
+      topOperatorByFacilities: topOperatorByFacilities ? {
+        name: topOperatorByFacilities.operator_name,
+        facilityCount: parseInt(topOperatorByFacilities.facility_count),
+        totalBeds: parseInt(topOperatorByFacilities.total_beds)
+      } : null,
+
+      topOperatorByBeds: topOperatorByBeds ? {
+        name: topOperatorByBeds.operator_name,
+        facilityCount: parseInt(topOperatorByBeds.facility_count),
+        totalBeds: parseInt(topOperatorByBeds.total_beds)
+      } : null,
+
+      forProfitFacilities: marketMetrics?.for_profit_facilities || 0,
+      nonprofitFacilities: marketMetrics?.nonprofit_facilities || 0,
+      governmentFacilities: marketMetrics?.government_facilities || 0
+    },
+
+    staffing: {
+      avgRnHours: marketMetrics?.avg_rn_hours || 0,
+      avgTotalNurseHours: marketMetrics?.avg_total_nurse_hours || 0,
+      avgCnaHours: marketMetrics?.avg_cna_hours || 0
+    },
+
+    compliance: {
+      facilitiesWithPenalties: marketMetrics?.facilities_with_penalties || 0,
+      totalPenaltiesAmount: marketMetrics?.total_penalties_amount || 0,
+      specialFocusFacilities: marketMetrics?.special_focus_facilities || 0,
+      facilitiesWithAbuseIcon: marketMetrics?.facilities_with_abuse_icon || 0
+    }
+  }
+}
+
+/**
+ * Get all states with key metrics for comparison map
+ */
+export async function getAllStatesComparison(metric = 'overall') {
+  const result = await pool.query(
+    `SELECT
+      sd.state_code,
+      sd.state_name,
+      sd.population_65_plus,
+      sd.population_85_plus,
+      smm.avg_overall_rating,
+      smm.average_occupancy_rate,
+      smm.total_facilities,
+      smm.total_beds,
+      smm.avg_health_deficiencies,
+      smm.chain_owned_facilities,
+      smm.total_facilities as total_fac,
+      CASE
+        WHEN sd.population_65_plus > 0
+        THEN ROUND((smm.total_beds::numeric / sd.population_65_plus * 1000)::numeric, 2)
+        ELSE 0
+      END as beds_per_1000_seniors,
+      ROUND((smm.chain_owned_facilities::numeric / NULLIF(smm.total_facilities, 0) * 100)::numeric, 1) as chain_ownership_percent
+    FROM state_demographics sd
+    LEFT JOIN state_market_metrics smm ON sd.state_code = smm.state_code
+    ORDER BY sd.state_name`
+  )
+  return result.rows
+}
+
+/**
+ * Get state rankings for various metrics
+ */
+export async function getStateRankings() {
+  const result = await pool.query(
+    `WITH state_data AS (
+      SELECT
+        sd.state_code,
+        sd.state_name,
+        sd.population_65_plus,
+        smm.avg_overall_rating,
+        smm.average_occupancy_rate,
+        smm.total_facilities,
+        smm.avg_health_deficiencies,
+        CASE
+          WHEN sd.population_65_plus > 0
+          THEN (smm.total_beds::numeric / sd.population_65_plus * 1000)
+          ELSE 0
+        END as beds_per_1000_seniors
+      FROM state_demographics sd
+      LEFT JOIN state_market_metrics smm ON sd.state_code = smm.state_code
+    ),
+    rankings AS (
+      SELECT
+        state_code,
+        state_name,
+        avg_overall_rating,
+        average_occupancy_rate,
+        total_facilities,
+        avg_health_deficiencies,
+        beds_per_1000_seniors,
+        RANK() OVER (ORDER BY avg_overall_rating DESC NULLS LAST) as quality_rank,
+        RANK() OVER (ORDER BY avg_health_deficiencies ASC NULLS LAST) as deficiency_rank,
+        RANK() OVER (ORDER BY average_occupancy_rate DESC NULLS LAST) as occupancy_rank,
+        RANK() OVER (ORDER BY beds_per_1000_seniors DESC NULLS LAST) as capacity_rank
+      FROM state_data
+    )
+    SELECT * FROM rankings ORDER BY quality_rank`
+  )
+  return result.rows
+}
+
 export default {
   // Demographics
   getStateDemographics,
@@ -527,6 +841,9 @@ export default {
   getStateMarketMetrics,
   calculateStateMarketMetrics,
   getStateOverview,
+  getComprehensiveStateAnalysis,
+  getAllStatesComparison,
+  getStateRankings,
 
   // Utilities
   getFacilityOwnershipBreakdown,
@@ -622,4 +939,77 @@ export async function upsertCountyDemographics(demographics) {
   )
 
   return result.rows[0]
+}
+
+/**
+ * COUNTY-BASED FACILITY QUERIES
+ */
+
+/**
+ * Get facilities by county
+ */
+export async function getFacilitiesByCounty(stateCode, countyName) {
+  const result = await pool.query(
+    `SELECT * FROM snf_facilities
+     WHERE state = $1 AND county = $2 AND active = true
+     ORDER BY facility_name`,
+    [stateCode.toUpperCase(), countyName]
+  )
+  return result.rows
+}
+
+/**
+ * Get facilities by county FIPS code
+ */
+export async function getFacilitiesByCountyFips(countyFips) {
+  const result = await pool.query(
+    `SELECT * FROM snf_facilities
+     WHERE county_fips = $1 AND active = true
+     ORDER BY facility_name`,
+    [countyFips]
+  )
+  return result.rows
+}
+
+/**
+ * Get facility summary for a county with demographics
+ */
+export async function getCountyFacilitySummary(countyFips) {
+  const result = await pool.query(
+    'SELECT * FROM county_facility_summary WHERE county_fips = $1',
+    [countyFips]
+  )
+  return result.rows[0] || null
+}
+
+/**
+ * Get all county facility summaries for a state
+ */
+export async function getStateCountyFacilitySummaries(stateCode) {
+  const result = await pool.query(
+    `SELECT * FROM county_facility_summary
+     WHERE state_code = $1
+     ORDER BY county_name`,
+    [stateCode.toUpperCase()]
+  )
+  return result.rows
+}
+
+/**
+ * Get facilities with enriched county demographic data
+ */
+export async function getFacilitiesWithCountyDemographics(stateCode = null, limit = 100) {
+  let query = `SELECT * FROM facilities_with_county_demographics WHERE active = true`
+  const params = []
+
+  if (stateCode) {
+    query += ` AND state = $1`
+    params.push(stateCode.toUpperCase())
+  }
+
+  query += ` ORDER BY facility_name LIMIT $${params.length + 1}`
+  params.push(limit)
+
+  const result = await pool.query(query, params)
+  return result.rows
 }

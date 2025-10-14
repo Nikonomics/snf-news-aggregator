@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import {
   MapPin, TrendingUp, TrendingDown, Minus, Building2,
   ExternalLink, Linkedin, Globe, AlertCircle, Calendar,
-  ArrowLeft, Loader, Newspaper, BarChart3
+  ArrowLeft, Loader, Newspaper, BarChart3, Users
 } from 'lucide-react'
 import ArticleList from './ArticleList'
 import MetricsCardGrid from './MetricsCardGrid'
@@ -23,6 +23,7 @@ function StateDashboard() {
   const [activeTab, setActiveTab] = useState('news')
   const [dashboardData, setDashboardData] = useState(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
+  const [scorecardData, setScorecardData] = useState(null)
   const [savedArticles, setSavedArticles] = useState(() => {
     const saved = localStorage.getItem('savedArticles')
     return saved ? JSON.parse(saved) : []
@@ -30,6 +31,7 @@ function StateDashboard() {
 
   useEffect(() => {
     loadStateData()
+    loadScorecardData()
   }, [stateCode])
 
   useEffect(() => {
@@ -57,17 +59,171 @@ function StateDashboard() {
     }
   }
 
+  const loadScorecardData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/state/${stateCode}/analysis`)
+      const data = await response.json()
+
+      if (data.success) {
+        setScorecardData(data.data)
+      }
+    } catch (err) {
+      console.error('Error loading scorecard:', err)
+    }
+  }
+
+  const transformAnalysisToMetrics = (analysis) => {
+    const data = analysis.data
+
+    return {
+      success: true,
+      metrics: {
+        demographics: [
+          {
+            name: 'population_65_plus',
+            displayName: 'Population 65+',
+            value: data.demographics.population65Plus,
+            unit: 'count',
+            description: 'Total population age 65 and older in ' + data.stateName
+          },
+          {
+            name: 'population_85_plus',
+            displayName: 'Population 85+',
+            value: data.demographics.population85Plus,
+            unit: 'count',
+            description: 'Total population age 85 and older in ' + data.stateName
+          }
+        ],
+        quality: [
+          {
+            name: 'avg_overall_rating',
+            displayName: 'Average Overall Star Rating',
+            value: data.quality.avgOverallRating,
+            nationalAvg: data.quality.nationalAvgRating,
+            regionalAvg: data.quality.regionalAvgRating,
+            percentDiff: data.quality.avgOverallRatingVsNational,
+            percentDiffRegional: data.quality.avgOverallRatingVsRegional,
+            unit: 'stars',
+            description: 'Mean CMS 5-star overall quality rating'
+          },
+          {
+            name: 'avg_deficiencies',
+            displayName: 'Average Deficiencies per Facility',
+            value: data.quality.avgDeficiencies,
+            nationalAvg: data.quality.nationalAvgDeficiencies,
+            regionalAvg: data.quality.regionalAvgDeficiencies,
+            percentDiff: data.quality.avgDeficienciesVsNational,
+            percentDiffRegional: data.quality.avgDeficienciesVsRegional,
+            unit: 'count',
+            description: 'Mean number of health survey deficiencies cited'
+          },
+          {
+            name: 'five_star_percent',
+            displayName: 'Percent 5-Star Facilities',
+            value: data.quality.fiveStarPercent,
+            nationalAvg: data.quality.nationalFiveStarPercent,
+            percentDiff: data.quality.nationalFiveStarPercent
+              ? ((data.quality.fiveStarPercent - data.quality.nationalFiveStarPercent) / data.quality.nationalFiveStarPercent * 100)
+              : 0,
+            unit: '%',
+            description: 'Percentage of facilities with 5-star overall rating'
+          },
+          {
+            name: 'one_star_percent',
+            displayName: 'Percent 1-Star Facilities',
+            value: data.quality.oneStarPercent,
+            nationalAvg: data.quality.nationalOneStarPercent,
+            percentDiff: data.quality.nationalOneStarPercent
+              ? ((data.quality.oneStarPercent - data.quality.nationalOneStarPercent) / data.quality.nationalOneStarPercent * 100)
+              : 0,
+            unit: '%',
+            description: 'Percentage of facilities with 1-star overall rating'
+          }
+        ],
+        market: [
+          {
+            name: 'total_facilities',
+            displayName: 'Total Facilities',
+            value: data.market.totalFacilities,
+            unit: 'count',
+            description: 'Number of Medicare/Medicaid certified nursing facilities'
+          },
+          {
+            name: 'total_beds',
+            displayName: 'Total Certified Beds',
+            value: data.market.totalBeds,
+            unit: 'count',
+            description: 'Total number of certified nursing home beds'
+          },
+          {
+            name: 'avg_beds_per_facility',
+            displayName: 'Average Beds per Facility',
+            value: data.market.avgBedsPerFacility,
+            nationalAvg: data.market.nationalAvgBedsPerFacility,
+            percentDiff: data.market.avgBedsVsNational,
+            unit: 'count',
+            description: 'Mean number of beds per facility in the state'
+          },
+          {
+            name: 'avg_occupancy',
+            displayName: 'Average Occupancy Rate',
+            value: data.market.avgOccupancyRate,
+            nationalAvg: data.market.nationalAvgOccupancy,
+            percentDiff: data.market.avgOccupancyVsNational,
+            unit: '%',
+            description: 'Average percentage of certified beds occupied'
+          },
+          {
+            name: 'beds_per_1000_seniors',
+            displayName: 'SNF Beds per 1,000 Seniors',
+            value: data.market.bedsPerThousandSeniors,
+            nationalAvg: data.market.nationalBedsPerThousandSeniors,
+            percentDiff: data.market.bedsPerThousandSeniorsVsNational,
+            unit: 'per 1000',
+            description: 'Number of certified nursing home beds per 1,000 population 65+'
+          },
+          {
+            name: 'chain_ownership_percent',
+            displayName: 'Chain Ownership Percentage',
+            value: data.market.chainOwnershipPercent,
+            nationalAvg: data.market.nationalChainOwnershipPercent,
+            percentDiff: data.market.chainOwnershipPercentVsNational,
+            unit: '%',
+            description: 'Percentage of facilities owned by multi-facility organizations'
+          }
+        ]
+      },
+      topOperators: {
+        byFacilities: data.market.topOperatorByFacilities,
+        byBeds: data.market.topOperatorByBeds
+      }
+    }
+  }
+
   const loadDashboardData = async () => {
     try {
       setDashboardLoading(true)
-      const response = await fetch(`${API_BASE_URL}/api/state/${stateCode}/dashboard`)
-      const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.message || data.error || 'Failed to load dashboard data')
+      // Fetch both analysis and facilities data in parallel
+      const [analysisResponse, facilitiesResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/analysis`),
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities?limit=100`)
+      ])
+
+      const analysisData = await analysisResponse.json()
+      const facilitiesData = await facilitiesResponse.json()
+
+      if (!analysisData.success) {
+        throw new Error(analysisData.message || analysisData.error || 'Failed to load dashboard data')
       }
 
-      setDashboardData(data)
+      // Transform the analysis data into the format the UI expects
+      const transformedData = transformAnalysisToMetrics(analysisData)
+
+      // Add facilities data
+      transformedData.facilities = facilitiesData.facilities || []
+
+      setDashboardData(transformedData)
     } catch (err) {
       console.error('Error loading dashboard:', err)
       setDashboardData({ error: err.message })
@@ -99,6 +255,30 @@ function StateDashboard() {
     if (score >= 50) return '#f59e0b' // yellow
     if (score >= 30) return '#f97316' // orange
     return '#ef4444' // red
+  }
+
+  const formatMetricValue = (value, unit) => {
+    // Convert string to number if needed
+    const numValue = typeof value === 'string' ? parseFloat(value) : value
+
+    if (isNaN(numValue)) return value // Return as-is if not a number
+
+    switch (unit) {
+      case '%':
+        return numValue.toFixed(1)
+      case 'count':
+        return Math.round(numValue).toLocaleString()
+      case 'stars':
+      case 'per 1000':
+      case 'rating':
+        return numValue.toFixed(1)
+      case '$':
+        return numValue.toFixed(2)
+      case '$/kWh':
+        return `$${numValue.toFixed(3)}/kWh`
+      default:
+        return numValue.toLocaleString()
+    }
   }
 
   if (loading) {
@@ -135,6 +315,93 @@ function StateDashboard() {
           {stateCode} State Dashboard
         </h1>
       </div>
+
+      {/* Scorecard */}
+      {scorecardData && (
+        <div className="state-scorecard">
+          <div className="scorecard-header">
+            <h3>{scorecardData.stateName} Market Overview</h3>
+            {scorecardData.cmsRegionName && (
+              <span className="scorecard-region">CMS Region: {scorecardData.cmsRegionName}</span>
+            )}
+          </div>
+
+          <div className="scorecard-grid">
+            <div className="scorecard-item">
+              <div className="scorecard-icon">
+                <Building2 size={24} />
+              </div>
+              <div className="scorecard-content">
+                <div className="scorecard-value">{scorecardData.market.totalFacilities.toLocaleString()}</div>
+                <div className="scorecard-label">Facilities</div>
+              </div>
+            </div>
+
+            <div className="scorecard-item">
+              <div className="scorecard-icon">
+                <Users size={24} />
+              </div>
+              <div className="scorecard-content">
+                <div className="scorecard-value">{scorecardData.market.totalBeds.toLocaleString()}</div>
+                <div className="scorecard-label">Licensed Beds</div>
+                {scorecardData.market.nationalAvgBeds && (
+                  <div className="scorecard-comparison">
+                    <span className="comparison-label">National Avg:</span>
+                    <span className="comparison-value">{Math.round(scorecardData.market.nationalAvgBeds).toLocaleString()}</span>
+                    {scorecardData.market.avgBedsVsNational !== 0 && (
+                      <span className={`comparison-indicator ${scorecardData.market.avgBedsVsNational > 0 ? 'positive' : 'negative'}`}>
+                        {scorecardData.market.avgBedsVsNational > 0 ? '+' : ''}{scorecardData.market.avgBedsVsNational.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="scorecard-item">
+              <div className="scorecard-icon">
+                <Users size={24} />
+              </div>
+              <div className="scorecard-content">
+                <div className="scorecard-value">{scorecardData.demographics.population65Plus.toLocaleString()}</div>
+                <div className="scorecard-label">Population 65+</div>
+              </div>
+            </div>
+
+            <div className="scorecard-item">
+              <div className="scorecard-icon">
+                <TrendingUp size={24} />
+              </div>
+              <div className="scorecard-content">
+                <div className="scorecard-value">{scorecardData.market.bedsPerThousandSeniors.toFixed(1)}</div>
+                <div className="scorecard-label">Beds per 1,000 Seniors</div>
+                {scorecardData.market.nationalBedsPerThousandSeniors && (
+                  <div className="scorecard-comparison">
+                    <span className="comparison-label">National:</span>
+                    <span className="comparison-value">{scorecardData.market.nationalBedsPerThousandSeniors.toFixed(1)}</span>
+                    {scorecardData.market.bedsPerThousandSeniorsVsNational !== 0 && (
+                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsNational > 0 ? 'positive' : 'negative'}`}>
+                        {scorecardData.market.bedsPerThousandSeniorsVsNational > 0 ? '+' : ''}{scorecardData.market.bedsPerThousandSeniorsVsNational.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                )}
+                {scorecardData.market.regionalBedsPerThousandSeniors && (
+                  <div className="scorecard-comparison">
+                    <span className="comparison-label">Regional:</span>
+                    <span className="comparison-value">{scorecardData.market.regionalBedsPerThousandSeniors.toFixed(1)}</span>
+                    {scorecardData.market.bedsPerThousandSeniorsVsRegional !== 0 && (
+                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsRegional > 0 ? 'positive' : 'negative'}`}>
+                        {scorecardData.market.bedsPerThousandSeniorsVsRegional > 0 ? '+' : ''}{scorecardData.market.bedsPerThousandSeniorsVsRegional.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="dashboard-tabs">
@@ -409,6 +676,50 @@ function StateDashboard() {
                 </section>
               )}
 
+              {/* Top Operators */}
+              {dashboardData.topOperators && (dashboardData.topOperators.byFacilities || dashboardData.topOperators.byBeds) && (
+                <section className="top-operators-section">
+                  <h2 className="section-title">
+                    <Building2 size={24} />
+                    Largest Operators in {stateCode}
+                  </h2>
+                  <div className="operators-grid">
+                    {dashboardData.topOperators.byFacilities && (
+                      <div className="operator-card">
+                        <h3>By Number of Facilities</h3>
+                        <div className="operator-name">{dashboardData.topOperators.byFacilities.name}</div>
+                        <div className="operator-stats">
+                          <div className="operator-stat">
+                            <span className="stat-label">Facilities:</span>
+                            <span className="stat-value">{dashboardData.topOperators.byFacilities.facilityCount}</span>
+                          </div>
+                          <div className="operator-stat">
+                            <span className="stat-label">Total Beds:</span>
+                            <span className="stat-value">{dashboardData.topOperators.byFacilities.totalBeds.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {dashboardData.topOperators.byBeds && (
+                      <div className="operator-card">
+                        <h3>By Number of Beds</h3>
+                        <div className="operator-name">{dashboardData.topOperators.byBeds.name}</div>
+                        <div className="operator-stats">
+                          <div className="operator-stat">
+                            <span className="stat-label">Total Beds:</span>
+                            <span className="stat-value">{dashboardData.topOperators.byBeds.totalBeds.toLocaleString()}</span>
+                          </div>
+                          <div className="operator-stat">
+                            <span className="stat-label">Facilities:</span>
+                            <span className="stat-value">{dashboardData.topOperators.byBeds.facilityCount}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
               {/* Detailed Metrics by Category */}
               {dashboardData.metrics && (
                 <section className="detailed-metrics-section">
@@ -433,18 +744,17 @@ function StateDashboard() {
                             </div>
                             <div className="metric-detail-value">
                               {metric.unit === '$' && '$'}
-                              {metric.unit === '%' && metric.value.toFixed(1)}
-                              {metric.unit === 'count' && metric.value.toLocaleString()}
-                              {metric.unit === 'stars' && metric.value.toFixed(1)}
-                              {metric.unit === 'per 1000' && metric.value.toFixed(1)}
-                              {metric.unit === 'rating' && metric.value.toFixed(1)}
-                              {metric.unit === '$' && metric.value.toFixed(2)}
-                              {metric.unit === '$/kWh' && `$${metric.value.toFixed(3)}/kWh`}
-                              {metric.unit === '%' ? '%' : metric.unit === 'count' ? '' : ''}
+                              {formatMetricValue(metric.value, metric.unit)}
+                              {metric.unit === '%' && '%'}
                             </div>
                             {metric.nationalAvg && (
                               <div className="metric-national-avg">
-                                National avg: {metric.unit === '$' ? '$' : ''}{metric.nationalAvg.toFixed(metric.unit === '$' ? 2 : 1)}{metric.unit === '%' ? '%' : ''}
+                                National avg: {metric.unit === '$' ? '$' : ''}{formatMetricValue(metric.nationalAvg, metric.unit)}{metric.unit === '%' ? '%' : ''}
+                              </div>
+                            )}
+                            {metric.regionalAvg && (
+                              <div className="metric-regional-avg">
+                                Regional avg: {metric.unit === '$' ? '$' : ''}{formatMetricValue(metric.regionalAvg, metric.unit)}{metric.unit === '%' ? '%' : ''}
                               </div>
                             )}
                             <div className="metric-description">{metric.description}</div>

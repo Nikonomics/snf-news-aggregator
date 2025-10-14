@@ -18,28 +18,28 @@ function FacilityTable({ facilities }) {
 
   const sortedFacilities = [...facilities]
     .filter(f =>
-      f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.city.toLowerCase().includes(searchTerm.toLowerCase())
+      (f.facility_name || f.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (f.city || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       let aVal, bVal
 
       switch (sortField) {
         case 'name':
-          aVal = a.name
-          bVal = b.name
+          aVal = a.facility_name || a.name || ''
+          bVal = b.facility_name || b.name || ''
           break
         case 'rating':
-          aVal = a.overallRating || 0
-          bVal = b.overallRating || 0
+          aVal = a.overall_rating || a.overallRating || 0
+          bVal = b.overall_rating || b.overallRating || 0
           break
         case 'beds':
-          aVal = a.certifiedBeds
-          bVal = b.certifiedBeds
+          aVal = a.certified_beds || a.certifiedBeds || 0
+          bVal = b.certified_beds || b.certifiedBeds || 0
           break
         case 'occupancy':
-          aVal = a.occupancyRate || 0
-          bVal = b.occupancyRate || 0
+          aVal = parseFloat(a.occupancy_rate || a.occupancyRate || 0)
+          bVal = parseFloat(b.occupancy_rate || b.occupancyRate || 0)
           break
         default:
           return 0
@@ -116,11 +116,11 @@ function FacilityTable({ facilities }) {
           </thead>
           <tbody>
             {sortedFacilities.map((facility) => (
-              <tr key={facility.providerId} className="facility-row">
+              <tr key={facility.federal_provider_number || facility.providerId} className="facility-row">
                 <td className="facility-name-cell">
-                  <div className="facility-name">{facility.name}</div>
-                  {facility.chainOrganization && (
-                    <div className="chain-badge">{facility.chainOrganization}</div>
+                  <div className="facility-name">{facility.facility_name || facility.name}</div>
+                  {(facility.ownership_chain || facility.chainOrganization) && (
+                    <div className="chain-badge">{facility.ownership_chain || facility.chainOrganization}</div>
                   )}
                 </td>
                 <td>
@@ -130,26 +130,26 @@ function FacilityTable({ facilities }) {
                   </div>
                 </td>
                 <td>
-                  <div className={`rating-cell ${getStarRatingClass(facility.overallRating)}`}>
-                    <div className="rating-number">{facility.overallRating}</div>
-                    {renderStars(facility.overallRating)}
+                  <div className={`rating-cell ${getStarRatingClass(facility.overall_rating || facility.overallRating)}`}>
+                    <div className="rating-number">{facility.overall_rating || facility.overallRating || 'N/A'}</div>
+                    {renderStars(facility.overall_rating || facility.overallRating)}
                   </div>
                 </td>
-                <td className="beds-cell">{facility.certifiedBeds}</td>
+                <td className="beds-cell">{facility.certified_beds || facility.certifiedBeds || 0}</td>
                 <td>
                   <div className="occupancy-cell">
                     <TrendingUp size={14} />
-                    {facility.occupancyRate.toFixed(1)}%
+                    {parseFloat(facility.occupancy_rate || facility.occupancyRate || 0).toFixed(1)}%
                   </div>
                 </td>
                 <td className="ownership-cell">
-                  <span className={`ownership-badge ${facility.ownershipType.toLowerCase().replace('-', '')}`}>
-                    {facility.ownershipType}
+                  <span className={`ownership-badge ${(facility.ownership_type || facility.ownershipType || '').toLowerCase().replace(/[\s-]/g, '')}`}>
+                    {facility.ownership_type || facility.ownershipType || 'Unknown'}
                   </span>
                 </td>
                 <td className="deficiencies-cell">
-                  <span className={facility.recentDeficiencies <= 5 ? 'def-low' : 'def-high'}>
-                    {facility.recentDeficiencies}
+                  <span className={(facility.health_deficiencies || facility.recentDeficiencies || 0) <= 5 ? 'def-low' : 'def-high'}>
+                    {facility.health_deficiencies || facility.recentDeficiencies || 0}
                   </span>
                 </td>
               </tr>

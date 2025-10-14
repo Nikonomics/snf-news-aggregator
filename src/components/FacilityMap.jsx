@@ -155,10 +155,10 @@ function FacilityMap({ facilities, metrics }) {
                 style={{ cursor: 'pointer' }}
               />
               <title>
-                {facility.name} - {facility.city}
-                {'\n'}{facility.overallRating} stars
-                {'\n'}{facility.certifiedBeds} beds
-                {'\n'}{facility.occupancyRate.toFixed(1)}% occupancy
+                {facility.facility_name || facility.name} - {facility.city}
+                {'\n'}{facility.overall_rating || facility.overallRating || 'N/A'} stars
+                {'\n'}{facility.certified_beds || facility.certifiedBeds || 0} beds
+                {'\n'}{parseFloat(facility.occupancy_rate || facility.occupancyRate || 0).toFixed(1)}% occupancy
               </title>
             </g>
           ))}

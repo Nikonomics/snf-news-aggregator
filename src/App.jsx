@@ -13,7 +13,7 @@ import StateSelector from './components/StateSelector'
 import StateComparisonMap from './components/StateComparisonMap'
 import Pagination from './components/Pagination'
 import WeeklyInsights from './components/WeeklyInsights'
-import MATrackerEnhanced from './components/MATrackerEnhanced'
+import MASection from './components/MASection'
 import PriorityFeed from './components/PriorityFeed'
 import RegulatoryFeed from './components/RegulatoryFeed'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
@@ -301,10 +301,10 @@ function App() {
               Regulatory Feed
             </Link>
             <Link
-              to="/ma-tracker"
-              className={`nav-tab ${location.pathname === '/ma-tracker' ? 'active' : ''}`}
+              to="/ma"
+              className={`nav-tab ${location.pathname.startsWith('/ma') ? 'active' : ''}`}
             >
-              M&A Tracker
+              M&A
             </Link>
             <Link
               to="/conferences"
@@ -437,8 +437,8 @@ function App() {
         {/* Regulatory Feed Route */}
         <Route path="/regulatory" element={<RegulatoryFeed />} />
 
-        {/* M&A Tracker Route */}
-        <Route path="/ma-tracker" element={<MATrackerEnhanced />} />
+        {/* M&A Section Routes */}
+        <Route path="/ma/*" element={<MASection />} />
 
         {/* Conference Directory Route */}
         <Route path="/conferences" element={<ConferenceDirectory />} />
