@@ -52,30 +52,38 @@ const StateComparisonHeatMap = ({ statesData, activeMetric }) => {
 
   // Get score for a state based on active metric
   const getStateScore = (stateCode) => {
-    const state = statesData.find(s => s.code === stateCode)
+    const state = statesData.find(s => (s.code || s.state_code) === stateCode)
     if (!state) return null
 
-    switch (activeMetric) {
-      case 'overall':
-        return state.scores.overallScore
-      case 'profitability':
-        return state.scores.components.profitabilityRatio
-      case 'reimbursement':
-        return state.scores.components.reimbursementIndex
-      case 'labor':
-        return state.scores.components.laborIndex
-      case 'market':
-        return state.scores.components.marketOpportunity
-      case 'quality':
-        return state.scores.components.qualityEnvironment
-      default:
-        return state.scores.overallScore
+    // If we have scores object, use it
+    if (state.scores) {
+      switch (activeMetric) {
+        case 'overall':
+          return state.scores.overallScore ?? 0
+        case 'profitability':
+          return state.scores.components?.profitabilityRatio ?? 0
+        case 'reimbursement':
+          return state.scores.components?.reimbursementIndex ?? 0
+        case 'labor':
+          return state.scores.components?.laborIndex ?? 0
+        case 'market':
+          return state.scores.components?.marketOpportunity ?? 0
+        case 'quality':
+          return state.scores.components?.qualityEnvironment ?? 0
+        default:
+          return state.scores.overallScore ?? 0
+      }
     }
+
+    // Fallback: use star rating as proxy for all metrics (1-5 → 0-100)
+    // Note: Proper composite scoring requires additional data (wages, Medicaid rates, etc.)
+    // that needs to be collected and added to the database
+    return parseFloat(state.avg_overall_rating || 0) * 20
   }
 
   // Get state data for tooltip
   const getStateData = (stateCode) => {
-    return statesData.find(s => s.code === stateCode)
+    return statesData.find(s => (s.code || s.state_code) === stateCode)
   }
 
   // Create color scale - smooth gradient from red to yellow to green

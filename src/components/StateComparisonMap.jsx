@@ -4,7 +4,7 @@ import { TrendingUp, MapPin, DollarSign, Users, Building2, Star, Calendar } from
 import StateComparisonHeatMap from './StateComparisonHeatMap'
 import './StateComparisonMap.css'
 
-const API_BASE_URL = 'https://snf-news-aggregator.onrender.com'
+const API_BASE_URL = 'http://localhost:3001'
 
 function StateComparisonMap() {
   const navigate = useNavigate()
@@ -178,14 +178,19 @@ function StateComparisonMap() {
                       <div className="ranking-list">
                         {rankings.top10.slice(0, 5).map((state, idx) => (
                           <div
-                            key={state.code}
+                            key={state.state_code || state.code}
                             className="ranking-item"
-                            onClick={() => navigate(`/state/${state.code}`)}
+                            onClick={() => navigate(`/state/${state.state_code || state.code}`)}
                           >
                             <div className="rank-number">{idx + 1}</div>
                             <div className="rank-details">
-                              <div className="rank-name">{state.name}</div>
-                              <div className="rank-score">Score: {state.scores.overallScore.toFixed(1)}</div>
+                              <div className="rank-name">{state.state_name || state.name}</div>
+                              <div className="rank-score">
+                                {state.scores?.overallScore
+                                  ? `Score: ${state.scores.overallScore.toFixed(1)}`
+                                  : `⭐ ${parseFloat(state.avg_overall_rating || 0).toFixed(2)}`
+                                }
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -197,14 +202,19 @@ function StateComparisonMap() {
                       <div className="ranking-list">
                         {rankings.bottom10.slice(0, 5).map((state, idx) => (
                           <div
-                            key={state.code}
+                            key={state.state_code || state.code}
                             className="ranking-item"
-                            onClick={() => navigate(`/state/${state.code}`)}
+                            onClick={() => navigate(`/state/${state.state_code || state.code}`)}
                           >
                             <div className="rank-number">{50 - idx}</div>
                             <div className="rank-details">
-                              <div className="rank-name">{state.name}</div>
-                              <div className="rank-score">Score: {state.scores.overallScore.toFixed(1)}</div>
+                              <div className="rank-name">{state.state_name || state.name}</div>
+                              <div className="rank-score">
+                                {state.scores?.overallScore
+                                  ? `Score: ${state.scores.overallScore.toFixed(1)}`
+                                  : `⭐ ${parseFloat(state.avg_overall_rating || 0).toFixed(2)}`
+                                }
+                              </div>
                             </div>
                           </div>
                         ))}

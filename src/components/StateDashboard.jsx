@@ -179,8 +179,11 @@ function StateDashboard() {
             value: data.market.bedsPerThousandSeniors,
             nationalAvg: data.market.nationalBedsPerThousandSeniors,
             percentDiff: data.market.bedsPerThousandSeniorsVsNational,
+            percentDiffRegional: data.market.bedsPerThousandSeniorsVsRegional,
+            regionalAvg: data.market.regionalBedsPerThousandSeniors,
             unit: 'per 1000',
-            description: 'Number of certified nursing home beds per 1,000 population 65+'
+            description: 'Number of certified nursing home beds per 1,000 population 65+',
+            inverseGood: true  // Lower is better (less market saturation)
           },
           {
             name: 'chain_ownership_percent',
@@ -380,7 +383,7 @@ function StateDashboard() {
                     <span className="comparison-label">National:</span>
                     <span className="comparison-value">{scorecardData.market.nationalBedsPerThousandSeniors.toFixed(1)}</span>
                     {scorecardData.market.bedsPerThousandSeniorsVsNational !== 0 && (
-                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsNational > 0 ? 'positive' : 'negative'}`}>
+                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsNational < 0 ? 'positive' : 'negative'}`}>
                         {scorecardData.market.bedsPerThousandSeniorsVsNational > 0 ? '+' : ''}{scorecardData.market.bedsPerThousandSeniorsVsNational.toFixed(1)}%
                       </span>
                     )}
@@ -391,7 +394,7 @@ function StateDashboard() {
                     <span className="comparison-label">Regional:</span>
                     <span className="comparison-value">{scorecardData.market.regionalBedsPerThousandSeniors.toFixed(1)}</span>
                     {scorecardData.market.bedsPerThousandSeniorsVsRegional !== 0 && (
-                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsRegional > 0 ? 'positive' : 'negative'}`}>
+                      <span className={`comparison-indicator ${scorecardData.market.bedsPerThousandSeniorsVsRegional < 0 ? 'positive' : 'negative'}`}>
                         {scorecardData.market.bedsPerThousandSeniorsVsRegional > 0 ? '+' : ''}{scorecardData.market.bedsPerThousandSeniorsVsRegional.toFixed(1)}%
                       </span>
                     )}
@@ -737,7 +740,11 @@ function StateDashboard() {
                             <div className="metric-detail-header">
                               <div className="metric-detail-name">{metric.displayName}</div>
                               {metric.nationalAvg && (
-                                <div className={`metric-comparison-badge ${metric.percentDiff < 0 ? 'negative' : 'positive'}`}>
+                                <div className={`metric-comparison-badge ${
+                                  metric.inverseGood
+                                    ? (metric.percentDiff < 0 ? 'positive' : 'negative')
+                                    : (metric.percentDiff < 0 ? 'negative' : 'positive')
+                                }`}>
                                   {metric.percentDiff > 0 ? '+' : ''}{metric.percentDiff.toFixed(1)}%
                                 </div>
                               )}
