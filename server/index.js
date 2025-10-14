@@ -50,6 +50,7 @@ import {
 } from './database/state-data.js'
 import cron from 'node-cron'
 import { startMAAnalysisWorker } from './workflows/ma-analysis-worker.js'
+import medicaidRouter from './routes/medicaid.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -914,6 +915,8 @@ app.use((req, res, next) => {
 })
 
 // API Routes
+app.use('/api/medicaid', medicaidRouter)
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })

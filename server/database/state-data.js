@@ -1,4 +1,5 @@
 import pool from './db.js'
+import cache, { CACHE_TTL, CACHE_KEYS } from '../utils/cache.js'
 
 /**
  * STATE DEMOGRAPHICS FUNCTIONS
@@ -516,6 +517,16 @@ export async function getTopChainsByState(stateCode, limit = 10) {
 export async function getComprehensiveStateAnalysis(stateCode) {
   const upperStateCode = stateCode.toUpperCase()
 
+  // Check cache first
+  const cacheKey = CACHE_KEYS.stateAnalysis(upperStateCode)
+  const cached = cache.get(cacheKey)
+  if (cached) {
+    console.log(`✓ Cache hit for state analysis: ${upperStateCode}`)
+    return cached
+  }
+
+  console.log(`⚡ Cache miss for state analysis: ${upperStateCode} - fetching from database`)
+
   // Get demographics
   const demographics = await getStateDemographics(upperStateCode)
 
@@ -632,7 +643,7 @@ export async function getComprehensiveStateAnalysis(stateCode) {
     ? (marketMetrics.total_beds / demographics.population_65_plus * 1000)
     : 0
 
-  return {
+  const result = {
     stateCode: upperStateCode,
     stateName: demographics?.state_name,
     cmsRegion: demographics?.cms_region || null,
@@ -749,6 +760,12 @@ export async function getComprehensiveStateAnalysis(stateCode) {
       facilitiesWithAbuseIcon: marketMetrics?.facilities_with_abuse_icon || 0
     }
   }
+
+  // Cache the result before returning
+  cache.set(cacheKey, result, CACHE_TTL.STATE_ANALYSIS)
+  console.log(`✓ Cached state analysis for: ${upperStateCode} (TTL: 6 hours)`)
+
+  return result
 }
 
 /**
@@ -848,6 +865,28 @@ export default {
   // Utilities
   getFacilityOwnershipBreakdown,
   getTopChainsByState
+}
+
+/**
+ * CACHE MANAGEMENT FUNCTIONS
+ */
+
+/**
+ * Clear all state analysis caches (call this when data is refreshed)
+ */
+export function clearStateAnalysisCache() {
+  cache.clearPattern('state:*')
+  cache.delete(CACHE_KEYS.nationalAverages())
+  cache.clearPattern('regional:*')
+  cache.delete(CACHE_KEYS.stateRankings())
+  console.log('✓ Cleared all state analysis caches')
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats() {
+  return cache.getStats()
 }
 
 /**
