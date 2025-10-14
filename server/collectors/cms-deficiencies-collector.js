@@ -104,10 +104,10 @@ function transformDeficiencyData(cmsRecord) {
     federalProviderNumber: providerNumber,
     surveyDate: parseDate(cmsRecord.SURVEY_DATE || cmsRecord.survey_date),
     surveyType: cmsRecord.SURVEY_TYPE || cmsRecord.survey_type || 'Health',
-    deficiencyTag: cmsRecord.DEFICIENCY_TAG || cmsRecord.deficiency_tag || cmsRecord.TAG || cmsRecord.tag,
-    deficiencyPrefix: cmsRecord.DEFICIENCY_PREFIX || cmsRecord.deficiency_prefix || cmsRecord.PREFIX || (cmsRecord.DEFICIENCY_TAG || '').charAt(0) || 'F',
-    scopeSeverity: cmsRecord.SCOPE_SEVERITY || cmsRecord.scope_severity || cmsRecord.SCOPE || cmsRecord.scope,
-    deficiencyText: cmsRecord.DEFICIENCY_TEXT || cmsRecord.deficiency_text || cmsRecord.deficiency_description || null,
+    deficiencyTag: cmsRecord.deficiency_tag_number || cmsRecord.DEFICIENCY_TAG_NUMBER || cmsRecord.deficiency_tag || cmsRecord.TAG || cmsRecord.tag,
+    deficiencyPrefix: cmsRecord.deficiency_prefix || cmsRecord.DEFICIENCY_PREFIX || cmsRecord.PREFIX || (cmsRecord.deficiency_tag_number || '').charAt(0) || 'F',
+    scopeSeverity: cmsRecord.scope_severity_code || cmsRecord.SCOPE_SEVERITY_CODE || cmsRecord.scope_severity || cmsRecord.SCOPE_SEVERITY || cmsRecord.SCOPE || cmsRecord.scope,
+    deficiencyText: cmsRecord.deficiency_description || cmsRecord.DEFICIENCY_DESCRIPTION || cmsRecord.deficiency_text || cmsRecord.DEFICIENCY_TEXT || null,
     correctionDate: parseDate(cmsRecord.CORRECTION_DATE || cmsRecord.correction_date),
     isCorrected: cmsRecord.CORRECTION_DATE || cmsRecord.correction_date ? true : false
   }

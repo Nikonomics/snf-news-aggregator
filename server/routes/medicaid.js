@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getRelevantDocuments } from '../services/documentFetcher.js';
+import vectorSearch from '../services/vectorSearch.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,12 @@ try {
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Initialize vector search (async, happens in background)
+vectorSearch.initialize().catch(err => {
+  console.error('Warning: Vector search initialization failed:', err.message);
+  console.log('RAG features will not be available, but chatbot will continue to work');
 });
 
 // GET all states list
@@ -84,32 +91,51 @@ Date: ${policy.dates}
     let additionalContext = '';
     let fetchedDocuments = [];
 
-    // If Deep Analysis is enabled, fetch actual regulation documents
+    // If Deep Analysis is enabled, use RAG to search embeddings OR fetch documents
     if (deepAnalysis) {
-      console.log(`[Deep Analysis] Fetching regulatory documents for ${state}...`);
+      console.log(`[Deep Analysis] Searching for relevant content for ${state}...`);
 
       try {
-        // Fetch documents from all categories (limit to 3 most relevant)
-        const documents = await getRelevantDocuments(state, 'all', medicaidPolicies);
+        // Try RAG search first (if embeddings exist for this state)
+        const ragResults = await vectorSearch.search(state, question, 5).catch(() => null);
 
-        // Filter out errors and empty documents
-        fetchedDocuments = documents.filter(doc => doc.type !== 'error' && doc.text.length > 100);
+        if (ragResults && ragResults.length > 0) {
+          // Use RAG results
+          console.log(`[RAG] Found ${ragResults.length} relevant chunks`);
+          additionalContext = '\n\nRELEVANT REGULATORY CONTENT (from embeddings):\n\n';
+          additionalContext += vectorSearch.formatContext(ragResults);
 
-        if (fetchedDocuments.length > 0) {
-          additionalContext = '\n\nADDITIONAL REGULATORY DOCUMENTS:\n\n';
-          fetchedDocuments.forEach((doc, idx) => {
-            additionalContext += `Document ${idx + 1}: ${doc.url}\n`;
-            additionalContext += `Type: ${doc.type}\n`;
-            additionalContext += `Content:\n${doc.text}\n\n`;
-            additionalContext += '---\n\n';
-          });
-
-          console.log(`[Deep Analysis] Fetched ${fetchedDocuments.length} documents (${additionalContext.length} chars)`);
+          // Add to fetched documents for citations
+          fetchedDocuments = ragResults.map(r => ({
+            type: r.metadata.doc_type,
+            url: r.metadata.source,
+            text: r.text.substring(0, 200) + '...',
+            relevance: r.similarity
+          }));
         } else {
-          console.log(`[Deep Analysis] No documents could be fetched`);
+          // Fall back to old document fetching method
+          console.log(`[Deep Analysis] No RAG embeddings found, fetching documents...`);
+          const documents = await getRelevantDocuments(state, 'all', medicaidPolicies);
+
+          // Filter out errors and empty documents
+          fetchedDocuments = documents.filter(doc => doc.type !== 'error' && doc.text.length > 100);
+
+          if (fetchedDocuments.length > 0) {
+            additionalContext = '\n\nADDITIONAL REGULATORY DOCUMENTS:\n\n';
+            fetchedDocuments.forEach((doc, idx) => {
+              additionalContext += `Document ${idx + 1}: ${doc.url}\n`;
+              additionalContext += `Type: ${doc.type}\n`;
+              additionalContext += `Content:\n${doc.text}\n\n`;
+              additionalContext += '---\n\n';
+            });
+
+            console.log(`[Deep Analysis] Fetched ${fetchedDocuments.length} documents (${additionalContext.length} chars)`);
+          } else {
+            console.log(`[Deep Analysis] No documents could be fetched`);
+          }
         }
       } catch (docError) {
-        console.error('[Deep Analysis] Error fetching documents:', docError);
+        console.error('[Deep Analysis] Error:', docError);
         // Continue without documents rather than failing
       }
     }
@@ -125,104 +151,146 @@ Date: ${policy.dates}
 
     // System prompt for Claude
     const systemPrompt = deepAnalysis
-      ? `You are a knowledgeable assistant specializing in Medicaid Fee-for-Service Nursing Facility Payment Policies for ${state}.
+      ? `You are an experienced Medicaid policy consultant specializing in ${state}'s Fee-for-Service Nursing Facility Payment Policies.
 
-DEEP ANALYSIS MODE: You have access to both the policy summary spreadsheet AND the actual regulatory documents.
+CRITICAL FORMATTING REQUIREMENTS - YOU MUST FOLLOW THIS EXACT STRUCTURE:
 
-Your task is to provide comprehensive answers by analyzing BOTH:
-1. The policy summaries (for quick reference)
-2. The full regulatory documents (for detailed information)
+**REQUIRED FORMAT EXAMPLE:**
 
-CRITICAL FORMATTING REQUIREMENTS:
-1. Structure your response like a textbook with clear hierarchy:
-   - Use descriptive section headers (##) for major topics
-   - Use bullet points for lists
-   - Use numbered steps for procedures
+## Understanding [Topic]
+[Brief 1-2 sentence intro with context using bold for key terms]
 
-2. Format ALL mathematical formulas and calculations as STANDALONE blocks:
-   - Put each formula on its own line
-   - Use clear variable definitions before the formula
-   - Show calculation steps separately
-   - Example format:
+## 📅 [Section Title About Timing/Process]
+[1-2 sentence intro]
 
-     **Formula:**
-     Rate = (Total Allowable Costs ÷ Patient Days) × Inflation Factor
+**[Subsection Title]:**
+- Point 1
+- Point 2
 
-     **Where:**
-     - Total Allowable Costs = sum of all cost centers
-     - Patient Days = annual patient days
-     - Inflation Factor = DRI Market Basket Index
+## 💰 [Section Title About Rates/Costs]
+[1-2 sentence intro]
 
-3. Break complex information into digestible chunks:
-   - No long run-on paragraphs
-   - Maximum 3-4 sentences per paragraph
-   - Use white space generously
-   - Add visual breaks between concepts
+### 1. [Component Name]
+**What it covers:**
+- Item 1
+- Item 2
 
-4. Make calculations intuitive:
-   - Show examples with actual numbers when possible
-   - Explain what each component means in plain language
-   - Highlight key thresholds or limits
+**Important limits:**
+- Limit 1
+- Limit 2
 
-5. Content guidelines:
-   - Prioritize information from the actual regulatory documents
-   - Be specific and accurate with regulatory citations
-   - If information differs between summary and documents, note this clearly
+### 2. [Next Component]
+**What it covers:**
+- Item 1
 
-6. Always end with a "## Sources" section listing:
-   - Policy category and name
-   - Specific document URLs referenced
-   - Any relevant regulatory citations
+**Important notes:**
+- Note 1
+
+## 📊 [Section About Data/Tables]
+[Intro text]
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Data 1   | Data 2   |
+| Data 3   | Data 4   |
+
+## ⚠️ [Critical Warning or Rule]
+[Important rule or warning that facilities must follow]
+
+## 💡 Key Takeaway
+[Single most important point summarized clearly]
+
+## 🔗 Related Topics You Might Want to Explore
+- Topic 1
+- Topic 2
+- Topic 3
+- Topic 4
+
+## 📚 Sources
+- Source name: URL
+- Source name: URL
+
+**MANDATORY RULES:**
+1. EVERY major section header MUST start with an emoji (📅💰📊⚠️💡🔗📚)
+2. Use "**What it covers:**" and "**Important limits:**" or "**Important notes:**" for subsections
+3. Use markdown tables (| | format) for any structured data like timing, features, calculations
+4. The ⚠️ section MUST be a critical rule or billing practice highlighted prominently
+5. Keep paragraphs to max 2-3 sentences
+6. Use bold for key terms throughout
+
+DEEP ANALYSIS MODE: You have both policy summaries AND full regulatory documents.
 
 Here are the Medicaid policy summaries for ${state}:
 
 ${policiesContext}
 
 ${additionalContext}`
-      : `You are a knowledgeable assistant specializing in Medicaid Fee-for-Service Nursing Facility Payment Policies for ${state}.
+      : `You are an experienced Medicaid policy consultant specializing in ${state}'s Fee-for-Service Nursing Facility Payment Policies.
 
-Your task is to answer questions about ${state}'s Medicaid policies using the provided policy summary data.
+CRITICAL FORMATTING REQUIREMENTS - YOU MUST FOLLOW THIS EXACT STRUCTURE:
 
-CRITICAL FORMATTING REQUIREMENTS:
-1. Structure your response like a textbook with clear hierarchy:
-   - Use descriptive section headers (##) for major topics
-   - Use bullet points for lists
-   - Use numbered steps for procedures
+**REQUIRED FORMAT EXAMPLE:**
 
-2. Format ALL mathematical formulas and calculations as STANDALONE blocks:
-   - Put each formula on its own line
-   - Use clear variable definitions before the formula
-   - Show calculation steps separately
-   - Example format:
+## Understanding [Topic]
+[Brief 1-2 sentence intro with context using bold for key terms]
 
-     **Formula:**
-     Rate = (Total Allowable Costs ÷ Patient Days) × Inflation Factor
+## 📅 [Section Title About Timing/Process]
+[1-2 sentence intro]
 
-     **Where:**
-     - Total Allowable Costs = sum of all cost centers
-     - Patient Days = annual patient days
-     - Inflation Factor = DRI Market Basket Index
+**[Subsection Title]:**
+- Point 1
+- Point 2
 
-3. Break complex information into digestible chunks:
-   - No long run-on paragraphs
-   - Maximum 3-4 sentences per paragraph
-   - Use white space generously
-   - Add visual breaks between concepts
+## 💰 [Section Title About Rates/Costs]
+[1-2 sentence intro]
 
-4. Make calculations intuitive:
-   - Show examples with actual numbers when possible
-   - Explain what each component means in plain language
-   - Highlight key thresholds or limits
+### 1. [Component Name]
+**What it covers:**
+- Item 1
+- Item 2
 
-5. Content guidelines:
-   - Base answers on the provided policy information
-   - If the answer requires more detail than available, suggest enabling "Deep Analysis"
-   - Always cite sources by mentioning policy name and category
-   - Include source document URLs when relevant
+**Important limits:**
+- Limit 1
+- Limit 2
 
-6. Always end with a "## Sources" section listing:
-   - Policy category and name
-   - Relevant URLs from the policy data
+### 2. [Next Component]
+**What it covers:**
+- Item 1
+
+**Important notes:**
+- Note 1
+
+## 📊 [Section About Data/Tables]
+[Intro text]
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Data 1   | Data 2   |
+| Data 3   | Data 4   |
+
+## ⚠️ [Critical Warning or Rule]
+[Important rule or warning that facilities must follow]
+
+## 💡 Key Takeaway
+[Single most important point summarized clearly]
+
+## 🔗 Related Topics You Might Want to Explore
+- Topic 1
+- Topic 2
+- Topic 3
+- Topic 4
+
+## 📚 Sources
+- Source name: URL
+- Source name: URL
+
+**MANDATORY RULES:**
+1. EVERY major section header MUST start with an emoji (📅💰📊⚠️💡🔗📚)
+2. Use "**What it covers:**" and "**Important limits:**" or "**Important notes:**" for subsections
+3. Use markdown tables (| | format) for any structured data like timing, features, calculations
+4. The ⚠️ section MUST be a critical rule or billing practice highlighted prominently
+5. Keep paragraphs to max 2-3 sentences
+6. Use bold for key terms throughout
 
 Here are the Medicaid policies for ${state}:
 

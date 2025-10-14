@@ -46,7 +46,8 @@ import {
   getAllStatesComparison,
   getStateRankings,
   getFacilityOwnershipBreakdown,
-  getTopChainsByState
+  getTopChainsByState,
+  searchFacilitiesAdvanced
 } from './database/state-data.js'
 import cron from 'node-cron'
 import { startMAAnalysisWorker } from './workflows/ma-analysis-worker.js'
@@ -2343,6 +2344,62 @@ app.get('/api/states/demographics', async (req, res) => {
   }
 })
 
+// GET /api/facilities/:providerId/deficiencies - Get deficiencies for a specific facility
+app.get('/api/facilities/:providerId/deficiencies', async (req, res) => {
+  try {
+    const { providerId } = req.params
+    const { prefix, years = 3 } = req.query
+
+    // Calculate the date cutoff (default 3 years ago)
+    const yearsAgo = parseInt(years) || 3
+    const cutoffDate = new Date()
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - yearsAgo)
+
+    let query = `
+      SELECT
+        id,
+        federal_provider_number,
+        survey_date,
+        survey_type,
+        deficiency_tag,
+        deficiency_prefix,
+        scope_severity,
+        deficiency_text,
+        correction_date,
+        is_corrected,
+        created_at
+      FROM cms_facility_deficiencies
+      WHERE federal_provider_number = $1
+        AND survey_date >= $2
+    `
+
+    const params = [providerId, cutoffDate.toISOString()]
+
+    // Add prefix filter if provided
+    if (prefix && prefix !== 'all') {
+      query += ` AND deficiency_prefix = $${params.length + 1}`
+      params.push(prefix)
+    }
+
+    query += ` ORDER BY survey_date DESC, id DESC`
+
+    const result = await db.query(query, params)
+
+    res.json({
+      success: true,
+      providerId,
+      count: result.rows.length,
+      deficiencies: result.rows
+    })
+  } catch (error) {
+    console.error('Error fetching facility deficiencies:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // GET /api/state/:stateCode/demographics - Get demographics for a specific state
 app.get('/api/state/:stateCode/demographics', async (req, res) => {
   try {
@@ -2671,6 +2728,126 @@ app.get('/api/chain/:chainName/facilities', async (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching chain facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// POST /api/facilities/nl-search - Natural language facility search
+app.post('/api/facilities/nl-search', async (req, res) => {
+  try {
+    const { query } = req.body
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Query string is required'
+      })
+    }
+
+    console.log('📝 Natural language query:', query)
+
+    // Use Claude to parse natural language into structured filters
+    const parsePrompt = `You are a facility search query parser. Convert natural language queries into structured database filters.
+
+Available facility attributes:
+- states: Array of 2-letter state codes (e.g., ["WA", "OR", "ID"])
+- counties: Array of county names
+- cities: Array of city names
+- ownershipTypes: Array from ["For profit", "Non-profit", "Government"]
+- minBeds, maxBeds: Numbers for bed count range
+- minOccupancy, maxOccupancy: Numbers for occupancy percentage (0-100)
+- minOverallRating, maxOverallRating: Star ratings 1-5
+- minHealthRating, maxHealthRating: Health inspection rating 1-5
+- minStaffingRating, maxStaffingRating: Staffing rating 1-5
+- maxDeficiencies: Maximum number of health deficiencies
+- acceptsMedicare: true/false
+- acceptsMedicaid: true/false
+- chainSizeMin, chainSizeMax: Number of facilities in ownership group
+- multiFacilityChain: true (part of chain) or false (independent)
+- specialFocusFacility: true/false (SFF designation - facilities with serious quality issues)
+- searchTerm: Text to search in facility name or parent organization
+
+Regional mappings:
+- Pacific Northwest: ["WA", "OR", "ID"]
+- Northeast: ["ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "PA"]
+- Southeast: ["MD", "DE", "VA", "WV", "KY", "TN", "NC", "SC", "GA", "FL", "AL", "MS", "LA", "AR"]
+- Midwest: ["OH", "IN", "IL", "MI", "WI", "MN", "IA", "MO", "ND", "SD", "NE", "KS"]
+- Southwest: ["TX", "OK", "NM", "AZ"]
+- West: ["MT", "WY", "CO", "UT", "NV", "CA", "AK", "HI"]
+
+Parse this query: "${query}"
+
+Return ONLY a JSON object with the appropriate filters. Use null for filters that don't apply.
+
+Example outputs:
+Query: "facilities in California with 4+ stars"
+{"states": ["CA"], "minOverallRating": 4}
+
+Query: "small independent facilities in the midwest"
+{"states": ["OH", "IN", "IL", "MI", "WI", "MN", "IA", "MO", "ND", "SD", "NE", "KS"], "maxBeds": 50, "multiFacilityChain": false}
+
+Query: "show me all skilled nursing facilities that are part of an ownership group of 10 or less and are located in the pacific northwest"
+{"states": ["WA", "OR", "ID"], "chainSizeMax": 10, "multiFacilityChain": true}
+
+Return ONLY valid JSON with no additional text:`
+
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY not configured')
+    }
+
+    const anthropic = new Anthropic({
+      apiKey: apiKey
+    })
+
+    const parseResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      temperature: 0,
+      messages: [{
+        role: 'user',
+        content: parsePrompt
+      }]
+    })
+
+    const parsedText = parseResponse.content[0].text.trim()
+    console.log('🤖 Claude response:', parsedText)
+
+    // Extract JSON from response
+    let filters
+    try {
+      const jsonMatch = parsedText.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('No JSON found in response')
+      }
+      filters = JSON.parse(jsonMatch[0])
+    } catch (parseError) {
+      console.error('Failed to parse Claude response as JSON:', parseError)
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to parse query. Please try rephrasing.',
+        details: parsedText
+      })
+    }
+
+    console.log('🔍 Parsed filters:', JSON.stringify(filters, null, 2))
+
+    // Execute search with parsed filters
+    const results = await searchFacilitiesAdvanced(filters)
+
+    res.json({
+      success: true,
+      query,
+      filters,
+      results: results.facilities,
+      total: results.total,
+      hasMore: results.hasMore
+    })
+  } catch (error) {
+    console.error('Error in natural language search:', error)
     res.status(500).json({
       success: false,
       error: error.message

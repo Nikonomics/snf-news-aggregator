@@ -17,6 +17,7 @@ import MASection from './components/MASection'
 import PriorityFeed from './components/PriorityFeed'
 import RegulatoryFeed from './components/RegulatoryFeed'
 import MedicaidChatbot from './components/MedicaidChatbot'
+import FacilityResearch from './components/FacilityResearch'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -337,6 +338,12 @@ function App() {
             >
               Advocate
             </Link>
+            <Link
+              to="/facility-research"
+              className={`nav-tab ${location.pathname === '/facility-research' ? 'active' : ''}`}
+            >
+              Facility Research
+            </Link>
           </nav>
 
           {/* Tagline */}
@@ -478,6 +485,13 @@ function App() {
                 <p style={{ color: '#6b7280' }}>Coming soon - Advocacy resources and tools</p>
               </div>
             </div>
+          </main>
+        } />
+
+        {/* Facility Research Route */}
+        <Route path="/facility-research" element={
+          <main className="app-main">
+            <FacilityResearch />
           </main>
         } />
 

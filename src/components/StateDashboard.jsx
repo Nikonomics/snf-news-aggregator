@@ -210,7 +210,7 @@ function StateDashboard() {
       // Fetch both analysis and facilities data in parallel
       const [analysisResponse, facilitiesResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/state/${stateCode}/analysis`),
-        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities?limit=100`)
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities`)
       ])
 
       const analysisData = await analysisResponse.json()

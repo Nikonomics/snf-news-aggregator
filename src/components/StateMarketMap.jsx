@@ -19,7 +19,7 @@ const STATE_BOUNDS = {
   FL: { scale: 3800, center: [-81.5, 28] },
   GA: { scale: 5500, center: [-83.5, 32.7] },
   HI: { scale: 10000, center: [-157, 20.5] },
-  ID: { scale: 4000, center: [-114.5, 44.5] },
+  ID: { scale: 3600, center: [-114.5, 45.3] },
   IL: { scale: 5000, center: [-89.2, 40] },
   IN: { scale: 7000, center: [-86.3, 40] },
   IA: { scale: 5800, center: [-93.5, 42] },
@@ -249,12 +249,13 @@ const StateMarketMap = ({ stateCode }) => {
         )}
       </div>
 
-      <div className="map-container">
-        <svg
-          viewBox="0 0 800 600"
-          className="state-map-svg"
-          preserveAspectRatio="xMidYMid meet"
-        >
+      <div className="map-and-stats-container" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', width: '100%' }}>
+        <div className="map-container" style={{ flex: '1', minWidth: '0' }}>
+          <svg
+            viewBox="0 0 800 600"
+            className="state-map-svg"
+            preserveAspectRatio="xMidYMid meet"
+          >
           <defs>
             <filter id="map-shadow">
               <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.3"/>
@@ -352,19 +353,19 @@ const StateMarketMap = ({ stateCode }) => {
               })}
             </g>
           )}
-        </svg>
+          </svg>
 
-        {/* Tooltip */}
-        {hoveredItem && (
-          <div
-            className="map-tooltip"
-            style={{
-              left: tooltipPos.x + 10,
-              top: tooltipPos.y + 10,
-              position: 'absolute',
-              pointerEvents: 'none'
-            }}
-          >
+          {/* Tooltip */}
+          {hoveredItem && (
+            <div
+              className="map-tooltip"
+              style={{
+                left: tooltipPos.x + 10,
+                top: tooltipPos.y + 10,
+                position: 'absolute',
+                pointerEvents: 'none'
+              }}
+            >
             {hoveredItem.type === 'facility' && (
               <>
                 <div className="tooltip-header">
@@ -433,11 +434,11 @@ const StateMarketMap = ({ stateCode }) => {
                 </div>
               </>
             )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
-      <div className="map-stats">
+        <div className="map-stats" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '220px', flexShrink: '0' }}>
         {viewMode === 'facilities' && (
           <>
             <div className="stat-card">
@@ -478,6 +479,7 @@ const StateMarketMap = ({ stateCode }) => {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   )

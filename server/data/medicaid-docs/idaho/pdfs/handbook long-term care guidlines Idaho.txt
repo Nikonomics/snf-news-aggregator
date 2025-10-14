@@ -1,0 +1,931 @@
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Table of Contents
+Long-Term Care Facility .............................................................................................. 1
+1. Important Contacts .............................................................................................. 2
+1.1. Gainwell Technologies .................................................................................... 2
+1.2. Provider Relations Consultants ......................................................................... 3
+2. Provider Qualifications .......................................................................................... 4
+3. Eligible Participants .............................................................................................. 5
+3.1. Referrals ....................................................................................................... 5
+3.2. References: Eligible Participants....................................................................... 5
+3.2.1. Federal Regulations .................................................................................. 5
+3.2.2. State Regulations .................................................................................... 5
+4. Advance Directives ............................................................................................... 6
+5. Swing-Beds ......................................................................................................... 7
+6. Covered Services and Limitations: Nursing Facility ................................................... 8
+6.1. Nursing Facility Per Diem ................................................................................ 8
+6.1.1. References: Nursing Facility – Per Diem ...................................................... 8
+6.2. Nursing Facility: Leave of Absence (LOA) .......................................................... 9
+6.2.1. References: Nursing Facility – LOA ............................................................. 9
+6.3. Admission Hour Codes/Discharge Hour Codes .................................................. 10
+6.4. Outpatient Therapy Services.......................................................................... 11
+7. Covered Services and Limitations: Intermediate Care Facility/Individual with Intellectual
+Disabilities............................................................................................................... 12
+7.1. ICF/IID: Leave of Absence (LOA) ................................................................... 13
+7.1.1. References: ICF/IID Leave of Absence (LOA) ............................................. 13
+8. Documentation Requirements .............................................................................. 14
+9. Reimbursement ................................................................................................. 15
+9.1. Participant Liability or Resource Amount ......................................................... 16
+9.1.1. References: Participant Liability or Resource Amount ................................. 16
+9.2. Special Rates ............................................................................................... 17
+9.2.1. References: Special Rates ....................................................................... 17
+9.3. Medicare Crossovers ..................................................................................... 18
+Appendix A. Long-Term Care Admission Codes ...................................................... 19
+Appendix B. Patient Status Codes ........................................................................ 20
+Appendix C. Long-Term Care Revenue Codes ........................................................ 21
+Appendix D. Skilled Nursing Facility/Long-Term Care Bill Types ............................... 22
+Appendix E. Long-Term Care Facility, Provider Handbook Modifications .................... 23
+November 18, 2022 Page i
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Long-Term Care Facility
+This section covers all Medicaid services provided through the Long-Term Care Facility
+Program by the Department of Health and Welfare, which includes nursing facilities and
+intermediate care facilities for individuals with intellectual disabilities (ICF/IID). Sections of
+the Idaho Medicaid Provider Handbook applicable in specific situations are listed throughout
+the handbook for provider convenience. Additional handbook sections which always apply to
+this provider type include the following:
+• General Billing Instructions;
+• General Information and Requirements for Providers; and
+• Glossary.
+Handbooks can only be used properly in context. Providers must be familiar with the
+handbooks that affect them and their services. The numbering in handbooks is also important
+to make note of as subsections rely on the content of the sections above them.
+Example
+Section 1.2.3.a The Answer requires the reader to have also read Section
+1, Section 1.2 and Section 1.2.3 to be able to properly apply Section
+1.2.3.a.
+References are included throughout the handbook for provider and staff convenience. Not all
+applicable references have been incorporated into the handbook. Not all references provided
+are equal in weight.
+• Case Law: Includes references to court cases that established interpretations of law
+that states and providers would be required to follow.
+• CMS Guidance: These references reflect various Centers for Medicare and Medicaid
+Services (CMS) publications that Idaho Medicaid reviewed in the formulation of their
+policy. The publications themselves are not required to be followed for Idaho Medicaid
+services.
+• Federal Regulations: These references are regulations from the federal level that
+affected policy development. Usually these include the Code of Federal Regulations,
+the Social Security Act and other statutes. They are required to be followed.
+• Idaho Medicaid Publications: These are communications from Idaho Medicaid to
+providers that were required to be followed when published. These are included in the
+handbook for historical reference. The provider handbook supersedes other
+communications unless the documents are listed in the Department’s Rules, Statutes,
+and Policies webpage under policies in Medicaid’s department library.
+• Idaho State Plan: The State Plan is the agreement between the State of Idaho and the
+Centers for Medicare and Medicaid Services on how the State will administer its medical
+assistance program.
+• Professional Organizations: These references reflect various publications of
+professional organizations that Idaho Medicaid reviewed in the formulation of their
+policy. Providers may or may not be required to follow these references, depending on
+the individual reference and its application to a provider’s licensure and scope of
+practice.
+• State Regulations: These references are regulations from the state level that affected
+policy development. They usually include statute and IDAPA. They are required to be
+followed.
+• Scholarly Work: These references are publications that Idaho Medicaid reviewed in the
+formulation of their policy. The publications themselves are not required to be followed
+for Idaho Medicaid services.
+November 18, 2022 Page 1 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+1. Important Contacts
+The Directory, Idaho Medicaid Provider Handbook contains a comprehensive list of contacts.
+The following contacts are presented here for convenience.
+1.1. Gainwell Technologies
+Gainwell Technologies is Idaho Medicaid’s fiscal agent that handles all claims processing and
+customer service issues.
+Gainwell Technologies Contact Information
+Gainwell Technologies Provider Services
+P.O. Box 70082
+Boise, ID 83707
+Phone: 1 (866) 686-4272
+Fax: 1 (877) 661-0974
+IDProviderServices@gainwelltechnologies.com
+The Medicaid Automated Call Service (MACS) is available 24 hours a day, seven
+days a week. Provider service representatives are available Monday through Friday,
+7:00 A.M.-7:00 P.M. MT.
+Provider Enrollment
+P.O. Box 70082
+Boise, ID 83707
+Phone: 1 (866) 686-4272
+Fax: 1 (877) 517-2041
+IDProviderEnrollment@gainwelltechnologies.com
+Technical Services
+Phone: 1 (866) 686-4272
+Fax: 1 (877) 517-2040
+IDEDISupport@gainwelltechnologies.com
+November 18, 2022 Page 2 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+1.2. Provider Relations Consultants
+Gainwell Technologies Provider Relations Consultants help keep providers up-to-date on
+billing changes required by program policy changes implemented by the Division of Medicaid.
+Provider Relations Consultants accomplish this by:
+• Conducting provider workshops;
+• Conducting live meetings for training;
+• Visiting a provider’s site to conduct training; and
+• Assisting providers with electronic claims submission
+November 18, 2022 Page 3 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+2. Provider Qualifications
+Long-term care service providers (i.e. nursing facilities and intermediate care facilities for
+individuals with intellectual disabilities) in any state are eligible to participate in the Idaho
+Medicaid Program. They must be licensed and certified in the state where the services are
+performed and enroll as an Idaho Medicaid provider prior to submitting claims for services.
+Skilled nursing facilities must also be enrolled with Medicare. Providers must follow the
+provider handbook and all applicable state, and federal, rules and regulations.
+See General Information and Requirements for Providers, Idaho Medicaid Provider Handbook
+for more information on enrolling as an Idaho Medicaid provider.
+November 18, 2022 Page 4 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+3. Eligible Participants
+Participants with Medicaid Enhanced Plans are eligible to receive services in a Long-Term Care
+Facility (i.e., nursing facilities and intermediate care facilities for individuals with intellectual
+disabilities). When billing for participants enrolled in other benefit plans, refer to General
+Information and Requirements for Providers, Idaho Medicaid Provider Handbook for coverage.
+Providers must check participant eligibility prior to delivery of the service by calling Idaho
+Medicaid Automated Customer Service (MACS) at 1 (866) 686-4272; or through the Trading
+Partner Account on Gainwell Technologies Idaho Medicaid website.
+3.1. Referrals
+Medicaid participants enrolled in Healthy Connections (HC), Idaho’s Medicaid primary care
+case management (PCCM) model of managed care, are not required to obtain a referral for
+services while residing in a nursing facility or ICF/IID, regardless of place of service.
+3.2. References: Eligible Participants
+3.2.1. Federal Regulations
+“Definitions.” Social Security Act, Sec. 1905(a)(4)(A) (1935). Social Security Administration,
+https://www.ssa.gov/OP_Home/ssact/title19/1905.htm.
+3.2.2. State Regulations
+“Nursing Facility.” IDAPA 16.03.10, “Medicaid Enhanced Plan Benefits,” Sec. 220.
+Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+“Nursing Facility: Criteria for Determining Need.” IDAPA 16.03.10, “Medicaid Enhanced Plan
+Benefits,” Sec. 223. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+“Nursing Facility Services: Eligibility.” IDAPA 16.03.10, “Medicaid Enhanced Plan Benefits,”
+Sec. 222. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+“Preadmission Screening and Resident Review Program (PASRR).” IDAPA 16.03.10,
+“Medicaid Enhanced Plan Benefits,” Sec. 227. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 5 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+4. Advance Directives
+Long-Term Care providers must explain to each participant their right to make decisions
+regarding their medical care, which includes the right to accept or refuse treatment. Long-
+Term Care providers will inform the participant of their right to formulate advance directives,
+such as a living will or durable power of attorney for health care at the time of the participant’s
+admission as a resident.
+As of January 1, 2018, Idaho Medicaid will reimburse for advanced care planning under CPT®
+99497 if provided for a minimum of 30 minutes, and CPT® 99498 for each additional 30
+minutes. ACP may include Health Care Proxy, Durable Power of Attorney for Health Care,
+Living Will, or Medical Orders for Life-Sustaining Treatment.
+The service is voluntary and is only reimbursable if the participant elects to receive the
+counseling. It may be rendered by any physician or non-physician practitioner in any location.
+It may also be rendered by other staff provided they meet the minimum direct supervision
+requirements. ACP is billable separately from a global surgical period, an annual wellness visit
+or E&M. It is not billable on the same dates of service as a critical care E&M. Time spent on
+any other service or treatment is not billable as ACP. The Advance Directive form does not
+have to be completed to be eligible for reimbursement.
+Documentation must be maintained of:
+• The face-to-face encounter;
+• The consent for counseling;
+• The time the counseling began;
+• The duration;
+• The explanation of an advance directive; and
+• Who was present at the counseling.
+November 18, 2022 Page 6 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+5. Swing-Beds
+See the Hospital, Idaho Medicaid Provider Handbook for information about swing-bed
+services.
+November 18, 2022 Page 7 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+6. Covered Services and Limitations: Nursing Facility
+6.1. Nursing Facility Per Diem
+All medically necessary Nursing Facility services covered in the per diem rate include, but are
+not limited to: nursing services; room and board services; therapies such as occupational
+therapy, personal services, physical therapy, and speech-language therapy; supervision
+required by the participant’s condition; social services, recreational activities; other services
+required as a condition of facility certification; abd pads; administration of intravenous,
+subcutaneous or intramuscular injections and infusions; application or administration of all
+drugs; autoclave sheets; basins; bed and bathroom linens; beds and mattresses; bibs;
+clinitest; clysis set; decubitus ulcer pads; denture cup; deodorant; donut pads; dressings;
+durable medical equipment such as, but not limited to, bed rails, canes, crutches, walkers,
+wheel chairs, and traction equipment; finger cots; flex straws; gloves; gowns; heel
+protectors; identification bands; invalid rings; laundry services; massages; medicine
+droppers; needles; nursing care; restraints; sand bags; scalpels; sheep skin; slings; special
+diets as prescribed a physician; special feeding and supplies if needed; specimen containers;
+supplies for enemas, catheters, bladder irrigations, and oxygen; suture set and tray; testing
+sets and refills; tongue blades; tubing; tray service; urological solutions; water for injections;
+and water pitchers.
+The per diem also includes common medical supplies that are available over the counter such
+as, but not limited to: analgesics; antibacterials, antiseptics, disinfectants and other materials
+for sterilization; baby powder; bandages; burn ointments; cellucotton; compresses; cottons;
+cough and cold preparations; disposable syringes; douche bags; first aid cream; gauzes; hot
+and cold therapies; incontinent supplies, or any other type of pads used to save labor or linen;
+laxatives emollients; lotions; lubricants; mouthwashes; non-legend drugs; protective creams
+and liquids; simple eye preparations; sponges; tapes; thermometers; tincture of Benzoin;
+and tissues.
+The date of admission counts as the first day of care for reimbursement. The Department
+does not reimburse for the date of the participant’s discharge. If a Medicaid participant dies
+in the nursing facility, the date of death is reimbursed as a day of care regardless of the time
+of occurrence. If admission and discharge occur on the same date, then one (1) day of care
+will be deemed to exist.
+Legend drugs, physician services, and certain other costs are paid directly by the Department
+and separately from other nursing facility payments. Facilities may request Special Rates for
+participants who require long-term care needs that exceed the scope of the services covered
+in the per diem.
+6.1.1. References: Nursing Facility – Per Diem
+(a) State Regulations
+“Nursing Facility: Coverage and Limitations.” IDAPA 16.03.10, “Medicaid Enhanced Plan
+Benefits,” Sec. 625. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 8 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+6.2. Nursing Facility: Leave of Absence (LOA)
+A leave of absence (LOA) occurs when a participant goes on a temporary leave of absence
+from the facility, such as to the hospital or home. A day may not be billed when a participant
+is on a non-covered leave of absence to home, in the hospital, or is not otherwise incurring a
+billable Medicaid day.
+When a participant residing in a nursing facility (NF) goes on a LOA to home, the facility may
+be eligible for a reserve bed payment if the facility charges private paying patients for reserve
+bed days. Therapeutic home visits for residents of up to three days per visit and not to exceed
+a total of 15 days per calendar year so long as the days are part of a treatment plan ordered
+by the attending physician. Eligibility for reserve bed payment is determined by Medicaid for
+participants.
+If the LOA is for longer than three days, written authorization must be obtained in advance
+from the Bureau of Long-Term Care and a copy attached to the UB-04 claim form. Payment
+for reserve bed days is the lesser of 75 percent of the NF rate or the customary charge.
+6.2.1. References: Nursing Facility – LOA
+(a) State Regulations
+“Nursing Facility: Payments for Periods of Temporary Absence.” IDAPA 16.03.10, “Medicaid
+Enhanced Plan Benefits,” Sec. 292. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 9 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+6.3. Admission Hour Codes/Discharge Hour Codes
+00 - 12:00 (midnight) - 12:59 a.m. 12 - 12:00 (noon) - 12:59 p.m.
+01 - 01:00-01:59 a.m. 13 - 01:00-01:59 p.m.
+02 - 02:00-02:59 a.m. 14 - 02:00-02:59 p.m.
+03 - 03:00-03:59 a.m. 15 - 03:00-03:59 p.m.
+04 - 04:00-04:59 a.m. 16 - 04:00-04:59 p.m.
+05 - 05:00-05:59 a.m. 17 - 05:00-05:59 p.m.
+06 - 06:00-06:59 a.m. 18 - 06:00-06:59 p.m.
+07 - 07:00-07:59 a.m. 19 - 07:00-07:59 p.m.
+08 - 08:00-08:59 a.m. 20 - 08:00-08:59 p.m.
+09 - 09:00-09:59 a.m. 21 - 09:00-09:59 p.m.
+10 - 10:00-10:59 a.m. 22 - 10:00-10:59 p.m.
+11 - 11:00-11:59 a.m. 23 - 11:00-11:59 p.m.
+99 - Hour Unknown
+November 18, 2022 Page 10 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+6.4. Outpatient Therapy Services
+Outpatient therapy services are included in the nursing facility per diem, however, services
+beyond the normal amount could be separately payable under Special Rates.
+November 18, 2022 Page 11 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+7. Covered Services and Limitations: Intermediate Care
+Facility/Individual with Intellectual Disabilities
+Intermediate Care Facility/Individuals with Intellectual Disabilities (ICF/IID) services include
+nursing services, room and board services, therapies, over-the-counter medications, social
+services, activities, and such other services required as a condition of facility certification.
+The per diem rate includes all medically necessary ICF/IID services including nursing services,
+room and board services, therapy services (occupational, physical, and speech), over-the-
+counter medications, social services, activities, and such other services required as a condition
+of facility certification. The date of admission counts as the first day of care for
+reimbursement. The Department only reimburses for the date of the participant’s discharge
+if the discharge occurs after 3:00 p.m. and the participant is not discharged to a related
+provider. If a Medicaid participant dies in an ICF/IID, the date of death is reimbursed as a day
+of care regardless of the time of occurrence. If admission and discharge occur on the same
+date, then one (1) day of care will be deemed to exist.
+Legend drugs, physician services, and certain other costs are paid directly by the Department
+and separately from other ICF/IID payments. Facilities may request Special Rates for
+participants who require long-term care needs that exceed the scope of the services covered
+in the per diem.
+November 18, 2022 Page 12 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+7.1. ICF/IID: Leave of Absence (LOA)
+A leave of absence (LOA) occurs when a participant goes on a temporary leave of absence
+from the facility, such as to the hospital or home. A day may not be billed when a participant
+is on a non-covered leave of absence to home, in the hospital, or is not otherwise incurring a
+billable Medicaid day.
+Participants of ICF/IIDs are allowed up to 36 LOA days to go home per calendar year so long
+as the days are part of a written treatment plan ordered by the attending physician. Prior
+authorization from Medicaid must be obtained for any home visits exceeding 14 consecutive
+days. To request prior authorization, complete the ICF/IID Special Rate Leave of Absence
+Form and e-mail it to Michelle Mittelstedt at Michelle.Mittelstedt@dhw.idaho.gov. Payment
+for reserve bed days is 100 percent of the facility rate for ICF/IID participants.
+7.1.1. References: ICF/IID Leave of Absence (LOA)
+(a) State Regulations
+“ICF/ID: Payments for Periods of Temporary Absence.” IDAPA 16.03.10, “Medicaid
+Enhanced Plan Benefits,” Sec. 620. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 13 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+8. Documentation Requirements
+Documentation requirements applicable in specific situations are listed throughout the
+handbook for provider convenience. General documentation requirements are also required
+and found in the General Information and Requirements for Providers, Idaho Medicaid
+Provider Handbook.
+November 18, 2022 Page 14 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+9. Reimbursement
+Idaho Medicaid reimburses claims on a per diem rate at the lower of the billed amount or
+Medicaid allowed amount; therefore, nursing facilities and ICF/IID facilities should always bill
+their usual and customary charges, rather than the Medicaid allowed per diem. A separate
+rate is assigned to each facility.
+When there are retrospective rate increases or decreases, the adjusted rates are added to
+the system and DHW initiates mass adjustments to previously paid claims for that facility for
+the time period that the rates have been adjusted. If the original claim was billed at the
+Medicaid allowed amount and the rate is increased retrospectively, the adjusted claim will pay
+at the original billed amount. The provider will not receive additional reimbursement.
+See the General Billing Instructions, Idaho Medicaid Provider Handbook regarding Medicaid
+policy on billing all other third party resources before submitting claims to Medicaid.
+Participants cannot be billed for any non-reimbursed amount. Providers may only bill non-
+covered services to the participant if the provider meets the requirements in the Participant
+Financial Responsibility section of the General Information and Requirements for Providers,
+Idaho Medicaid Provider Handbook.
+November 18, 2022 Page 15 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+9.1. Participant Liability or Resource Amount
+Participant liability information will be received from the Medicaid eligibility process. The
+Nursing Home and Waiver Claim Review Request Form and is used to request a review of the
+participant’s share of cost (SOC). Nursing Home and Waiver Claim Review Request Form
+Instructions provides information on how to fill out the form. All fields in the forms are
+required. The form can be filled out online, saved, and e-mailed to
+idnursinghomes@gainwelltechnologies.com. Faxed submissions are not accepted.
+9.1.1. References: Participant Liability or Resource
+Amount
+(a) State Regulations
+“Nursing Facility: Post-Eligibility Treatment of Income.” IDAPA 16.03.10, “Medicaid
+Enhanced Plan Benefits,” Sec. 224. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 16 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+9.2. Special Rates
+Special rates may be requested to pay for care given to participants who have Long-Term
+Care needs beyond the normal scope of facility services. The payments for such specialized
+care will be in addition to any payments made to the facility. Special rates are requested by
+submitting the form specific to the facility type found below.
+Special Rate Request Forms
+Facility Type Webpage Form
+ICF/IID Medicaid
+Providers
+ICF/IID Special Rate Request Form
+Nursing
+Facility
+Special Rates Idaho Special Rate Request Form – Skilled
+Nursing Facility
+Medicaid will notify the facility if its special rate request is approved or denied. If a participant
+is approved for special rate pricing, an approval letter will be sent out to the provider. The
+provider must submit claims with Revenue Code 0101 for approved long-term care special
+rate pricing.
+9.2.1. References: Special Rates
+(a) State Regulations
+“Nursing Facility: Special Rates.” IDAPA 16.03.10, “Medicaid Enhanced Plan Benefits,” Sec.
+270. Department of Administration, State of Idaho,
+https://adminrules.idaho.gov/rules/current/16/160310.pdf.
+November 18, 2022 Page 17 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+9.3. Medicare Crossovers
+Nursing facility and ICF/IID services that have been paid by Medicare Part A do not
+automatically cross over to Medicaid. These claims must be submitted manually.
+Services that have been paid by Medicare Part B will cross over to Medicaid for payment when
+there is a deductible or coinsurance amount due for those services. Examples of Medicare
+Part B covered claims are physical therapy, certain medical supplies, and liquid nutrition when
+it is one hundred percent of the participant’s nutritional intake. Always submit the total
+charges billed to Medicare, not just the allowed amount. Medicaid’s payment for Part B cross
+over services will be calculated according to the “Lesser Of” methodology.
+November 18, 2022 Page 18 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Appendix A. Long-Term Care Admission Codes
+Admission Codes
+Admission Code Source of
+Admission Code Description
+-3
+-Elective
+-The participant’s
+condition permits
+adequate time to
+schedule the
+availability of a
+suitable
+accommodation.
+1 Physician Referral
+The participant was admitted to this facility
+upon recommendation of his/her personal
+physician.
+2 Clinic Referral
+The participant was admitted to this facility
+upon recommendation of this facility’s clinic
+physician.
+3 HMO Referral
+The participant was admitted to this facility
+upon the recommendation of a health
+maintenance organization physician.
+4 Transfer from a
+Hospital
+The participant was admitted to this facility
+as a transfer from an acute care facility
+where he/she was an inpatient.
+5
+Transfer from a
+Nursing Facility or
+Skilled Nursing
+Facility
+The participant was admitted to this facility
+as a transfer from a nursing facility or skilled
+nursing facility where he/she was an
+inpatient.
+6
+Transfer from
+Another Health
+Care Facility
+The patient was admitted to this facility as a
+transfer from a health care facility other than
+an acute care facility, a nursing facility, or
+skilled nursing facility. This includes transfers
+from ICF/IID Long-Term Care facilities.
+7 Emergency
+Department Not applicable to Long-Term Care facilities.
+8 Court/Law
+Enforcement
+The participant was admitted to this facility
+upon the direction of a court of law, or upon
+the request of a law enforcement agency
+representative.
+8 Court/Law
+Enforcement
+The participant was admitted to this facility
+upon the direction of a court of law, or upon
+the request of a law enforcement agency
+representative.
+November 18, 2022 Page 19 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Appendix B. Patient Status Codes
+Patient Status Codes (Field 17)
+Code Description
+01 Discharge to home
+02 Transfer to hospital
+03 Transfer to Long-Term Care facility
+04 Transfer to state hospital
+05 Discharged to another type of institution for inpatient care or referred for outpatient
+services
+06
+Discharge/transfer to other (Indicate in field 80 of the UB-04 claim form or in the
+appropriate field of the electronic claim form, the status or location of the participant and
+the time they left the Long-Term Care facility)
+07 Left against medical advice
+08 Discharged/transferred to home under care of a home IV provider
+20 Death
+30 Not discharged, still a patient
+40 Expired at home
+41 Expired in an institution
+42 Expired, place unknown
+November 18, 2022 Page 20 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Appendix C. Long-Term Care Revenue Codes
+Revenue Codes (Field 42)
+Revenue
+Codes Description
+0100 Inpatient days (NF, ICF/IID, or swing bed)
+0101 All Inclusive R&B LTC (For Special Rate or participant Specific Pricing)
+0183 LOA (NF therapeutic leave to home)
+0189 ICF/IID LOA (Other Leave of Absence)
+November 18, 2022 Page 21 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Appendix D. Skilled Nursing Facility/Long-Term Care
+Bill Types
+Long-Term Care Bill Types
+Code Description
+0211 Skilled Nursing - Inpatient (Admit - Through - Discharge Claim) (Including Part A)
+0212 Skilled Nursing - Inpatient (Interim - First Claim) (Including Part A)
+0213 Skilled Nursing - Inpatient (Interim - Continuing Claim) (Including Part A)
+0214 Skilled Nursing - Inpatient (Interim - Last Claim) (Including Part A)
+0217 Skilled Nursing - Inpatient (Adjustment/Replacement of Prior Claim) (Including
+Part A)
+0218 Skilled Nursing - Inpatient (Void/Cancel of Prior Claim)
+November 18, 2022 Page 22 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Appendix E. Long-Term Care Facility, Provider
+Handbook Modifications
+This table lists the last three years of changes to this handbook as of the publication date.
+Long-Term Care Facility, Provider Handbook Modifications
+Versio
+Section n
+20.0 All Published version 11/18/2022 TQD
+19.1 Modification Description 11/18/2022 SME
+1.2 Provider
+Relations
+Consultants
+Published
+Date
+Updated contact phone numbers
+for PRCs
+R Lynch
+M Payne
+J Kennedy-
+King
+19.0 All Published version TQD
+18.1 1.2 Provider
+Relations
+Consultants
+Updated to add Region 9 contact
+information
+6/17/2022 6/14/2022 G Branscum
+M Payne
+J Kennedy-
+King
+18.0 All Published version 12/31/2020 TQD
+17.1 All Removed DXC references,
+rebranded to Gainwell
+Technologies
+12/31/2020 TQD
+17.0 All Published version 10/30/2020 TQD
+16.16 Appendix E. Long-
+Term Care Facility,
+Provider Handbook
+Modifications
+Modifications are deleted from
+table after three years.
+10/28/2020 W Deseron
+E Garibovic
+16.15 Appendix D. Skilled
+Nursing
+Facility/Long-Term
+Care Bill Types
+Deleted bill-type 0215. Added bill-
+type 0218.
+10/28/2020 W Deseron
+E Garibovic
+16.14 Appendix C. Long-
+Term Care Revenue
+Codes
+Moved patient status codes and
+admission codes to their own
+sections.
+10/28/2020 W Deseron
+E Garibovic
+16.13 Appendix B. Patient
+Status Codes
+New section. Previously in Long-
+Term Care Revenue Codes.
+10/28/2020 W Deseron
+E Garibovic
+16.12 Appendix A. Long-
+Term Care
+Admission Codes
+New section. Previously in Long-
+Term Care Revenue Codes.
+10/28/2020 W Deseron
+E Garibovic
+16.11 8.2.1. References:
+Special Rates
+New section. 10/28/2020 W Deseron
+E Garibovic
+16.10 8.1.1. References:
+Participant Liability
+or Resource
+Amount
+New section. 10/28/2020 W Deseron
+E Garibovic
+16.9 8.1. Participant
+Liability or
+Resource Amount
+Section moved to under
+Reimbursement.
+10/28/2020 W Deseron
+E Garibovic
+16.8 10.8 References:
+Covered Services
+and Limitations
+Nursing Facility
+Section deleted. References
+added to individual subsections.
+10/28/2020 W Deseron
+E Garibovic
+16.7 5.4. Outpatient
+Therapy Services
+New section. 10/28/2020 W Deseron
+E Garibovic
+November 18, 2022 Page 23 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Long-Term Care Facility, Provider Handbook Modifications
+Versio
+Section Modification Description Published
+SME
+n
+Date
+16.6 5.2.1. References:
+Nursing Facility –
+LOA
+New section. 10/28/2020 W Deseron
+E Garibovic
+16.5 5.1.1. References:
+Nursing Facility –
+Per Diem
+New section. 10/28/2020 W Deseron
+E Garibovic
+16.4 5.1. Nursing
+Facility Per Diem
+New section. Describes what is
+included in per diem.
+10/28/2020 W Deseron
+E Garibovic
+16.3 3. Advance
+Directives
+Clarified section to match
+physician and non-physician
+practitioner handbook.
+10/28/2020 W Deseron
+E Garibovic
+16.2 2. References:
+Eligible Participants
+New section. 10/28/2020 W Deseron
+E Garibovic
+16.1 Added description for use of
+references.
+Appendix C Section
+Modifications
+W Deseron
+E Garibovic
+12/20/2019 Long-Term Care
+Facility
+Renamed Long-Term Care
+Facility, Provider Handbook
+Modifications.
+10/28/2020 16.0 All Published version 01/01/2020 TQD
+15.37 W Deseron
+E Garibovic
+15.36 Appendix B Skilled
+Nursing
+Facility/Long-Term
+Care Bill Types
+New section. Previously under UB-
+04 Instructions, Idaho Medicaid
+Provider Handbook.
+12/20/2019 W Deseron
+E Garibovic
+15.35 Appendix A Long-
+Term Care Revenue
+Codes
+New section. Previously under UB-
+04 Instructions, Idaho Medicaid
+Provider Handbook.
+12/20/2019 W Deseron
+E Garibovic
+15.34 2.3.6 Adjustments Section deleted. Redundancy. 12/20/2019 W Deseron
+E Garibovic
+15.33 2.3.5.2 Medicare
+Crossovers
+Section moved under
+Reimbursement.
+12/20/2019 W Deseron
+E Garibovic
+15.32 2.3.5.1 Third Party
+Recovery (TPR)
+Section deleted. Redundancy. 12/20/2019 W Deseron
+E Garibovic
+15.31 1.8.
+Reimbursement
+New Section. Incorporates
+previous sections Customary
+Fees, Retrospective Rate
+Increases or Decreases and
+Retrospective Rate Changes.
+Added reference to General Billing
+Instructions.
+12/20/2019 W Deseron
+E Garibovic
+15.30 1.7.
+Documentation
+Requirements
+New Section. 12/20/2019 W Deseron
+E Garibovic
+15.29 1.6.1.1.
+References:
+ICF/IID Leave of
+Absence (LOA)
+New Section. 12/20/2019 W Deseron
+E Garibovic
+15.28 2.3.4.3 Date of
+Discharge
+Section deleted. Contents moved
+to Covered Services and
+Limitations: ICF/IID.
+12/20/2019 W Deseron
+E Garibovic
+15.27 2.3.4.2 Patient Day Section deleted. Contents moved
+to Covered Services and
+Limitations: ICF/IID.
+12/20/2019 W Deseron
+E Garibovic
+15.26 2.3.4.1 Special
+Rates
+Section moved under
+Reimbursement.
+12/20/2019 W Deseron
+E Garibovic
+November 18, 2022 Page 24 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Long-Term Care Facility, Provider Handbook Modifications
+Versio
+Section Modification Description Published
+SME
+n
+Date
+15.25 2.3.4 Healthy
+Connections (HC)
+Section deleted. Content moved
+to Referrals.
+12/20/2019 W Deseron
+E Garibovic
+15.24 2.3.3 Covered
+Services
+Section deleted. Contents moved
+to Covered Services and
+Limitations: ICF/IID.
+12/20/2019 W Deseron
+E Garibovic
+15.23 2.26.2
+Retrospective Rate
+Changes
+Section deleted. Contents moved
+to Reimbursement.
+12/20/2019 W Deseron
+E Garibovic
+15.22 2.26.1 Overview Header deleted. Text moved into
+Covered Services and Limitations:
+ICF/IID.
+12/20/2019 W Deseron
+E Garibovic
+15.21 1.6. Intermediate
+Care
+Facility/Individual
+with Intellectual
+Disabilities
+Renamed Covered Services and
+Limitations: Intermediate Care
+Facility/Individual with
+Intellectual Disabilities.
+Incorporated Covered Services,
+Patient Day and Date of
+Discharge.
+12/20/2019 W Deseron
+E Garibovic
+15.20 1.5.4References:
+Covered Services
+and Limitations:
+Nursing Facility
+New Section. 12/20/2019 W Deseron
+E Garibovic
+15.19 2.25.5 Claim
+Replacement and
+Voids
+Section deleted. Redundancy. 12/20/2019 W Deseron
+E Garibovic
+15.18 1.5.2 Participant
+Liability or
+Resource Amount
+Clarified that faxes are not
+accepted.
+12/20/2019 W Deseron
+E Garibovic
+15.17 2.2.3.2 Medicare
+Crossovers
+Section moved to under
+Reimbursement.
+12/20/2019 W Deseron
+E Garibovic
+15.16 2.2.3.1Third Party
+Recovery (TPR)
+Section deleted. Redundancy. 12/20/2019 W Deseron
+E Garibovic
+15.15 2.2.3 Third Party
+Insurance and
+Medicare
+Crossovers
+Header deleted. 12/20/2019 W Deseron
+E Garibovic
+15.14 1.5.1 Leave of
+Absence (LOA)
+Section renamed Nursing Facility:
+Leave of Absence (LOA)
+12/20/2019 W Deseron
+E Garibovic
+15.13 2.2.1 Overview Section deleted. Redundancy. 12/20/2019 W Deseron
+E Garibovic
+15.12 2.2 Long Term Care
+Service Policy
+Header deleted. 12/20/2019 W Deseron
+E Garibovic
+15.11 2.1.4.3 Date of
+Discharge
+Section deleted. Text
+incorporated into Covered
+Services and Limitations: Nursing
+Facility.
+12/20/2019 W Deseron
+E Garibovic
+15.10 2.1.4.2 Patient Day Section deleted. Text
+incorporated into Covered
+Services and Limitations: Nursing
+Facility.
+12/20/2019 W Deseron
+E Garibovic
+15.9 2.1.4.1 Special
+Rates
+Section moved to under
+Reimbursement.
+12/20/2019 W Deseron
+E Garibovic
+15.8 2.1.4 Covered
+Services
+Renamed Covered Services and
+Limitations: Nursing Facility.
+12/20/2019 W Deseron
+E Garibovic
+November 18, 2022 Page 25 of 26
+Idaho Medicaid Provider Handbook Long-Term Care Facility
+Long-Term Care Facility, Provider Handbook Modifications
+Versio
+Section Modification Description Published
+SME
+n
+Date
+Incorporated text from Patient
+Day, Date of Discharge.
+15.7 2.1.3.1
+Retrospective Rate
+Increases or
+Decreases
+Section deleted. Text
+incorporated into Reimbursement
+section.
+12/20/2019 W Deseron
+E Garibovic
+15.6 2.1.3 Customary
+Fees
+Section deleted. Text
+incorporated into Reimbursement
+section.
+12/20/2019 W Deseron
+E Garibovic
+15.5 1.2.1 Referrals New section with text
+incorporated from Healthy
+Connections (HC).
+12/20/2019 W Deseron
+E Garibovic
+15.4 1.2 Eligible
+Participants
+New section. 12/20/2019 W Deseron
+E Garibovic
+15.3 1.1 Provider
+Qualifications
+New section. 12/20/2019 W Deseron
+E Garibovic
+15.2 2.1.1 General
+Policy
+Header deleted. Text consolidated
+into 1. Long-Term Care Facility.
+Added references to other
+applicable handbooks.
+12/20/2019 W Deseron
+E Garibovic
+15.1 2.1 Introduction Header deleted. 12/20/2019 W Deseron
+E Garibovic
+15.0 All Published version 4/9/2019 TQD
+14.4 2.3.4 Healthy
+Connections (HC)
+Updated Healthy Connections
+information that a referral is not
+necessary for residents of a
+ICF/IID.
+4/3/2019 E Garibovic
+W Deseron
+14.3 2.1.6. Healthy
+Connections (HC)
+Deleted section. 4/3/2019 E Garibovic
+W Deseron
+14.2 2.1.5 - 2.1.5.1
+Swing Bed General
+Policy
+Updated section to point to the
+Hospital handbook.
+4/3/2019 E Garibovic
+W Deseron
+14.1 2.1.3. Customary
+Fees
+Updated Healthy Connections
+information that a referral is not
+necessary for residents of a
+nursing.
+4/3/2019 E Garibovic
+W Deseron
+14.0 All Published version 11/1/2018 TQD
+13.1 All Removed Molina references 11/1/2018 D Baker
+E Garibovic
+13.0 All Published version TQD
+12.1 2.1.5 Swing Bed
+General Policy
+Replace RMS with BLTC 10/24/2018 10/24/2018 D Baker
+E Garibovic
+November 18, 2022 Page 26 of 26

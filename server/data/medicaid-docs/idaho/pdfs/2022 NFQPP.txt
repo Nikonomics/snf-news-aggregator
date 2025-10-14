@@ -1,0 +1,1252 @@
+State of Idaho
+Department of Health and Welfare
+Nursing Facility
+Quality Payment Program Guide
+October 14, 2022
+TABLE OF
+CONTENTS
+1. Supplemental Payment History ............................................................................................ 3
+2. Quality Measures .................................................................................................................. 4
+• A. Quality of Care Measures ........................................................................................ 4
+3. Point Assignment Steps ....................................................................................................... 5
+• A. Base Year for Payment Tiers ................................................................................... 5
+• B. Quality Score Cut Points .......................................................................................... 6
+• C. Anomalies in the Data .............................................................................................. 6
+• D. Timeline After Base Year ......................................................................................... 7
+4. Supplemental Payment and Provider Assessment Calculations ......................................... 8
+• A. Determine the Quality Payment Pool ....................................................................... 8
+• B. Payment Percentages .............................................................................................. 8
+• C. Undistributed Funds ................................................................................................. 9
+• D. Provider Assessment ............................................................................................... 9
+• E. Shadow Payments ................................................................................................... 9
+• F. Calculated Tier and Percentage Payout .................................................................. 9
+• G. Dispute Process ..................................................................................................... 10
+5. Appendices ......................................................................................................................... 12
+• A. Revised 2017 Base Year Tiers .............................................................................. 12
+• B. MDS Quality Measures 1-9 Quality Score Cut Point – Range for Point Values for
+Quality Measures ........................................................................................................ 12
+• C. Long Stay Hospitalization Quality Measure 10 – Cut Points ................................. 12
+• D. NF Quality Payment Program at a Glance ............................................................. 12
+• E. 2017 Base Year Tiers (Superseded) ..................................................................... 12
+ page 2
+1. SUPPLEMENTAL
+PAYMENT HISTORY
+1. Supplemental Payment History
+Beginning in state fiscal year 2010, the state of Idaho implemented cost cutting measures in the
+nursing facility (NF) rate methodologies. The efficiency incentive add-on for indirect costs was
+removed, inflation from the cost reporting period to the rate year was removed, and the overall
+rate was subjected to a 2.7% reduction. As a result, the Department of Health and Welfare
+(Department) implemented an Upper Payment Limit (UPL) supplemental payment program to
+replace the lost funding from the rate reductions. The UPL program provides supplemental
+payments to NFs using a combination of provider assessments and intergovernmental transfers
+(IGT) to fund the state share of the supplemental payment. In the initial year of the UPL program,
+the payment was limited to cover the estimated losses providers incurred from the change in rate
+methodology. Later, the program was revised to pay providers the entire available UPL gap.
+UPL supplemental payments are based on the difference between what Medicare would have
+paid and what Medicaid did pay for NF services provided to Medicaid residents. That difference,
+or gap, can be distributed to providers as a supplemental payment. Currently, the UPL program
+provides approximately $59 million dollars of supplemental payments to all providers with the
+exception of the state owned and operated facilities.
+The Department currently contracts with two participating managed care organizations (MCOs) to
+administer a managed care program to dual-eligible beneficiaries. Enrollment in MCOs has
+increased over 30% since last year at the same time. Federal rules do not allow supplemental
+UPL payments on managed care days; therefore, the growing enrollment trend into MCOs will
+impact UPL payments that are based on traditional fee-for-service days. It is estimated that this
+reduction in fee-for-service days would reduce the supplemental payments by approximately $49
+million.
+Under federal regulations, states have the flexibility to implement supplemental payment systems
+that are based on quality. The Department has formed a work group with the Idaho Health Care
+Association, American Health Care Association, other providers, and the consulting firm of Myers
+and Stauffer to develop the Nursing Facility Quality Payment Program system based on quality.
+The Department is appreciative of the collaboration and input received from state and national
+nursing facility representatives for improving quality of care and life for our most frail and elderly
+participants. This input has been informative to deliberations on the best way to move forward.
+This document summarizes the work group decisions, methodologies, plan details, and timelines
+of the proposed system.
+ page 3
+2. QUALITY
+MEASURES
+2. Quality Measures
+The goal of this new payment structure is to link supplemental payments to the quality of care
+provided by NFs participating in the Medicaid program. Linking payments to quality of care is a
+primary goal of the Centers for Medicare & Medicaid Services (CMS) and the Department, and
+provides a strong financial incentive to NFs to improve the quality of care and lives of the
+residents they serve.
+A. Quality of Care Measures
+The Department and NF industry representatives have reached consensus on the following nine
+measures, which leverage existing and readily accessible data. These measures capture
+common clinical outcomes for long-stay residents and are reflective of the overall quality of the
+NF. These represent reasonable indicators of quality of care and will be used in Idaho’s Nursing
+Facility Quality Payment Program. During initial discussions, the consensus was to utilize ten
+measures, but on October 1, 2019, CMS removed the measure to remove moderate to severe
+pain from their Five Star quality program. As a result, this measure was removed from the
+calculation of the total quality based score for the Idaho Quality Payment Program.
+ Eight Minimum Data Set (MDS) long-stay quality measures.
+o These measures are derived from the Minimum Data Set (MDS) used by CMS in
+the Five Star quality rating program for NFs.
+o All NFs are required to submit data to a national MDS repository and CMS has
+made the data available to states to use in various rate-setting systems.
+o Data is calculated using a four-quarter average.
+ One PointRight® Long-Stay Hospitalization measure from the National Quality Forum
+endorsed measure about hospitalization rates.
+o Data is calculated from the most recent data available. This measure is an
+MDS-based, risk adjusted measure of the rate of hospitalization of long-stay
+patients of NFs averaged across the year, weighted by the number of stays in
+each quarter.
+Table 2.1 Long Stay Quality Measures Selected for NF Quality Measure Program
+1
+# Measure
+Data
+Source
+Measure
+Source
+Points
+Available 1 Antipsychotic medication use MDS CMS NHC 20 to 100
+2 Urinary tract infections MDS CMS NHC 20 to 100
+3 Pressure ulcers MDS CMS NHC 20 to 100
+4 Indwelling catheter MDS CMS NHC 20 to 100
+5 Decline in late-loss ADLs MDS CMS NHC 20 to 100
+6 Decline in mobility MDS CMS NHC 20 to 100
+7 Physical restraints MDS CMS NHC 20 to 100
+8 Falls with major injury MDS CMS NHC 20 to 100
+9 Long stay hospitalization rate (Point Right Pro Long Stay) MDS AHCA 2 20 to 100
+Minimum Points Available 180
+Maximum Points Available 900
+1 Points are calculated in increments of 20 (20, 40, 60, 80, 100) using the same methodology used by CMS
+for their 5 Star rating system.
+2 https://www.ahcancal.org/research_data/quality/Pages/Measure%20Downloads.aspx
+ page 4
+3. POINT
+ASSIGNMENT STEPS
+3. Point Assignment Steps
+The quality payment parameters are determined using provider scores for all nine quality
+measures. Scores for all providers will be arrayed and payment tiers will be calculated.
+Percentages are assigned to each payment tier in order to determine the portion of each
+provider’s quality payments they are eligible to receive. Therefore, the payment tier that each
+provider falls into will be used to determine their quality payment. The payment percentages by
+tier are described in Section 4.
+A. Base Year for Payment Tiers
+Provider quality payments will be based on the payment tier their score falls within. The options
+discussed for the tier calculations were to either recalculate them annually or use a base period
+where the payment tiers will remain intact for several years. The work group concluded that a
+base period is preferable in order for the providers to track their progress over a five-year period.
+The base period will be used to compile provider scores and to calculate payment tiers. The base
+year tiers will then be used to determine payments moving forward. Following is a high-level
+summary of the base year concepts:
+ Base year – Quality scores captured for the most current data available as of 12/31/17.
+ Tier groups – The 2017 quality scores will establish three payment tiers that will be
+applied until a rebase occurs.
+ Years in use before a rebase is evaluated – The payment tiers will remain in place
+through the SFY 2025 payments and then will be reevaluated. Refer to Table 3.2.
+Following is a summary of the steps that will be taken to calculate the base year tiers and point
+ranges:
+Table 3.1 Base Year Payment Tier Calculation Steps
+Step Topic Discussion and Tiers
+Gather the scores using the data sources described in Table
+2.1.
+3 Score tabulation 2 Data period Scores available as of 12/31/17
+1 Capture provider
+scores
+Sum the scores for all 9 measures to determine a total score
+for each provider
+4 Calculate 2017 base
+year point ranges for
+the 3 Tiers
+Using the array of all provider scores, calculate 3 Tiers as
+follows. Refer to Appendix A for detail calculations.
+Tier 1 720 – 900 points 75th Percentile
+Tier 2 620 – 700 points Minimum 100 Points below
+Tier 1
+Tier 3 180 – 600 points All Points below Tier 2
+ page 5
+3. POINT
+ASSIGNMENT STEPS
+B. Quality Score Cut Points
+Point values assigned to each quality measure will remain unchanged until a rebase occurs.
+Refer to Appendix B and C for the point value range for each quality measure.
+C. Anomalies in the Data
+In the cases of data anomalies or missing data, the work group decided on the following methods:
+i. Missing Quality Measure Scores
+While most Idaho NFs have data for all nine of the measures, some do not. When quality
+measure data is missing, the work group decided to impute scores for each missing measure
+using the median score of all Idaho NFs.
+ii. Providers with Special Care Units
+For the quality measures identified below, providers expressed concern over the observed lower
+scores of NFs with Behavior Care Units (BCU) or those providing ventilator care.
+ Antipsychotic use for long-stay residents
+ ADLs decline
+The providers asserted that these special units may tend to score lower simply due to the nature
+of the residents served. For the two quality measures listed above, the work group proposed the
+following solutions:
+ Applicable only to providers with state designated units (currently BCU, and special care
+facilities under IDAPA 16.03.10.269.06.a) and those providing ventilator care.
+ Allow the provider the higher of their own score or the statewide median score of the non-
+unit providers for each measure.
+Any facility that met the BCU qualification requirements as of the beginning of the rate period
+within the quality measurement year would be considered a BCU for the quality measures
+calculations. Rate periods have a July 1 start date.
+iii. Quality Measure Treatment through COVID-19
+During the COVID-19 pandemic, the majority of providers experienced a decrease in their total
+scores for the quality measures listed in Table 2.1. Upon review of detail of the decrease in
+scores, it was determined that two quality measures were the main contributing factors for the
+decreases. Those quality measures were Decline in Late-Loss ADLs and Decline in Mobility.
+Decreases were expected in these areas because of the isolation protocols put into place in an
+effort to reduce the spread of the COVID-19 virus. In order to address the decrease in scores,
+the Department opted to increase each provider’s total quality measure score by 40 points. The
+increase of 40 points will be in effect for SFY 2022. Due to continued effects of COVID-19, the
+Department applied the 40 point increase for SFY 2023 as well.
+When tiers are calculated for SFY 2024, the 40 points added to each provider’s score will be
+excluded. This will allow tiers for that period to not be negatively impacted by the Department’s
+decision to increase total quality scores by 40 points in SFY 2022 and SFY 2023.
+ page 6
+3. POINT
+ASSIGNMENT STEPS
+D. Timeline After Base Year
+The quality payment calculations are performed annually with a goal of sending payment notice
+letters every August. The steps identified in Sections A and B above will be applied each year
+when gathering the quality measures. Following is the timeline and data sources for the program:
+Table 3.2 Data Sources and Base Year Timeline
+Medicaid
+QMs Based
+Days from
+on the Four
+Provider
+Quarter
+UPL Paid in
+Medicaid Rates
+FYE
+Average
+Base Year
+Payment
+SFY
+Paid
+Ending
+for Tiers
+Type 1
+6/30/19 7/1/17 – 6/30/18 2016 12/31/17 12/31/17 Shadow
+6/30/20 7/1/18 – 6/30/19 2017 12/31/18 12/31/17 Shadow
+6/30/21 7/1/19 – 6/30/20 20182 12/31/19 12/31/17 Year 1
+6/30/22 7/1/20 – 6/30/21 2019 12/31/20 12/31/17 Year 2
+6/30/23 7/1/21 – 6/30/22 2020 12/31/21 12/31/17 Year 3
+6/30/24 7/1/22 – 6/30/23 2021 12/31/22 12/31/17 Year 4
+6/30/25 7/1/23 – 6/30/24 2022 12/31/23 12/31/17 Year 5
+6/30/26 7/1/24 – 6/30/25 2023 12/31/24 Rebase
+1 See Section 4E for description of shadow payments.
+2 Beginning this year, days will be a combination of Idaho Medicaid Managed Care and traditional Medicaid.
+All days will be captured for the available supplemental payment pool calculations.
+ page 7
+4. SUPPLEMENTAL PAYMENT
+AND PROVIDER ASSESSMENT
+4. Supplemental Payment and Provider
+Assessment Calculations
+This section describes how payment tiers translate to payments. The Department will make the
+quality payments to providers once a year.
+A. Determine the Quality Payment Pool
+Historically, the supplemental payment pool has been determined as follows:
+Step 1) Calculate what Medicare would have paid each provider using Medicare RUG
+rates
+Step 2) Calculate what Medicaid did pay each provider
+Step 3) Calculate the UPL gap as Step 1 – Step 2 * traditional Medicaid fee-for-service
+(FFS) patient days
+Step 4) Sum the UPL gap by each ownership class (private, government, state-owned)
+Step 5) Distribute the sum of the gap for each class to each provider based on their
+share of Medicaid days to the total Medicaid days in the class.
+Step 6) The result in Step 5 is the funding pool available to each provider. Based on
+their quality score, they will be paid a percentage of their own pool and not a
+percentage of the entire pool for the class.
+For the new quality measure system, a similar method will be used with the only exception being
+that instead of basing the gap calculation on only traditional Medicaid FFS days and payments, it
+will be based on traditional FFS days plus Idaho Medicaid managed care days and payments.
+The calculation will provide a UPL gap for each payer (FFS and each MCO) to determine the pool
+of dollars to distribute by each payer. Idaho Medicaid will issue payments for traditional FFS days.
+For the MCOs payments, Idaho Medicaid will provide a lump sum payment to each MCO and will
+also identify the calculated payment the MCO will issue to each facility. The calculation for the
+MCO payments related to managed care days will follow the same parameters as listed above.
+B. Payment Percentages
+Once each provider’s total available fund pool is determined, and their quality scores for the
+payment year have been tabulated, the following payment tier methodologies will be applied to
+their available pool:
+Table 4.1 Percentage of Each Provider’s Available Pool Paid by Tier Group
+Payments Based on Change in QM Score From Prior Year
+Improved by 40 Points
+Declined by 40 Points
+Tier
+or More No Change
+or More
+1 100% 100% 100%
+2 100% 100% 95%
+3 100% 95% 90%
+ page 8
+4. SUPPLEMENTAL PAYMENT
+AND PROVIDER ASSESSMENT
+C. Undistributed Funds
+Because each provider will be paid between 90% and 100% of their available pool of funds, there
+may be excess funds available to distribute. The excess funds will be summed by ownership
+class and every provider in that class will receive a share of the undistributed pool based on their
+percent of FFS and Idaho managed care days to total FFS and Idaho manged care days in their
+ownership class.
+D. Provider Assessment
+The provider assessment is currently calculated once a year, at the same time the quality
+payments are calculated. The assessment has historically been set at an amount to cover the
+state share of the supplemental payments paid to privately owned providers plus an
+administrative fee for Myers and Stauffer to prepare the calculations. The assessment
+methodology will remain unchanged.
+Non-state government owned providers are exempt from the assessment and instead pay an IGT
+payment to the state to cover the state share of each provider’s payment. During the 2018
+legislative session, Idaho State Veteran’s Home providers are now eligible to participate in the
+UPL payment program. These providers are state operated and are also exempt from the
+assessment. They will instead pay an IGT payment to the state to cover the state share of each
+provider’s payment.
+E. Shadow Payments
+The current UPL payment system will continue through the payment made in SFY ending 6/30/20
+because it relies on patient days. This will allow providers time to learn and adapt to the new
+system and begin working to improve their quality scores in the hopes of receiving 100% of their
+available fund pool in the future.
+For the years leading up to the full implementation date, the work group decided that issuing
+shadow payment calculations would serve to remind providers to focus on quality care. In
+addition, the shadow payments will be in a format that will be educational to providers so they can
+learn the new system.
+The shadow payment will be issued annually along with each provider’s current UPL payment
+calculation. It will show the provider what they would have been paid had the new system been
+live.
+Providers will be issued quarterly reports that show their most recent quality scores. There will not
+be a shadow payment attached to the quarterly reports as shadow payments only occur annually.
+However, the report will show their quality scores so they can be aware of their score throughout
+the year.
+F. Calculated Tier and Percentage Payout
+During the second quarter of the calendar year, each provider will receive a Quality Standing
+report along with the standard quarterly report. The Quality Standing report will include the
+provider’s adjusted quality scores based on the four quarter average from the preceding calendar
+year, payment tier, and UPL payment percentage. Providers should review the Quality Standing
+ page 9
+4. SUPPLEMENTAL PAYMENT
+AND PROVIDER ASSESSMENT
+report to determine if they disagree with any of their scores. If a provider disagrees with their
+score, procedures outlined in Section G, Dispute Process, should be followed.
+G. Dispute Process
+The dispute process was created by the work group to address concerns that nursing facilities
+may not take individuals that have complex needs for fear those individuals may drive down
+quality scores. Any NF that believes the calculated quality scores do not reflect the actual quality
+care that was provided during the reported year is allowed to submit documentation to dispute
+their scores. NFs may only dispute the calculated quality scores as stated in the Quality Standing
+report issued in the second quarter following the end of the reporting year. The Dispute Process
+steps are as follows:
+Step 1) Each NF receives quarterly reports with raw quality measure scores. Any NF
+with concern that their quality scores are not reflective of the actual care provided should begin
+the research to determine the cause of the quality scores and compile supporting documentation.
+The burden of proof lies with the NF. The Department does not have the
+capability to compare one or more MDS assessments to another set of residents to determine the
+effect of changes in quality measure scores or to model the impact of one resident’s score and
+how it affects the total facility score.
+Step 2) After receiving the Quality Standing report, any NF wishing to dispute their quality
+scores must submit documentation supporting their position within 21 days from the send date as
+stated on the Quality Standing report. The submission of supporting documentation initiates the
+Dispute Process. Late submissions will not be accepted. Supporting documentation must be
+provided in an electronic format and transmitted via efax, email, or mail for encrypted data
+storage devices such as thumb drives. No paper documents will be accepted.
+Fax: 208-332-7283
+Email: Alexandra.Fernandez@dhw.idaho.gov
+Mail: Attn: Alexandra Fernandez
+Bureau of Long Term Care, Division of Medicaid
+PO Box 83720
+Boise, ID 83720-0009
+Step 3) A review committee, as established by the work group, will consist of four (4)
+members. The review committee is charged with reviewing and evaluating the submitted
+disputes and determining the resolution to the disputes. Each stakeholder member of the review
+committee will be required to sign a confidentiality agreement as the documentation submitted by
+nursing facilities will most likely contain protected health information (PHI). Committee members
+are as follows:
+o Robert Vande Merwe – Executive Director of the Idaho Health Care Association
+(IHCA)
+o Chris Hansen – Director of Reimbursement, Ensign Facility Services, Inc.
+ page 10
+4. SUPPLEMENTAL PAYMENT
+AND PROVIDER ASSESSMENT
+o James Winfield – Director of Accounting at Cascadia Healthcare and IHCA Chair
+of the Skilled Nursing and Assisted Living Reimbursement Committee
+o Susie Choules – Program Manager for the Bureau of Long Term Care, Division
+of Medicaid
+Step 4) Notification of the resolution will be provided by the review committee to the
+disputing NF, the work group, the Bureau of Financial Operations, and its contractor, Myers and
+Stauffer, no later than June 30 of the same year.
+ page 11
+5. APPENDICES
+5. Appendices
+A. B. C. D. E. Revised 2017 Base Year Tiers
+MDS Quality Measures 1-9 Quality Score Cut Point – Range for Point
+Values for Quality Measures
+Long Stay Hospitalization Quality Measure 10 – Cut Points
+NF Quality Payment Program at a Glance
+2017 Base Year Tiers (Superseded)
+ page 12
+State of Idaho
+Idaho Department of Health & Welfare
+MDS Quality Measures for Nursing Home Long Stay Residents
+CMS Nursing Home Compare Dataset: 2016Q4 - 2017Q3
+Adjusted Data
+REVISED 2017 Base Year Scores
+EXCLUDING PAIN MEASURE
+CMS Assigned Point Values for Quality Measures
+MCR
+Number NPI Number Provider Name County
+BCU, Special
+Care, or
+Vent Units Notes
+Decline in
+Late-Loss
+ADLs
+Decline in
+Mobility
+on Unit
+High-Risk
+Residents
+w/ Pressure
+Ulcers
+Antipsychotic
+Medications
+Falls w/
+Major Injury
+Physical
+Restraints
+Indwelling
+Catheter
+Urinary
+Tract
+Infection
+Long Stay
+Hospital-
+izations
+Adjusted
+Total (a)
+Column1 Column18 Column2 Column4 Column5 Column6 Column7 Column8 Column9 Column11 Column12 Column13 Column14 Column15 Column152 Column16
+135079 1194762815 APEX CENTER Ada 60 20 40 60 100 100 100 100 80 660
+135097 1497756803 ASHTON MEMORIAL LIVING CENTER Fremont 100 80 100 40 40 20 40 40 100 560
+135077 1245574896 AVAMERE TRANSITIONAL CARE & REHAB - BOISE Ada 60 60 20 40 80 100 60 100 40 560
+135070 1568552446 BEAR LAKE MEMORIAL SKILLED NURSING FACILITY Bear Lake 40 60 100 80 60 100 100 40 100 680
+135069 1831522762 BELL MOUNTAIN VILLAGE & CARE CENTER Blaine 20 20 100 80 40 100 100 40 80 580
+135134 1013237528 BENNETT HILLS CENTER Gooding 40 80 80 60 60 100 60 80 80 640
+135007 1861694960 BINGHAM MEMORIAL SKILLED NURSING & REHABILIT. Bingham 80 40 100 20 100 100 20 80 100 640
+135004 1225113152 BOUNDARY COUNTY NURSING HOME Boundary 80 40 100 20 60 100 100 20 100 620
+135113 1285688739 BRIDGEVIEW ESTATES Twin Falls 100 80 100 80 20 100 60 60 40 640
+135014 1467978460 CALDWELL OF CASCADIA Canyon Special Care 80 40 100 80 40 100 100 80 60 680
+135051 1770009680 CANYON WEST OF CASCADIA Canyon 40 60 80 40 60 100 20 100 100 600
+135060 1750442240 CARIBOU MEMORIAL LIVING CENTER Caribou 20 20 40 40 100 100 40 20 100 480
+135095 1760438063 CHERRY RIDGE CENTER Gem 60 60 100 20 100 100 40 100 100 680
+135048 1760925572 CLEARWATER OF CASCADIA Clearwater 20 20 100 100 40 100 100 40 20 540
+135052 1487197299 COEUR D'ALENE OF CASCADIA Kootenai 20 60 100 80 40 100 20 80 60 560
+135064 1023052040 COUNTRYSIDE CARE & REHABILITATION Minidoka 100 40 100 80 80 100 20 60 100 680
+135089 1306094610 DESERT VIEW CARE CENTER OF BUHL Twin Falls BCU 100 100 100 80 80 100 80 60 100 800
+135129 1477816965 DISCOVERY REHABILITATION AND LIVING Lemhi 100 80 20 100 40 100 40 100 40 620
+135059 1548355811 FRANKLIN COUNTY TRANSITIONAL CARE Franklin 40 40 20 20 100 100 20 60 100 500
+135011 1407956253 GATEWAY TRANSITIONAL CARE CENTER Bannock 100 80 100 60 100 100 100 80 80 800
+135085 1053392548 GOOD SAMARITAN SOCIETY - BOISE VILLAGE Ada 80 60 100 20 60 100 80 60 100 660
+135092 1366432023 GOOD SAMARITAN SOCIETY - IDAHO FALLS VILLAGE Bonneville 80 40 100 80 60 100 80 60 100 700
+135067 1598755266 GOOD SAMARITAN SOCIETY - MOSCOW VILLAGE Latah 40 40 100 60 40 100 100 100 100 680
+135058 1053301457 GOOD SAMARITAN SOCIETY - SILVER WOOD VILLAGE Shoshone 60 40 100 40 20 100 60 60 100 580
+135080 1528099744 GRANGEVILLE HEALTH & REHABILITATION CENTER Idaho 60 80 100 60 40 20 80 60 20 520
+135131 1285624627 IDAHO STATE VETERANS HOME - BOISE Ada 80 60 100 80 80 100 60 60 80 700
+135133 1679562011 IDAHO STATE VETERANS HOME - LEWISTON Nez Perce 60 60 80 80 40 100 60 100 100 680
+135132 1285624064 IDAHO STATE VETERANS HOME - POCATELLO Bannock 40 20 100 60 80 100 60 40 100 600
+135053 1821486986 IVY COURT Kootenai 80 80 80 80 100 100 40 100 60 720
+135110 1891148979 KARCHER POST-ACUTE & REHABILITATION CENTER Canyon 80 80 20 60 40 100 20 40 80 520
+135042 1811385974 LACROSSE HEALTH & REHABILITATION CENTER Kootenai Vent 60 60 20 80 80 100 60 100 80 640
+135021 1477064780 LEWISTON OF CASCADIA Nez Perce 40 80 20 80 60 100 60 80 60 580
+135038 1225081284 LIFE CARE CENTER OF BOISE Ada 60 60 60 60 20 100 80 80 80 600
+135122 1366495277 LIFE CARE CENTER OF COEUR D'ALENE Kootenai 80 60 100 60 100 100 100 20 100 720
+135091 1780638296 LIFE CARE CENTER OF IDAHO FALLS Bonneville 100 80 100 80 100 100 100 100 100 860
+135128 1235182155 LIFE CARE CENTER OF LEWISTON Nez Perce 40 40 100 100 100 100 100 100 100 780
+135135 1740442771 LIFE CARE CENTER OF POST FALLS Kootenai 100 60 60 80 40 100 60 100 100 700
+135127 1780638213 LIFE CARE CENTER OF SANDPOINT Bonner 80 80 60 100 80 60 100 60 100 720
+135123 1184678617 LIFE CARE CENTER OF TREASURE VALLEY Ada 100 80 60 100 80 100 80 60 100 760
+135056 1518115773 LINCOLN COUNTY CARE CENTER Lincoln BCU 60 20 40 80 80 100 20 60 100 560
+135140 1649692609 MADISON CARRIAGE COVE SHORT STAY REHAB Madison (b) 60 60 100 60 80 100 80 80 100 720
+135082 1730136490 MCCALL REHABILITATION AND CARE CENTER Valley 60 100 80 60 100 100 80 100 100 780
+135076 1083146484 MEADOW VIEW NURSING AND REHABILITATION Canyon 60 80 60 20 80 60 40 60 40 500
+135125 1639126493 MERIDIAN CENTER GENESIS HEALTHCARE Ada 40 20 60 60 100 100 80 40 100 600
+135081 1285882431 MINI-CASSIA CARE CENTER Cassia BCU 60 60 80 80 100 100 80 80 100 740
+135018 1821360868 MONTE VISTA HILLS HEALTHCARE CENTER Bannock 100 60 100 100 80 100 100 60 100 800
+135093 1194236406 MOSCOW OF CASCADIA (ASPEN PARK) Latah 100 20 60 20 20 100 40 40 60 460
+135065 1396261202 MOUNTAIN VALLEY OF CASCADIA Shoshone 80 40 100 80 100 100 100 100 100 800
+135084 1912157090 OAK CREEK REHABILITATION CENTER OF KIMBERLY Twin Falls BCU 60 20 100 80 60 60 100 100 60 640
+135062 1811949431 ONEIDA COUNTY HOSPITAL & LONG TERM CARE FACILI Oneida 80 80 60 80 100 100 60 60 100 720
+135019 1912418229 ORCHARDS OF CASCADIA, THE Canyon 80 80 100 100 80 100 100 80 80 800
+State of Idaho
+Idaho Department of Health & Welfare
+MDS Quality Measures for Nursing Home Long Stay Residents
+CMS Nursing Home Compare Dataset: 2016Q4 - 2017Q3
+Adjusted Data
+REVISED 2017 Base Year Scores
+EXCLUDING PAIN MEASURE
+CMS Assigned Point Values for Quality Measures
+MCR
+Number NPI Number Provider Name County
+BCU, Special
+Care, or
+Vent Units Notes
+Decline in
+Late-Loss
+ADLs
+Decline in
+Mobility
+on Unit
+High-Risk
+Residents
+w/ Pressure
+Ulcers
+Antipsychotic
+Medications
+Falls w/
+Major Injury
+Physical
+Restraints
+Indwelling
+Catheter
+Urinary
+Tract
+Infection
+Long Stay
+Hospital-
+izations
+Adjusted
+Total (a)
+135087 1225390131 OWYHEE HEALTH & REHABILITATION CENTER Owyhee 40 100 100 40 100 100 100 40 100 720
+135068 1720317761 PARKE VIEW REHABILITATION & CARE CENTER Cassia 80 60 80 80 100 100 80 100 100 780
+135015 1851348635 PAYETTE CENTER Payette 100 40 100 80 20 100 100 80 80 700
+135066 1821096082 POWER COUNTY NURSING HOME Power 20 20 20 40 100 20 40 100 100 460
+135103 1346598299 PRESTIGE CARE & REHABILITATION - THE ORCHARDS Nez Perce 60 60 60 20 100 60 100 80 60 600
+135136 1821250713 QUINN MEADOWS REHABILITATION AND CARE CENTER Bannock 60 60 100 100 100 100 40 100 60 720
+135105 1659325132 TEMPLE VIEW TRANSITIONAL CARE CENTER Madison 20 20 80 80 80 100 100 100 100 680
+135020 1275862211 RIVER'S EDGE REHABILITATION & LIVING CENTER Gem 100 80 100 80 100 100 100 60 100 820
+135116 1982011474 ROYAL PLAZA HEALTH & REHABILITATION Nez Perce 60 60 100 100 20 100 100 20 80 640
+135090 1700245594 SHAW MOUNTAIN OF CASCADIA Ada BCU 60 40 80 80 20 100 80 80 80 620
+135006 1508105248 ST LUKE'S ELMORE LONG TERM CARE Elmore 60 60 100 80 100 20 20 20 100 560
+135102 1790732337 SUNNY RIDGE Canyon 80 60 100 80 40 100 60 40 100 660
+135138 1649517806 TETON POST ACUTE CARE & REHABILITATION Bonneville 60 60 40 80 60 100 80 20 40 540
+135104 1841244407 TWIN FALLS CENTER Twin Falls 80 40 40 80 60 100 80 100 80 660
+135098 1942254487 VALLEY VIEW NURSING & REHABILITATION Ada 100 40 100 80 100 100 60 80 80 740
+135055 1497761050 VALLEY VISTA CARE CENTER OF SANDPOINT Bonner BCU 60 60 80 80 40 20 100 40 100 580
+135075 1770599409 VALLEY VISTA CARE CENTER OF ST MARIES Benewah BCU 60 80 100 80 20 100 100 100 100 740
+135010 1558384420 WEISER OF CASCADIA Washington 80 100 40 40 20 100 40 100 80 600
+135094 1699208280 WELLSPRING HEALTH & REHABILITATION OF CASCADIACanyon Vent 60 40 60 80 100 60 40 60 60 560
+Provider Count 70
+Idaho Average: 67 57 78 68 69 91 70 70 84 653
+Surrounding States Average: 68 57 65 64 62 91 71 70 603
+National Average: 63 56 62 62 59 88 76 71 607
+Idaho Median: 60 60 100 80 80 100 80 80 660
+Non-Unit Idaho Median: 60 60 100 80 80 100 60 60 100 700
+Surrounding States Median: 80 60 60 60 60 100 80 80 600
+National Median: 60 60 60 60 60 100 80 80 600
+Idaho Providers Reported: 70 70 70 70 70 70 70 70 70
+Surrounding State Providers Reported: 589 585 589 595 595 595 592 595 595
+National Providers Reported: 14,996 14,918 14,995 15,083 15,105 15,104 15,077 15,096 15,105
+Surrounding States: MT, NV, OR, UT, WA, WY
+(a)
+Adjusted data includes edits for 1) providers with a missing QM score receive the statewide median score for that measure and 2) unit providers receive the higher of their own score, or the non unit
+median score for decline in late loss ADLs, moderate to sever pain, and antipsychotic medications.
+(b)
+0 points in raw data column because data is non-existent for this provider. The provider has short stay measures but no long stay measures. It appears they did not have any residents with a total length
+of stay long enough to qualify as data to compute the long stay measures.
+Calculated 75th Percentile 720
+Criteria
+Range
+Tier 1 = 75th % & Above Tier 2 = Minimum 100 Points below Tier 1 Tier 3 = All Points below Tier 2 720 - 900
+620 - 700
+200 - 620
+Table A3
+Ranges for Point Values for Quality Measures, Using Four Quarter Average
+Distributions1, 4
+For QM values
+Number of QM points
+is…2
+July 2016 January
+Quality measure
+between... and...
+2017
+ADL Decline (long-stay) 0.00000000 0.10049021 100 100
+0.10049022 0.13483145 80 80
+0.13483146 0.16778523 60 60
+0.16778524 0.20794393 40 40
+0.20794394 1.00000000 20 20
+High risk pressure Ulcers (long-stay) 0.00000000 0.02654868 100 100
+0.02654869 0.04453437 80 80
+0.04453438 0.06181819 60 60
+0.06181820 0.08633095 40 40
+0.08633096 1.00000000 20 20
+Catheter (long-Stay) 0.00000000 0.01073927 100 100
+0.01073928 0.02094371 80 80
+0.02094372 0.03178361 60 60
+0.03178362 0.04745521 40 40
+0.04745522 1.00000000 20 20
+Urinary Tract Infection (long-stay) 0.00000000 0.01851851 100 100
+0.01851852 0.03423682 80 80
+0.03423683 0.05128203 60 60
+0.05128204 0.07598784 40 40
+0.07598785 1.00000000 20 20
+Physical Restraints (long-stay) 0.00000000 0.00000000 100 100
+0.00000001 0.01424503 60 60
+0.01424504 1.00000000 20 20
+23
+Quality measure
+Injurious Falls (long-stay) Antipsychotic Meds (long-stay) New or Worsening Pressure Ulcers (short-
+stay)
+Antipsychotic Meds (short-stay) Mobility decline (long-stay)3 For QM values
+Number of QM points
+is…2
+July 2016 January
+between... and...
+2017
+0.00000000 0.01315789 100 100
+0.01315790 0.02403848 80 80
+0.02403849 0.03511052 60 60
+0.03511053 0.05035973 40 40
+0.05035974 1.00000000 20 20
+0.00000000 0.06843265 100 100
+0.06843266 0.12704916 80 80
+0.12704917 0.17391305 60 60
+0.17391306 0.23979592 40 40
+0.23979593 1.00000000 20 20
+0.00000000 0.00000000 100 100
+0.00000001 0.00692691 75 75
+0.00692692 0.01566247 50 50
+0.01566248 1.00000000 25 25
+0.00000000 0.00000000 100 100
+0.00000001 0.00999998 80 80
+0.00999999 0.01912567 60 60
+0.01912568 0.03486237 40 40
+0.03486238 1.00000000 20 20
+0.00000000 0.08022493 50 100
+0.08022494 0.14454544 40 80
+0.14454545 0.19333225 30 60
+0.19333226 0.24905966 20 40
+0.24905967 1.00000000 10 20
+24
+For QM values
+Number of QM points
+is…2
+July 2016 January
+Quality measure
+between... and...
+2017
+Functional Improvement (short-stay)3 0.81666872 1.00000000 50 100
+0.70966590 0.81666871 40 80
+0.62861965 0.70966589 30 60
+0.52015014 0.62861964 20 40
+0.00000000 0.52015013 10 20
+Hospital readmission (short-stay)3 0.00000000 0.13839278 50 100
+0.13839279 0.18716279 40 80
+0.18716280 0.21886203 30 60
+0.21886204 0.25689121 20 40
+0.25689122 1.00000000 10 20
+ED Visits (short-stay)3 0.00000000 0.05488714 50 100
+0.05488715 0.08944665 40 80
+0.08944666 0.11696705 30 60
+0.11696706 0.15529003 20 40
+0.15529004 1.00000000 10 20
+Successful community discharge (short-
+stay)3
+0.66448731 1.00000000 50 100
+0.59926791 0.66448730 40 80
+0.54906047 0.59926790 30 60
+0.47667646 0.54906046 20 40
+10 20
+0.00000000 0.47667645 1For the claims-based measures (hospital readmission, ED visit, community discharge), points are based on data from 2014Q3 –
+2015Q2. For the MDS-based measures (all others), points are based on data from 2015Q1 – 2015Q4. A higher QM value
+corresponds to better performance for all measures except functional improvement and successful community discharge where
+lower QM values correspond to better performance.
+2The five new QMs (functional improvement, mobility decline, hospital readmission, ED visit, and community discharge) are
+being phased into the QM rating. In July 2016 each contributed half the points of the other measures. In January 2017, the
+thresholds will remain the same but the points associated with each will double.
+3Indicates one of the five new QMs as of July 2016 contributing half the points of the other 11 QMs. Starting in January 2017,
+the new QMs will contribute the same number of points as the other measures.
+4Thresholds for three quality measures were slightly changed on July 20, 2016 to correct errors in the earlier version of the TUG
+that was published on July 7, 2016. The thresholds that appeared in the July 7, 2016 version of the TUG were never used to
+calculate ratings that were publicly reported.
+25
+Appendix C. Long Stay Hospitalization Quality Measure 10 –
+Cut Points
+Point Values for Long Stay Hospitalization Quality Measure1, 2
+For QM Values
+Quality Measure
+between… and…
+Long Stay Hospitalization 0.00000000 0.20000000 0.20000001 0.4000000 0.40000001 0.6000000 0.60000001 0.8000000 0.80000001 1.00000000 # of QM Points is…
+100
+80
+60
+40
+20
+1Long Stay Hospitalization data is taken from CMS MDS data based on PointRight(R) Pro Long Stay(TM) measure. © 2015
+PointRight Inc.
+2Long Stay Hospitalization is ranked using Excel function percentrank.inc to determine the QM Values.
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+Elements of Proposal
+Prestige and
+IDHW Proposal
+IHCA Comments
+Avamere Comments
+VBP Element
+Dated 10/6/17
+Emailed 12/4/17
+Emailed 10/31/17 Meeting Discussion Topics Final Decision
+1. Quality Measures
+(QMs) 10 long stay 10 long stay 10 long stay Agreement
+10 Long Stay; Revised to 9
+Long Stay as a result of
+removal of the Pain Quality
+Measure by CMS on 10/1/19
+2. Maximum Quality
+Points 1,000 1,000 1,000 Agreement
+1,000; Revised to 900 total
+after removal of the Paid
+Quality Measure by CMS on
+10/1/19
+3. Missing QM Score(s)
+Impute the missing
+QM score using the
+average QM score of
+the NF
+Impute the missing
+QM score using the
+average QM score
+of all ID NFs
+Impute the missing
+QM score using the
+average QM score of
+the NF
+DHW is agreeable to impute
+the missing QM score using
+the average QM score for all
+ID NFs
+Impute the missing QM score
+using the median (revised
+from average because
+average was giving non‐round
+results) QM score of all ID NFs
+4. QM Measurement
+Period Calendar Year Calendar Year Calendar Year Agreement
+Data available on 12/31,
+which is calculated on a four
+quarter average
+5. Thresholds and Cut
+Points
+CMS 5‐Star and held
+constant for 5 years
+CMS 5‐Star and held
+constant for 5 years
+CMS 5‐Star and held
+constant for 5 years Agreement CMS 5‐Star and held
+constant for 5 years
+6. Quality Groups 3 3 3 Agreement 3
+7. Tier 1 – Quality Score 75th percentile 75th percentile 75th percentile Agreement 75th percentile
+1
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+Prestige and
+IDHW Proposal
+IHCA Comments
+Avamere Comments
+VBP Element
+Dated 10/6/17
+Emailed 12/4/17
+Emailed 10/31/17 Meeting Discussion Topics Final Decision
+8. Tier 2 – Quality Score 50th percentile
+80 point range
+below the 75th
+percentile
+50th percentile
+For tier 2, DHW is agreeable
+to an 80 point range below
+the 75th percentile
+Minimum 100 Points below
+Tier 1
+9. Tier 3 – Quality Score Below 50th
+percentile
+Starting 100 points
+below 75th
+percentile
+Below 50th
+percentile
+DHW is agreeable to tier 3
+starting 100 points below the
+75th percentile
+All Points below Tier 2
+10. How a “Change” in
+Score is Defined
+Equal to or greater
+than ± 20 points
+Equal to or greater
+than ± 40 points
+Equal to or greater
+than ± 20 points
+DHW is agreeable to
+measure change as equal to
+or greater than ± 40 points
+Equal to or greater
+than ± 40 points
+2
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+11. Base UPL Payment –
+Fully Phased‐in
+Percentages
+Tier 1 = 100%
+Tier 2 =
+•100% w/
+improvement;
+•95% w/o a change;
+•75% w/ a decline
+Tier 3 =
+•100% w/
+improvement;
+•75% w/o a change
+or with a decline
+Tier 1 = 100%
+Tier 2 =
+•100% w/
+improvement or
+without a change;
+•95% w/ a decline
+Tier 3 =
+•95% w/
+improvement or
+w/o a change;
+•90% with a decline
+Tier 1 = 105%
+Tier 2 =
+•100% w/
+improvement; •96%
+without a change;
+•92% with a decline
+Tier 3 =
+•100% w/
+improvement; •92%
+w/o a change;
+•84% w/ a decline
+Setting the percentage for tier 1
+at greater than 100% could
+result in total payments
+exceeding the UPL.
+DHW has concerns that the
+proposed percentage reductions
+are not sufficient to
+meaningfully incent quality of
+care.
+DHW proposes a compromise to
+comments received 12/4:
+a) Tier 2 – 80% with a decline
+b) Tier 3 –
+a. 100% with
+improvement;
+b. 90% without a
+change;
+c. 85% with a
+decline
+Tier 1 =
+100%
+Tier 2 =
+•100% w/ improvement or
+without a change;
+•95% w/ a decline
+Tier 3 =
+•100% w/ improvement
+•95% w/o a change;
+•90% with a decline
+3
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+12. Bonus Pool” ‐
+Undistributed UPL
+Funds
+To tier 3
+w/improvement
+a) To tier 1;
+b) Tier 2 without a
+decline in score
+To tiers 1 and 2
+DHW proposes a
+compromise:
+a) To tier 1 – regardless of
+score;
+b) To tier 2 – without a
+decline in score;
+c) To tier 3 – with
+improvement in score
+• Pay to all providers
+regardless of quality score.
+• Pro‐rata allocation using
+MCD & MCO days
+13. BCUs / Vent Units /
+TBI NFs
+a) Exclude TBI NFs,
+b) Combines BCUs
+and Vent Units
+into a single
+separate peer
+group
+c) Establish
+parameters
+specific to this
+peer group
+a) Includes TBIs
+b) Assigns 100
+bonus points to
+NF
+No comment
+DHW is apprehensive with
+the assignment of 100 bonus
+points to these facilities for
+something other than
+quality.
+Topic needs further
+discussion.
+1) Keep BCU, vent, and
+Caldwell Care Center in the
+array with all other providers.
+2) For the following measures,
+use the higher of the unit
+provider’s score or the ID
+Statewide Median score (of
+non‐unit providers):
+ Antipsychotic Meds
+ Mod/Severe pain; no
+longer applicable as
+of 10/1/19
+ Late Loss ADLs
+3) TBI is not a state
+designated unit so TBI units
+are not treated as “units” for
+these measures.
+4
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+14. Hold Harmless Period 2021 2021 2021 Agreement
+Payment made in SFY 2020 is
+last UPL payment that will not
+reflect quality impact.
+The UPL payment made in SFY
+2021 will implement quality
+measures.
+15. Thresholds and Cut
+Points Base Period
+Determination
+Held constant
+for 5 years
+Held constant
+for 5 years
+Held constant
+for 5 years
+Program is scheduled to be
+implemented in 2021. Using
+2017 thresholds and cut
+points would mean they
+would be in place for 8 years.
+DHW proposes setting cut
+points in 2020 using the 75th
+percentile for tier 1; an 80
+point spread for tier 2; and
+tier 3 beginning 100 points
+less than the 75th percentile.
+Topic needs discussion.
+• 2017 is Base Year
+• Keep same cut points until
+end of 2025
+• Evaluate rebase in 2026
+16. QMs Reporting and
+Shadow Rates Quarterly Quarterly Quarterly Agreement
+• Quarterly for informational
+• Payments will be annual
+based on the four quarter
+average of the preceding
+calendar year QMs
+5
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+17. Determination of BCU
+Status
+10/16/18 Meeting –
+Discussed BCU approval
+process. Determined that if
+a facility met BCU
+qualifications at the
+beginning of the rate year
+within the Quality Measure
+period, they would be
+considered a BCU
+ Newly approved
+BCUs have to be
+approved for 6
+months of the year
+to be eligible.
+ If a facility is a BCU at
+beginning of Rate
+Period (7/1), then it
+would be considered
+as a BCU for QM
+calculations.
+18. Removal of Pain
+Quality Measure
+ As of 10/01/2019,
+CMS stopped
+collection and
+publishing
+information related
+to moderate to
+severe pain.
+ It has been decided
+to remove this
+Quality Measure
+from the Program.
+6
+Idaho Department of Health & Welfare Prepared by MSLC: 1/10/18;
+Updated: 10/15/18
+Updated by BLTC: 1/19/18
+Updated by MSLC: 05/01/19
+Updated by MSLC: 07/20/20
+Updated by MSLC: 5/17/21
+Updated by MSLC: 10/14/22
+Appendix D – NF Quality Program at a Glance
+Comparison of VBP Proposals for the 12/18/17 Meeting with DHW, NF Industry Representatives and MSLC
+19. Considerations for
+COVID‐19
+ To counter‐act
+COVID‐19 effects to
+QM scores, the
+Department
+increased Total
+Adjusted QM scores
+by 40 points for all
+providers
+ The additional 40
+point increase
+applies to SFY 2022
+and 2023. The point
+increase will not be
+included with total
+scores when tiers are
+calculated for SFY
+2024.
+7
+State of Idaho
+Idaho Department of Health & Welfare
+MDS Quality Measures for Nursing Home Long Stay Residents
+CMS Nursing Home Compare Dataset: 2016Q4 - 2017Q3
+Adjusted Data
+2017 Base Year Scores
+CMS Assigned Point Values for Quality Measures
+MCR
+Number NPI Number Provider Name County
+BCU, Special
+Care, or
+Vent Units Notes
+Decline in
+Late-Loss
+ADLs
+Decline in
+Mobility
+on Unit
+High-Risk
+Residents
+w/ Pressure
+Ulcers
+Moderate
+to Severe
+Pain
+Antipsychotic
+Medications
+Falls w/
+Major Injury
+Physical
+Restraints
+Indwelling
+Catheter
+Urinary
+Tract
+Infection
+Long Stay
+Hospital-
+izations
+Adjusted
+Total (a)
+Raw Data
+Total (a)
+Column1 Column18 Column2 Column4 Column5 Column6 Column7 Column8 Column9 Column10 Column11 Column12 Column13 Column14 Column15 Column152 Column16 Column17
+135079 1194762815 APEX CENTER Ada 60 20 40 20 60 100 100 100 100 80 680 680
+135097 1497756803 ASHTON MEMORIAL LIVING CENTER Fremont 100 80 100 40 40 40 20 40 40 100 600 600
+135077 1245574836 AVAMERE TRANSITIONAL CARE & REHAB - BOISE Ada 60 60 20 20 40 80 100 60 100 40 580 580
+135070 1568552446 BEAR LAKE MEMORIAL SKILLED NURSING FACILITY Bear Lake 40 60 100 80 80 60 100 100 40 100 760 760
+135069 1831522762 BELL MOUNTAIN VILLAGE & CARE CENTER Blaine 20 20 100 60 80 40 100 100 40 80 640 640
+135134 1013237528 BENNETT HILLS CENTER Gooding 40 80 80 60 60 60 100 60 80 80 700 700
+135007 1861694960 BINGHAM MEMORIAL SKILLED NURSING & REHABILIT. Bingham 80 40 100 80 20 100 100 20 80 100 720 720
+135004 1225113152 BOUNDARY COUNTY NURSING HOME Boundary 80 40 100 20 20 60 100 100 20 100 640 640
+135113 1285688739 BRIDGEVIEW ESTATES Twin Falls 100 80 100 80 80 20 100 60 60 40 720 720
+135014 1467978460 CALDWELL OF CASCADIA Canyon Special Care 80 40 100 60 80 40 100 100 80 60 740 640
+135051 1770009680 CANYON WEST OF CASCADIA Canyon 40 60 80 80 40 60 100 20 100 100 680 680
+135060 1750442240 CARIBOU MEMORIAL LIVING CENTER Caribou 20 20 40 20 40 100 100 40 20 100 500 500
+135095 1760438063 CHERRY RIDGE CENTER Gem 60 60 100 20 20 100 100 40 100 100 700 700
+135048 1760925572 CLEARWATER OF CASCADIA Clearwater 20 20 100 60 100 40 100 100 40 20 600 600
+135052 1487197299 COEUR D'ALENE OF CASCADIA Kootenai 20 60 100 20 80 40 100 20 80 60 580 580
+135064 1023052040 COUNTRYSIDE CARE & REHABILITATION Minidoka 100 40 100 80 80 80 100 20 60 100 760 760
+135089 1306094610 DESERT VIEW CARE CENTER OF BUHL Twin Falls BCU 100 100 100 60 80 80 100 80 60 100 860 800
+135129 1477816965 DISCOVERY REHABILITATION AND LIVING Lemhi 100 80 20 80 100 40 100 40 100 40 700 700
+135059 1548355811 FRANKLIN COUNTY TRANSITIONAL CARE Franklin 40 40 20 80 20 100 100 20 60 100 580 580
+135011 1407956253 GATEWAY TRANSITIONAL CARE CENTER Bannock 100 80 100 100 60 100 100 100 80 80 900 900
+135085 1053392548 GOOD SAMARITAN SOCIETY - BOISE VILLAGE Ada 80 60 100 40 20 60 100 80 60 100 700 700
+135092 1366432023 GOOD SAMARITAN SOCIETY - IDAHO FALLS VILLAGE Bonneville 80 40 100 20 80 60 100 80 60 100 720 720
+135067 1598755266 GOOD SAMARITAN SOCIETY - MOSCOW VILLAGE Latah 40 40 100 60 60 40 100 100 100 100 740 740
+135058 1053301457 GOOD SAMARITAN SOCIETY - SILVER WOOD VILLAGE Shoshone 60 40 100 60 40 20 100 60 60 100 640 640
+135080 1528099744 GRANGEVILLE HEALTH & REHABILITATION CENTER Idaho 60 80 100 100 60 40 20 80 60 20 620 620
+135131 1285624627 IDAHO STATE VETERANS HOME - BOISE Ada 80 60 100 20 80 80 100 60 60 80 720 720
+135133 1679562011 IDAHO STATE VETERANS HOME - LEWISTON Nez Perce 60 60 80 60 80 40 100 60 100 100 740 740
+135132 1285624064 IDAHO STATE VETERANS HOME - POCATELLO Bannock 40 20 100 20 60 80 100 60 40 100 620 620
+135053 1821486986 IVY COURT Kootenai 80 80 80 100 80 100 100 40 100 60 820 820
+135110 1891148979 KARCHER POST-ACUTE & REHABILITATION CENTER Canyon 80 80 20 20 60 40 100 20 40 80 540 540
+135042 1811385974 LACROSSE HEALTH & REHABILITATION CENTER Kootenai Vent 60 60 20 60 80 80 100 60 100 80 700 660
+135021 1477064780 LEWISTON OF CASCADIA Nez Perce 40 80 20 100 80 60 100 60 80 60 680 680
+135038 1225081284 LIFE CARE CENTER OF BOISE Ada 60 60 60 80 60 20 100 80 80 80 680 680
+135122 1366495277 LIFE CARE CENTER OF COEUR D'ALENE Kootenai 80 60 100 80 60 100 100 100 20 100 800 800
+135091 1780638296 LIFE CARE CENTER OF IDAHO FALLS Bonneville 100 80 100 100 80 100 100 100 100 100 960 960
+135128 1235182155 LIFE CARE CENTER OF LEWISTON Nez Perce 40 40 100 80 100 100 100 100 100 100 860 860
+135135 1740442771 LIFE CARE CENTER OF POST FALLS Kootenai 100 60 60 60 80 40 100 60 100 100 760 760
+135127 1780638213 LIFE CARE CENTER OF SANDPOINT Bonner 80 80 60 20 100 80 60 100 60 100 740 740
+135123 1184678617 LIFE CARE CENTER OF TREASURE VALLEY Ada 100 80 60 100 100 80 100 80 60 100 860 860
+135056 1518115773 LINCOLN COUNTY CARE CENTER Lincoln BCU 60 20 40 60 80 80 100 20 60 100 620 540
+135140 1649692609 MADISON CARRIAGE COVE SHORT STAY REHAB Madison (b) 60 60 100 60 60 80 100 80 80 100 780 0
+135082 1730136490 MCCALL REHABILITATION AND CARE CENTER Valley 60 100 80 60 60 100 100 80 100 100 840 840
+135076 1083146484 MEADOW VIEW NURSING AND REHABILITATION Canyon 60 80 60 60 20 80 60 40 60 40 560 560
+135125 1639126493 MERIDIAN CENTER GENESIS HEALTHCARE Ada 40 20 60 20 60 100 100 80 40 100 620 620
+135081 1285882431 MINI-CASSIA CARE CENTER Cassia BCU 60 60 80 60 80 100 100 80 80 100 800 680
+135018 1821360868 MONTE VISTA HILLS HEALTHCARE CENTER Bannock 100 60 100 100 100 80 100 100 60 100 900 900
+135093 1194236406 MOSCOW OF CASCADIA (ASPEN PARK) Latah 100 20 60 40 20 20 100 40 40 60 500 500
+135065 1396261202 MOUNTAIN VALLEY OF CASCADIA Shoshone 80 40 100 100 80 100 100 100 100 100 900 900
+135084 1912157090 OAK CREEK REHABILITATION CENTER OF KIMBERLY Twin Falls BCU 60 20 100 60 80 60 60 100 100 60 700 560
+135062 1811949431 ONEIDA COUNTY HOSPITAL & LONG TERM CARE FACILITOneida 80 80 60 20 80 100 100 60 60 100 740 740
+135019 1912418229 ORCHARDS OF CASCADIA, THE Canyon 80 80 100 80 100 80 100 100 80 80 880 880
+135087 1225390131 OWYHEE HEALTH & REHABILITATION CENTER Owyhee 40 100 100 40 40 100 100 100 40 100 760 760
+135068 1720317761 PARKE VIEW REHABILITATION & CARE CENTER Cassia 80 60 80 60 80 100 100 80 100 100 840 840
+Prepared by Myers and Stauffer LC Page 1 of 2 10/04/18
+State of Idaho
+Idaho Department of Health & Welfare
+MDS Quality Measures for Nursing Home Long Stay Residents
+CMS Nursing Home Compare Dataset: 2016Q4 - 2017Q3
+Adjusted Data
+2017 Base Year Scores
+CMS Assigned Point Values for Quality Measures
+MCR
+Number NPI Number Provider Name County
+BCU, Special
+Care, or
+Vent Units Notes
+Decline in
+Late-Loss
+ADLs
+Decline in
+Mobility
+on Unit
+High-Risk
+Residents
+w/ Pressure
+Ulcers
+Moderate
+to Severe
+Pain
+Antipsychotic
+Medications
+Falls w/
+Major Injury
+Physical
+Restraints
+Indwelling
+Catheter
+Urinary
+Tract
+Infection
+Long Stay
+Hospital-
+izations
+Adjusted
+Total (a)
+Raw Data
+Total (a)
+135015 1851348635 PAYETTE CENTER Payette 100 40 100 40 80 20 100 100 80 80 740 740
+135066 1821096082 POWER COUNTY NURSING HOME Power 20 20 20 20 40 100 20 40 100 100 480 480
+135103 1346598299 PRESTIGE CARE & REHABILITATION - THE ORCHARDS Nez Perce 60 60 60 60 20 100 60 100 80 60 660 660
+135136 1821250713 QUINN MEADOWS REHABILITATION AND CARE CENTER Bannock 60 60 100 100 100 100 100 40 100 60 820 820
+135105 1659325132 REXBURG CARE & REHABILITATION CENTER Madison 20 20 80 80 80 80 100 100 100 100 760 760
+135020 1275862211 RIVER'S EDGE REHABILITATION & LIVING CENTER Gem 100 80 100 40 80 100 100 100 60 100 860 860
+135116 1982011474 ROYAL PLAZA HEALTH & REHABILITATION Nez Perce 60 60 100 100 100 20 100 100 20 80 740 740
+135090 1700245594 SHAW MOUNTAIN OF CASCADIA Ada BCU 60 40 80 60 80 20 100 80 80 80 680 600
+135006 1508105248 ST LUKE'S ELMORE LONG TERM CARE Elmore 60 60 100 20 80 100 20 20 20 100 580 520
+135102 1790732337 SUNNY RIDGE Canyon 80 60 100 80 80 40 100 60 40 100 740 740
+135138 1649517805 TETON POST ACUTE CARE & REHABILITATION Bonneville 60 60 40 60 80 60 100 80 20 40 600 600
+135104 1841244407 TWIN FALLS CENTER Twin Falls 80 40 40 40 80 60 100 80 100 80 700 700
+135098 1942254487 VALLEY VIEW NURSING & REHABILITATION Ada 100 40 100 60 80 100 100 60 80 80 800 800
+135055 1497761050 VALLEY VISTA CARE CENTER OF SANDPOINT Bonner BCU 60 60 80 60 80 40 20 100 40 100 640 500
+135075 1770599409 VALLEY VISTA CARE CENTER OF ST MARIES Benewah BCU 60 80 100 60 80 20 100 100 100 100 800 680
+135010 1558384420 WEISER OF CASCADIA Washington 80 100 40 40 40 20 100 40 100 80 640 640
+135094 1699208280 WELLSPRING HEALTH & REHABILITATION OF CASCADIA Canyon Vent 60 40 60 60 80 100 60 40 60 60 620 500
+Provider Count 70
+Idaho Average: 67 57 78 59 68 69 91 70 70 84 712 686
+Surrounding States Average: 68 57 65 57 64 62 91 71 70 603 607
+National Average: 63 56 62 71 62 59 88 76 71 607 610
+Idaho Median: 60 60 100 60 80 80 100 80 80 710 700
+Non-Unit Idaho Median: 60 60 100 60 80 80 100 60 60 100 700 700
+Surrounding States Median: 80 60 60 60 60 60 100 80 80 600 600
+National Median: 60 60 60 80 60 60 100 80 80 600 620
+Idaho Providers Reported: 70 70 70 70 70 70 70 70 70 70 70
+Surrounding State Providers Reported: 589 585 589 583 595 595 595 592 595 595 595
+National Providers Reported: 14,996 14,918 14,995 14,978 15,083 15,105 15,104 15,077 15,096 15,105 15,105
+Surrounding States: MT, NV, OR, UT, WA, WY
+(a)
+Adjusted data includes edits for 1) providers with a missing QM score receive the statewide median score for that measure and 2) unit providers receive the higher of their own score, or the non unit median score for
+decline in late loss ADLs, moderate to sever pain, and antipsychotic medications.
+(b) 0 points in raw data column because data is non-existent for this provider. The provider has short stay measures but no long stay measures. It appears they did not have any residents with a total length of stay long enough to qualify as data to compute the long stay measures.
+Calculated 75th Percentile 775
+Criteria
+Range Counts
+Tier 1 = 75th % & Above Tier 2 = Minimum 100 Points below Tier 1 Tier 3 = All Points below Tier 2 760 ‐ 1000 660 ‐ 740 200 ‐ 640 23
+25
+22
+70
+Prepared by Myers and Stauffer LC Page 2 of 2 10/04/18

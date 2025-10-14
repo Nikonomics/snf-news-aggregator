@@ -1,7 +1,7 @@
 .state-market-map {
   background: white;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -116,12 +116,22 @@
   color: #64748b;
 }
 
+.map-and-stats-container {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
 .map-container {
   position: relative;
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  overflow: visible;
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem;
 }
 
 .state-map-svg {
@@ -189,10 +199,11 @@
 }
 
 .map-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  margin-top: 1.5rem;
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .stat-card {
@@ -200,6 +211,7 @@
   padding: 1rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  text-align: center;
 }
 
 .stat-label {
@@ -213,6 +225,22 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: #1e293b;
+}
+
+@media (max-width: 1024px) {
+  .map-and-stats-container {
+    flex-direction: column;
+  }
+
+  .map-stats {
+    flex-direction: row;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .stat-card {
+    flex: 1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -231,6 +259,6 @@
   }
 
   .map-stats {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }

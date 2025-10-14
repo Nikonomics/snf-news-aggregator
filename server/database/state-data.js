@@ -523,6 +523,276 @@ export async function getTopChainsByState(stateCode, limit = 10) {
 }
 
 /**
+ * Advanced facility search with dynamic filters
+ * Supports complex queries with multiple filter conditions
+ */
+export async function searchFacilitiesAdvanced(filters = {}) {
+  const {
+    states = [],
+    counties = [],
+    cities = [],
+    ownershipTypes = [],
+    ownershipChains = [],
+    minBeds = null,
+    maxBeds = null,
+    minOccupancy = null,
+    maxOccupancy = null,
+    minOverallRating = null,
+    maxOverallRating = null,
+    minHealthRating = null,
+    maxHealthRating = null,
+    minStaffingRating = null,
+    maxStaffingRating = null,
+    maxDeficiencies = null,
+    acceptsMedicare = null,
+    acceptsMedicaid = null,
+    specialFocusFacility = null,
+    abuseIcon = null,
+    multiFacilityChain = null,
+    chainSizeMax = null, // Max number of facilities in chain
+    chainSizeMin = null, // Min number of facilities in chain
+    searchTerm = null,
+    active = true,
+    sortBy = 'facility_name',
+    sortDirection = 'ASC',
+    limit = 1000,
+    offset = 0
+  } = filters
+
+  const conditions = []
+  const params = []
+  let paramIndex = 1
+
+  // Active filter
+  if (active !== null) {
+    conditions.push(`active = $${paramIndex}`)
+    params.push(active)
+    paramIndex++
+  }
+
+  // Location filters
+  if (states.length > 0) {
+    conditions.push(`state = ANY($${paramIndex})`)
+    params.push(states.map(s => s.toUpperCase()))
+    paramIndex++
+  }
+
+  if (counties.length > 0) {
+    conditions.push(`county = ANY($${paramIndex})`)
+    params.push(counties)
+    paramIndex++
+  }
+
+  if (cities.length > 0) {
+    conditions.push(`LOWER(city) = ANY($${paramIndex})`)
+    params.push(cities.map(c => c.toLowerCase()))
+    paramIndex++
+  }
+
+  // Ownership filters
+  if (ownershipTypes.length > 0) {
+    conditions.push(`ownership_type = ANY($${paramIndex})`)
+    params.push(ownershipTypes)
+    paramIndex++
+  }
+
+  if (ownershipChains.length > 0) {
+    conditions.push(`ownership_chain = ANY($${paramIndex})`)
+    params.push(ownershipChains)
+    paramIndex++
+  }
+
+  if (multiFacilityChain !== null) {
+    conditions.push(`multi_facility_chain = $${paramIndex}`)
+    params.push(multiFacilityChain)
+    paramIndex++
+  }
+
+  // Chain size filters (requires subquery to count facilities per chain)
+  if (chainSizeMax !== null || chainSizeMin !== null) {
+    let chainSizeCondition = `ownership_chain IN (
+      SELECT ownership_chain
+      FROM snf_facilities
+      WHERE ownership_chain IS NOT NULL
+        AND active = true
+      GROUP BY ownership_chain`
+
+    const chainSizeFilters = []
+    if (chainSizeMin !== null) {
+      chainSizeFilters.push(`COUNT(*) >= $${paramIndex}`)
+      params.push(chainSizeMin)
+      paramIndex++
+    }
+    if (chainSizeMax !== null) {
+      chainSizeFilters.push(`COUNT(*) <= $${paramIndex}`)
+      params.push(chainSizeMax)
+      paramIndex++
+    }
+
+    if (chainSizeFilters.length > 0) {
+      chainSizeCondition += ` HAVING ${chainSizeFilters.join(' AND ')}`
+    }
+    chainSizeCondition += ')'
+    conditions.push(chainSizeCondition)
+  }
+
+  // Bed size filters
+  if (minBeds !== null) {
+    conditions.push(`total_beds >= $${paramIndex}`)
+    params.push(minBeds)
+    paramIndex++
+  }
+
+  if (maxBeds !== null) {
+    conditions.push(`total_beds <= $${paramIndex}`)
+    params.push(maxBeds)
+    paramIndex++
+  }
+
+  // Occupancy filters
+  if (minOccupancy !== null) {
+    conditions.push(`occupancy_rate >= $${paramIndex}`)
+    params.push(minOccupancy)
+    paramIndex++
+  }
+
+  if (maxOccupancy !== null) {
+    conditions.push(`occupancy_rate <= $${paramIndex}`)
+    params.push(maxOccupancy)
+    paramIndex++
+  }
+
+  // Rating filters
+  if (minOverallRating !== null) {
+    conditions.push(`overall_rating >= $${paramIndex}`)
+    params.push(minOverallRating)
+    paramIndex++
+  }
+
+  if (maxOverallRating !== null) {
+    conditions.push(`overall_rating <= $${paramIndex}`)
+    params.push(maxOverallRating)
+    paramIndex++
+  }
+
+  if (minHealthRating !== null) {
+    conditions.push(`health_inspection_rating >= $${paramIndex}`)
+    params.push(minHealthRating)
+    paramIndex++
+  }
+
+  if (maxHealthRating !== null) {
+    conditions.push(`health_inspection_rating <= $${paramIndex}`)
+    params.push(maxHealthRating)
+    paramIndex++
+  }
+
+  if (minStaffingRating !== null) {
+    conditions.push(`staffing_rating >= $${paramIndex}`)
+    params.push(minStaffingRating)
+    paramIndex++
+  }
+
+  if (maxStaffingRating !== null) {
+    conditions.push(`staffing_rating <= $${paramIndex}`)
+    params.push(maxStaffingRating)
+    paramIndex++
+  }
+
+  // Deficiency filter
+  if (maxDeficiencies !== null) {
+    conditions.push(`health_deficiencies <= $${paramIndex}`)
+    params.push(maxDeficiencies)
+    paramIndex++
+  }
+
+  // Medicare/Medicaid participation
+  if (acceptsMedicare !== null) {
+    conditions.push(`accepts_medicare = $${paramIndex}`)
+    params.push(acceptsMedicare)
+    paramIndex++
+  }
+
+  if (acceptsMedicaid !== null) {
+    conditions.push(`accepts_medicaid = $${paramIndex}`)
+    params.push(acceptsMedicaid)
+    paramIndex++
+  }
+
+  // Special designations
+  if (specialFocusFacility !== null) {
+    conditions.push(`special_focus_facility = $${paramIndex}`)
+    params.push(specialFocusFacility)
+    paramIndex++
+  }
+
+  if (abuseIcon !== null) {
+    conditions.push(`abuse_icon = $${paramIndex}`)
+    params.push(abuseIcon)
+    paramIndex++
+  }
+
+  // Text search
+  if (searchTerm) {
+    conditions.push(`(
+      to_tsvector('english', COALESCE(facility_name, '') || ' ' || COALESCE(parent_organization, ''))
+      @@ plainto_tsquery('english', $${paramIndex})
+      OR facility_name ILIKE $${paramIndex + 1}
+    )`)
+    params.push(searchTerm, `%${searchTerm}%`)
+    paramIndex += 2
+  }
+
+  // Build WHERE clause
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+  // Validate sort field to prevent SQL injection
+  const validSortFields = [
+    'facility_name', 'state', 'county', 'city', 'total_beds', 'occupancy_rate',
+    'overall_rating', 'health_inspection_rating', 'staffing_rating',
+    'health_deficiencies', 'ownership_type', 'ownership_chain'
+  ]
+  const sortField = validSortFields.includes(sortBy) ? sortBy : 'facility_name'
+  const direction = sortDirection.toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
+
+  // Main query
+  const query = `
+    SELECT
+      f.*,
+      (SELECT COUNT(*) FROM snf_facilities sf
+       WHERE sf.ownership_chain = f.ownership_chain
+         AND sf.ownership_chain IS NOT NULL
+         AND sf.active = true
+      ) as chain_facility_count
+    FROM snf_facilities f
+    ${whereClause}
+    ORDER BY ${sortField} ${direction}
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `
+  params.push(limit, offset)
+
+  // Count query for pagination
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM snf_facilities f
+    ${whereClause}
+  `
+
+  const [facilities, countResult] = await Promise.all([
+    pool.query(query, params),
+    pool.query(countQuery, params.slice(0, -2)) // Exclude limit and offset for count
+  ])
+
+  return {
+    facilities: facilities.rows,
+    total: parseInt(countResult.rows[0].total),
+    limit,
+    offset,
+    hasMore: offset + facilities.rows.length < parseInt(countResult.rows[0].total)
+  }
+}
+
+/**
  * Get comprehensive state analysis data combining demographics, market metrics, and national comparisons
  */
 export async function getComprehensiveStateAnalysis(stateCode) {

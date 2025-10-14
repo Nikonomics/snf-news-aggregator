@@ -1,0 +1,342 @@
+Understanding the Idaho Skilled Nursing Facility Medicaid rate sheet
+There are several data items present on the rate summary sheet sent each quarter to Idaho
+skilled nursing providers. Understanding each of these data items and their
+interrelationship with various facility operations is critical to adjusting practices to
+maximize reimbursement. The purpose of this paper is to explain each section of the rate
+summary page and identify certain items operators should be watching to ensure they are
+receiving appropriate reimbursement.
+For the purposes of this explanation, the rate sheet will be divided into six sections.
+These sections are:
+1. 2. 3. 4. 5. 6. The case mix tables, located in the upper ¼ of the summary page,
+The cost detail, located between the CMI table and Rate Calculations,
+The indirect cost column, located slightly below and left of the center of the
+page,
+The direct cost column, located slightly below and to the right of the center of
+the page,
+The exempt cost column, located to the right of the direct cost column, and
+The Summary of Rate Components, located in the lower right corner of the
+page.
+Please refer to the Rate Calculation Worksheet included at the end of this explanation.
+The six sections are described in detail below.
+SECTION 1: THE CASE MIX INDEX TABLE
+The case mix table on the Rate Calculation Worksheet looks like this:
+CMI Table
+Rate Period C/R Period
+Facility Wide: 1.1065 1.1582
+Facility Medicaid: 1.1110 1.0872
+State-Wide Avg.: 1.1638 1.1467
+The Case Mix Index (CMI) is calculated based on the MDS’s that are regularly sent by
+facilities to the state repository. Idaho uses a 34-group RUG III model, nursing weights
+only. The weights by RUG category are listed on the last page. The state has a computer
+program which automatically converts the MDS 3.0 to the RUG III grouper system.
+Every quarter, each facility receives a report from Myers and Stauffer that lists all
+patients with MDS’s in the state repository, along with each patient’s payor status, RUG
+category, and case mix score. It is imperative that the facility review this information and
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 1 of 9
+send corrections to the state as soon as possible. You cannot change the RUG category
+on this page, but you can change whether a certain patient was in the facility as of the
+picture date (the last day of the previous quarter) and their payor status. If a patient’s
+payor status changed from Medicare to Medicaid between the time the MDS was
+submitted and the end of the picture date (remember you do not need to complete an
+MDS when taking a patient off Medicare), note on the page the new payor source and the
+effective date. If a patient is listed on the page and he or she was discharged or expired
+between the time the MDS was submitted and the picture date and the discharge tracking
+form has not been submitted to the state repository yet, state that the patient was
+discharged and list the date of discharge on the patient list.
+You cannot add patients to the list who were admitted before the picture date but whose
+MDS’s were not submitted in time to appear on the patient list from Myers and Stauffer.
+For this reason, you should submit MDS’s frequently, and especially just prior to the
+picture date, to get the most accurate picture of your current patient population.
+Although it is required for MDS’s to be submitted within 30 days after closing and
+locking, most facilities submit MDS’s on a weekly basis. Not only does this ensure the
+most up to date information is in the state repository, it reduces potential problems of
+computer malfunctions or other issues preventing MDS transmission within the allowable
+time frames. Further, after you submit MDS’s to the state, you receive a Validation
+Report. The MDS submitter should review this document to be sure all MDS’s were
+received and processed correctly and that none were rejected. It is much better to do this
+with smaller reports on a weekly basis rather than a very large report if you submit only
+once per month.
+The CMI for the Cost Report (C/R) period is an aggregation of the MDS’s submitted
+to the state repository during your particular facility’s cost report period. The table
+includes the average CMI for all patients in your facility during the cost report period, all
+Medicaid patients in your facility during the cost report period, and the state-wide
+average case mix score for all patients in Idaho skilled nursing facilities during your
+facility’s cost report period.
+The CMI for the Rate Period lists the average case mix index for your facility for the
+quarter used to determine your rate. Average CMI scores are listed for all patients in
+your facility for the Rate Period, plus your facility’s Medicaid patients only, plus the state
+wide average CMI for the rate period. The “Rate Period” is always a three month lag, so
+the MDS’s submitted to the state from January 1 through March 31 impacts your
+reimbursement rates effective July 1 of that year. MDS’s submitted from April 1 through
+June 30 impact your rates effective October 1, and so on.
+Out of the six CMI figures listed on the table, only three are used for the current rate
+calculation quarter: the Facility Wide CMI for the Cost Report Period; the State-Wide
+Average for the Cost Report Period, and the Facility Medicaid for the Rate Period. The
+usage of these CMI’s is described below under Section 4: Direct Cost Component.
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 2 of 9
+Analyzing/Interpretation/Improving the CMI Data
+First, look at your baseline. This is your facility CMI scores for the entire facility for the
+cost report period. Compare this average to the state average. Three situations are
+possible:
+Your average Facility-Wide CMI is higher than the state average. This normally means
+you have a higher Medicare population, and/or you are taking care of an overall higher
+acuity population than most Idaho skilled nursing facilities. Your facility staff probably
+does a good job of documenting mood and behaviors, ADLs, restorative care, and other
+factors that place more patients in higher acuity RUG categories. This also means your
+facility will have a higher direct care cap, because your facility-specific direct care cap is
+calculated by dividing the facility-wide case mix index for the cost report period by the
+state-wide average CMI for the cost report period and multiplying the result by the Per
+Diem Limit for direct care (explained in more detail under Section 4 below).
+Your average Facility-Wide CMI is lower than the state average. You may just be
+treating lighter care patients overall, but it could also be that your staff aren’t
+documenting items that positively impact your case mix index. See below for
+suggestions on improving your case mix index.
+Your average Facility-Wide CMI is almost the same as the state average. Your facility is
+neither better nor worse than other Idaho skilled facilities in terms of acuity scores, and
+you are very close to the average for Medicare census and acuity.
+What to do now?
+Suppose you want to review your acuity scores to make sure they are accurate, and that
+your Medicaid rates are based on your current acuity. First, compare the CMI for the
+rate period with the CMI for the cost report period for all three indicators. For example,
+if your facility wide CMI scores for the most recent rate period are higher than the cost
+report period, you are either taking credit for accurate assessments of ADL assistance
+provided and other factors positively impacting your CMI, or you are simply taking care
+of an overall higher acuity patient population. On the example CMI table on Page 1,
+you’ll see that the facility-wide CMI for the rate period is lower than the cost report
+period. While the facility-wide CMI for the rate period is not used for any part of the rate
+setting process, it does give you an indication of a trend in your overall acuity.
+If you feel the need to review the MDS’s of patients to make sure those factors impacting
+the acuity score are accurate, your time would be best spent following these guidelines:
+1. Identify all Medicaid patients with acuity scores at or below your facility
+average CMI. Especially focus on the PA1 patients with an acuity score of
+0.49.
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 3 of 9
+2. 3. 4. 5. Find out from the therapists who came off therapy over the past three months
+and see if they were transitioned into a restorative program.
+List all patients who are currently on a structured restorative program.
+Review your Quality Indicators and note all patients who triggered for a
+decline in ADL’s or range of motion.
+Begin your chart audit of each patient identified above. Questions to answer
+include:
+a. b. c. d. e. How frequently is restorative care provided? It must be provided 6
+days per week, two activities per day for 15 minutes per activity. If
+you are only providing restorative nursing care five days per week, it
+does not count as a restorative program for MDS purposes.
+Are restorative minutes documented accurately? Again, it needs to be
+15 minutes per day per activity. Further, the restorative program must
+be overseen by a licensed nurse, and the restorative nursing assistants
+must have appropriate training.
+Is the ADL portion of the care plan appropriate, and does it list
+interventions that should be done but aren’t being done? Are there
+interventions that should be listed that aren’t included in the care plan?
+Are the goals measurable, and are they reviewed periodically?
+Are side rails listed as a mobility device instead of a restraint? If so, is
+restorative care being provided to make sure the patient is actually
+using the side rail as a bed mobility device or is the side rail actually a
+restraint? If the MDS is coded as a 3, 4, or 8 under Bed Mobility,
+there is a question of whether side rails are appropriately listed as bed
+mobility devices, and they will probably be deemed restraints by
+surveyors.
+Is the ADL coding accurate? Does it match the aide flow sheets? You
+should also talk directly with the caregivers on all shifts to be sure the
+coding is accurate. Remember that column B on Section G1 of the
+MDS says to code for “Most support provided over all shifts during
+last 7 days” and that the most support needed by the patient is
+probably not at 10 am when the restorative aides or therapists are right
+there, but at 7 am on Sunday morning when the aides provide a 2+
+physical assist for bed mobility or transfer. Look especially closely at
+copy cat charting, where the aides simply put the previous day’s or
+shift’s code in the current shift’s flow sheet.
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 4 of 9
+f. Have any behaviors occurred over the past several weeks, and have
+they been appropriately documented in the nurse’s notes and behavior
+sheets, and were those observations transferred over to the MDS?
+g. Is there anything out of the ordinary in the nurse’s notes, social
+services notes, therapy notes, or the physician progress notes? For
+example, there may be something noted in one disciplines’ notes that
+wasn’t corroborated in other notes which would impact the acuity
+score.
+h. Can the patient benefit from a Part B therapy program? If that therapy
+is provided during the assessment window, regardless of how it was
+paid, it counts as therapy on the MDS and results in a higher RUG
+score.
+i. Are there skin issues that weren’t accurately coded on the MDS?
+Some people do not like to code stage 1 pressure ulcers because they
+think it results in a survey flag. While this is partially correct, if you
+are treating a skin issue as a pressure ulcer, it needs to be listed as a
+pressure ulcer on the MDS. Two or more sites at any stage, or one at
+stage 3 or 4 result in a RUG category of SS.
+6. Personally examine the patient. See for yourself how much independence he
+or she has, and how much assistance is provided, in transferring, bed mobility,
+eating, and toilet use.
+Using all of the above information, determine if the MDS accurately depicts the patient’s
+condition. You should also determine if that patient is a candidate for Part B therapy or
+for initiation, modification, or termination of a restorative program.
+If you find the MDS is incorrect, follow the correction policy guidelines set by CMS.
+But also remember that several significant changes to your facility’s MDS’s may trigger
+increased scrutiny from surveyors, who may question why there was a breakdown in
+facility systems and processes that would allow inaccurate assessments to be filed with
+the state.
+Finally, some providers may wish to increase their CMI by providing more therapy
+services that they usually provide during an assessment window. While this practice will
+increase the CMI for that rate period, these higher case mix numbers will be averaged
+into the overall facility CMI when the cost report is filed. Future quarterly CMI
+adjustments will then be divided by the artificially higher base CMI and potentially
+reduce rates in future periods. This “double edged sword” reveals a simultaneous benefit
+and limitation of the SNF reimbursement system: facilities with gradual changes in CMI,
+census, and costs under the cap can do very well under this payment methodology.
+Facilities with large variations in CMI, census, and costs will have quarters and years that
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 5 of 9
+are extremely profitable, and other quarters and years in which they will experience
+financial hardship.
+SECTION 2: COST DETAIL AND INFLATION ADJUSTMENT
+In the upper one third of the Rate Calculation Worksheet is a section labeled “Inflated
+Cost Summary.” The column under “Cost Detail” contains figures derived from your
+cost report. If your rate is a finalized rate based on an audited cost report, these totals can
+be traced directly from the “Schedule of Adjusted Costs” pages of your audit report. If
+your rate is an interim rate based on reported costs, in order to trace these amounts, you
+will need to request information from Myers and Stauffer. Myers and Stauffer uses your
+as-filed cost report and separates cost centers between the direct, indirect, property, and
+exempt cost centers. The cost report information included here is from the cost report
+period listed in the upper part of the Rate Calculation Worksheet.
+The derivation of the costs on the summary page is detailed in the subsequent pages of
+the rate sheet calculations. You, or your cost accountant, should be able to track costs
+listed on the cost report to the rate sheet.
+The Inflation Adjustment is no longer used, as it was removed in 2011 Legislature. Rates
+are now based strictly on historical costs per patient day.
+The third column in this section is entitled, “CMI Adjust for Food and Ancillaries or
+Indirect Ancillary Gross-Up.” This column performs two functions. First, food and the
+direct portion of ancillaries are included in direct care rate calculation, but are not case
+mix adjusted. Because all costs in the “Direct Cost” column of page one of the rate
+calculation worksheet are case mix adjusted, that case mix adjustment is reversed here to
+have a net impact of zero. Therefore, the costs associated with food and direct ancillary
+expenses are “reverse case mix adjusted” for lack of a better term, so that the entire direct
+care cost total can be case mix adjusted. Second, this column is also used to gross up
+ancillary costs. Ancillary costs included in the first column are the costs attributed solely
+to Medicaid services. Therefore, the Medicaid portion of ancillaries are grossed up by
+taking Medicaid ancillary cost, dividing by Medicaid days, times total patient days. This
+is necessary because on page 1 of the Rate Calculation Worksheet, total costs are divided
+by total days to calculate a per diem. Therefore, ancillary costs associated with just the
+Medicaid portion should be grossed up to reflect the total cost.
+The final column in this section is the sum of the previous three columns, and the totals
+by line item are then carried below to the columns in the lower one half of the Rate
+Calculation Worksheet page.
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 6 of 9
+SECTION 3: INDIRECT COST COMPONENT
+The lower half of the Rate Calculation Worksheet contains the final rate calculation. The
+first column of numbers in this section presents the Indirect Cost component of your rate.
+Indirect costs include primarily overhead cost areas such as administration,
+housekeeping, dietary costs (except raw food), activities, and so on.
+The Indirect Cost Component is calculated according to the process outlined below:
+1. The total indirect costs are divided by the total patient days in the cost report
+period to arrive at the indirect cost per patient day.
+2. The cap for the current rate period is listed. It is the amount equal to 117% of the
+median rate for indirect costs for all Idaho SNFs and is recalculated annually.
+3. The facility indirect rate is the lesser of the inflated costs or the cap, so if the
+facility is below the indirect cap, it only the per diem costs per patient day. If it is
+over the cap, it will only receive the cap as its indirect cost component of its final
+rate.
+SECTION 4: DIRECT COST COMPONENT
+The second column of numbers in the lower half of the Rate Calculation Worksheet
+contains the derivation of your facility’s Direct Cost Component of your Medicaid rate.
+Direct costs include nursing and social service salaries and benefits, nursing supplies,
+Medicaid-related ancillaries, and raw food. The Direct Cost Component is calculated as
+follows:
+1. 2. The total direct costs from the upper section of the Rate Calculation
+Worksheet are listed on the first line this column, and this total is divided by
+the total patient days for the cost report period to arrive at the direct cost per
+patient day.
+The state cap on Direct Costs is shown as the Per Diem Limit. This cap is an
+overall state cap, and the cap is adjusted for each facility based on that
+facility’s overall acuity for the cost report period compared to the state
+average acuity. The facility-specific cap is calculated by dividing the facility-
+wide average CMI for the cost report period by the state average CMI for the
+cost report period and multiplying the result by the state cap. Using the CMI
+table on page 1, the facility-wide CMI for the cost report period is 1.1582, and
+the state average CMI for the same period was 1.1467. The formula and
+resulting facility-specific cap is shown below:Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 7 of 9
+3. Facility-wide CMI = 1.1582 = 1.0100
+State Avg CMI 1.1467
+Therefore, because the facility has an overall acuity slightly higher than the
+state average (exactly 1 percent higher than the state average), it makes sense
+that it would have a higher cap.
+The lower of the inflated cost per patient day (described in #1 of this section)
+or the facility-specific cap on direct costs is then adjusted to reflect the
+assumed ratio of costs associated with Medicaid patients compared to all other
+patients (private, Medicare, VA, insurance, etc.) in the facility. This
+adjustment divides the Facility Medicaid CMI for the Rate Period by the
+Facility Wide CMI for the cost report period. Using the case mix table on
+page 1, the resulting calculation is:
+Medicaid avg CMI = 1.1110 = 0.9592
+Facility-wide CMI 1.1582
+The direct cost component, and the customary charge calculation (below) are
+the only parts of the Medicaid rate that changes throughout the year. The
+change to the direct portion of the rate is based solely on acuity scores for
+Medicaid patients for the period ending 90 days prior to the current rate period
+(MDS’s submitted between January 1 and March 31 will impact direct care
+rates effective July 1-September 30).
+SECTION 5: EXEMPT COSTS AND NATCEP
+Exempt costs include property taxes, property insurance, utilities, and costs associated
+with the Nurse Aide Training and Certification Evaluation Program (NATCEP). For
+hospital-based providers, exempt costs also include property costs. These are pass-
+through costs not subject to any limitation.
+SECTION 6: SUMMARY OF RATE COMPONENTS
+The lower right corner of the Rate Calculation Worksheet contains the summary of all of
+the individual components of your facility’s Medicaid rate. It also includes the property
+component, which is defined in detail in Idaho rule. In general, the property rate for free-
+standing nursing facilities is based on the Marshall-Swift Valuation Index, and the age of
+all nursing facilities in Idaho have been frozen at their age in 1991 for facilities
+constructed on or before that date.
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 8 of 9
+Look at your own Medicaid rate sheet to see how these components add up. Remember
+there is also an additional 2.7 percent reduction because Idaho’s budget shortfalls during
+2009-2011. This amount was replaced with a provider tax so the facilities will get this
+amount returned to them through a different program.
+Finally, your Medicaid rate is limited to the lesser of the sum of rate components or the
+customary charge. The customary charge is calculated as your semi-private room rate
+plus the Medicaid charges of reimbursable ancillaries. The ancillary portion is inflated to
+the rate period using the same method for inflating costs, and is also case mix adjusted by
+dividing facility Medicaid CMI for the rate period by facility Medicaid CMI for the cost
+report period. The result of the Medicaid ancillary portion is divided by Medicaid days
+and is added to your semi-private room rate. For this reason, it is imperative that you
+charge out all appropriate ancillary services and supplies to all patients, including those
+whose primary payor is the Medicaid program.
+Medicaid RUG Categories and Weights
+RAD 1.928 IB2 0.902
+RAC 1.632 IB1 0.798
+RAB 1.491 IA2 0.662
+RAA 1.239 IA1 0.598
+SE3 2.398 BB2 0.869
+SE2 1.958 BB1 0.737
+SE1 1.645 BA2 0.638
+BA1 0.522
+SSC 1.591
+SSB 1.469 PE2 1.012
+SSA 1.439 PE1 0.917
+PD2 0.932
+CC2 1.211 PD1 0.842
+CC1 1.116 PC2 0.799
+CB2 1.061 PC1 0.736
+CB1 0.981 PB2 0.702
+CA2 0.886 PB1 0.638
+CA1 0.794 PA2 0.543
+PA1 0.490
+Explanation of the Idaho Medicaid SNF Reimbursement System
+Updated 10 August 2016
+Page 9 of 9
