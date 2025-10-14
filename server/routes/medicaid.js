@@ -226,7 +226,7 @@ CRITICAL FORMATTING REQUIREMENTS:
 
 Here are the Medicaid policies for ${state}:
 
-${policiesContext}`;`
+${policiesContext}`;
 
     // Call Claude API with extended context for deep analysis
     const response = await anthropic.messages.create({
