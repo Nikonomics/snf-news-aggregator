@@ -91,35 +91,46 @@ export async function getFacilitiesByState(stateCode, options = {}) {
     offset = 0
   } = options
 
-  let query = 'SELECT * FROM snf_facilities WHERE state = $1'
+  // Join with deficiency summary to get actual deficiency counts from cms_facility_deficiencies
+  let query = `
+    SELECT
+      f.*,
+      COALESCE(ds.total_deficiencies, f.health_deficiencies, 0) as total_deficiencies,
+      ds.serious_deficiencies,
+      ds.uncorrected_deficiencies,
+      ds.last_survey_date
+    FROM snf_facilities f
+    LEFT JOIN facility_deficiency_summary ds ON f.federal_provider_number = ds.federal_provider_number
+    WHERE f.state = $1
+  `
   const params = [stateCode.toUpperCase()]
   let paramIndex = 2
 
   if (active !== null) {
-    query += ` AND active = $${paramIndex}`
+    query += ` AND f.active = $${paramIndex}`
     params.push(active)
     paramIndex++
   }
 
   if (minRating) {
-    query += ` AND overall_rating >= $${paramIndex}`
+    query += ` AND f.overall_rating >= $${paramIndex}`
     params.push(minRating)
     paramIndex++
   }
 
   if (ownershipType) {
-    query += ` AND ownership_type = $${paramIndex}`
+    query += ` AND f.ownership_type = $${paramIndex}`
     params.push(ownershipType)
     paramIndex++
   }
 
   if (chain) {
-    query += ` AND ownership_chain = $${paramIndex}`
+    query += ` AND f.ownership_chain = $${paramIndex}`
     params.push(chain)
     paramIndex++
   }
 
-  query += ` ORDER BY facility_name LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
+  query += ` ORDER BY f.facility_name LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
   params.push(limit, offset)
 
   const result = await pool.query(query, params)

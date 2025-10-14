@@ -189,16 +189,49 @@
 
 .deficiencies-cell {
   text-align: center;
+}
+
+.deficiency-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.deficiency-info > span:first-child {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .def-low {
   color: #10b981;
 }
 
+.def-medium {
+  color: #f59e0b;
+}
+
 .def-high {
   color: #ef4444;
+}
+
+.serious-def,
+.uncorrected-def {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.serious-def {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.uncorrected-def {
+  background: #FEF3C7;
+  color: #D97706;
 }
 
 @media (max-width: 1024px) {

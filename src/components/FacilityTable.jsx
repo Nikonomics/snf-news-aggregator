@@ -41,6 +41,10 @@ function FacilityTable({ facilities }) {
           aVal = parseFloat(a.occupancy_rate || a.occupancyRate || 0)
           bVal = parseFloat(b.occupancy_rate || b.occupancyRate || 0)
           break
+        case 'deficiencies':
+          aVal = a.total_deficiencies || a.health_deficiencies || a.recentDeficiencies || 0
+          bVal = b.total_deficiencies || b.health_deficiencies || b.recentDeficiencies || 0
+          break
         default:
           return 0
       }
@@ -111,7 +115,9 @@ function FacilityTable({ facilities }) {
                 Occupancy {sortField === 'occupancy' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
               <th>Ownership</th>
-              <th>Deficiencies</th>
+              <th onClick={() => handleSort('deficiencies')} className="sortable">
+                Deficiencies {sortField === 'deficiencies' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -148,9 +154,29 @@ function FacilityTable({ facilities }) {
                   </span>
                 </td>
                 <td className="deficiencies-cell">
-                  <span className={(facility.health_deficiencies || facility.recentDeficiencies || 0) <= 5 ? 'def-low' : 'def-high'}>
-                    {facility.health_deficiencies || facility.recentDeficiencies || 0}
-                  </span>
+                  {(() => {
+                    const totalDef = facility.total_deficiencies || facility.health_deficiencies || facility.recentDeficiencies || 0
+                    const seriousDef = facility.serious_deficiencies || 0
+                    const uncorrectedDef = facility.uncorrected_deficiencies || 0
+
+                    return (
+                      <div className="deficiency-info">
+                        <span className={totalDef <= 5 ? 'def-low' : totalDef <= 15 ? 'def-medium' : 'def-high'}>
+                          {totalDef}
+                        </span>
+                        {seriousDef > 0 && (
+                          <span className="serious-def" title={`${seriousDef} serious deficiencies`}>
+                            {seriousDef} serious
+                          </span>
+                        )}
+                        {uncorrectedDef > 0 && (
+                          <span className="uncorrected-def" title={`${uncorrectedDef} uncorrected deficiencies`}>
+                            {uncorrectedDef} uncorrected
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </td>
               </tr>
             ))}

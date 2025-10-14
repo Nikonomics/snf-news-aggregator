@@ -151,3 +151,47 @@ export async function fetchRegulatoryBills(filters = {}) {
     throw error
   }
 }
+
+// Medicaid Policy Chatbot API functions
+export async function getMedicaidStates() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/medicaid/states`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching Medicaid states:', error)
+    throw error
+  }
+}
+
+export async function askMedicaidQuestion(state, question, conversationHistory = [], deepAnalysis = false) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/medicaid/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        state,
+        question,
+        conversationHistory,
+        deepAnalysis
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error asking Medicaid question:', error)
+    throw error
+  }
+}

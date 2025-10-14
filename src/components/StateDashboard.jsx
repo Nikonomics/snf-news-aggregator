@@ -7,10 +7,10 @@ import {
 } from 'lucide-react'
 import ArticleList from './ArticleList'
 import MetricsCardGrid from './MetricsCardGrid'
-import FacilityMap from './FacilityMap'
 import FacilityTable from './FacilityTable'
 import RegulatoryAlerts from './RegulatoryAlerts'
 import DashboardSkeleton from './DashboardSkeleton'
+import StateMarketMap from './StateMarketMap'
 import './StateDashboard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snf-news-aggregator.onrender.com'
@@ -309,9 +309,9 @@ function StateDashboard() {
   return (
     <div className="state-dashboard">
       <div className="state-header">
-        <Link to="/" className="back-link">
+        <Link to="/state-comparison" className="back-link">
           <ArrowLeft size={16} />
-          Back to News Feed
+          Back to State Analysis
         </Link>
         <h1>
           <MapPin size={32} />
@@ -659,13 +659,14 @@ function StateDashboard() {
             </div>
           ) : dashboardData ? (
             <>
-              {/* Facility Map with Integrated Metrics */}
-              {dashboardData.facilities && (
-                <FacilityMap
-                  facilities={dashboardData.facilities}
-                  metrics={dashboardData.topMetrics}
-                />
-              )}
+              {/* State Market Map */}
+              <section className="market-map-section">
+                <h2 className="section-title">
+                  <MapPin size={24} />
+                  {stateCode} Market Map
+                </h2>
+                <StateMarketMap stateCode={stateCode} />
+              </section>
 
               {/* Regulatory Alerts */}
               {dashboardData.regulatoryAlerts && (

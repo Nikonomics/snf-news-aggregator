@@ -2763,6 +2763,33 @@ app.get('/api/state/:stateCode/top-chains', async (req, res) => {
   }
 })
 
+// GET /api/state/:stateCode/map-data - Get combined facility and county data for state map
+app.get('/api/state/:stateCode/map-data', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+
+    // Fetch facilities and county summaries in parallel
+    const [facilities, countySummaries] = await Promise.all([
+      getFacilitiesByState(stateCode, { active: true, limit: 5000 }),
+      getStateCountyFacilitySummaries(stateCode)
+    ])
+
+    res.json({
+      success: true,
+      facilities,
+      counties: countySummaries,
+      facilityCount: facilities.length,
+      countyCount: countySummaries.length
+    })
+  } catch (error) {
+    console.error('Error fetching state map data:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // AI Analysis endpoint
 app.post('/api/analyze-article', async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY

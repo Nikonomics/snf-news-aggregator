@@ -16,6 +16,7 @@ import WeeklyInsights from './components/WeeklyInsights'
 import MASection from './components/MASection'
 import PriorityFeed from './components/PriorityFeed'
 import RegulatoryFeed from './components/RegulatoryFeed'
+import MedicaidChatbot from './components/MedicaidChatbot'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -325,6 +326,12 @@ function App() {
               Tools
             </Link>
             <Link
+              to="/medicaid-policies"
+              className={`nav-tab ${location.pathname === '/medicaid-policies' ? 'active' : ''}`}
+            >
+              Medicaid Policies
+            </Link>
+            <Link
               to="/advocate"
               className={`nav-tab ${location.pathname === '/advocate' ? 'active' : ''}`}
             >
@@ -458,6 +465,9 @@ function App() {
             </div>
           </main>
         } />
+
+        {/* Medicaid Policies Route */}
+        <Route path="/medicaid-policies" element={<MedicaidChatbot />} />
 
         {/* Advocate Route (Placeholder) */}
         <Route path="/advocate" element={

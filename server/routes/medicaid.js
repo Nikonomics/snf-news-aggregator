@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getRelevantDocuments } from '../services/documentFetcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,7 +58,7 @@ router.get('/policies/:state', (req, res) => {
 // POST chat endpoint
 router.post('/chat', async (req, res) => {
   try {
-    const { state, question, conversationHistory = [] } = req.body;
+    const { state, question, conversationHistory = [], deepAnalysis = false } = req.body;
 
     if (!state || !question) {
       return res.status(400).json({ error: 'State and question are required' });
@@ -80,6 +81,39 @@ Date: ${policy.dates}
 ---`;
     }).join('\n\n');
 
+    let additionalContext = '';
+    let fetchedDocuments = [];
+
+    // If Deep Analysis is enabled, fetch actual regulation documents
+    if (deepAnalysis) {
+      console.log(`[Deep Analysis] Fetching regulatory documents for ${state}...`);
+
+      try {
+        // Fetch documents from all categories (limit to 3 most relevant)
+        const documents = await getRelevantDocuments(state, 'all', medicaidPolicies);
+
+        // Filter out errors and empty documents
+        fetchedDocuments = documents.filter(doc => doc.type !== 'error' && doc.text.length > 100);
+
+        if (fetchedDocuments.length > 0) {
+          additionalContext = '\n\nADDITIONAL REGULATORY DOCUMENTS:\n\n';
+          fetchedDocuments.forEach((doc, idx) => {
+            additionalContext += `Document ${idx + 1}: ${doc.url}\n`;
+            additionalContext += `Type: ${doc.type}\n`;
+            additionalContext += `Content:\n${doc.text}\n\n`;
+            additionalContext += '---\n\n';
+          });
+
+          console.log(`[Deep Analysis] Fetched ${fetchedDocuments.length} documents (${additionalContext.length} chars)`);
+        } else {
+          console.log(`[Deep Analysis] No documents could be fetched`);
+        }
+      } catch (docError) {
+        console.error('[Deep Analysis] Error fetching documents:', docError);
+        // Continue without documents rather than failing
+      }
+    }
+
     // Build conversation messages
     const messages = [
       ...conversationHistory,
@@ -90,27 +124,114 @@ Date: ${policy.dates}
     ];
 
     // System prompt for Claude
-    const systemPrompt = `You are a knowledgeable assistant specializing in Medicaid Fee-for-Service Nursing Facility Payment Policies for ${state}.
+    const systemPrompt = deepAnalysis
+      ? `You are a knowledgeable assistant specializing in Medicaid Fee-for-Service Nursing Facility Payment Policies for ${state}.
 
-Your task is to answer questions about ${state}'s Medicaid policies using ONLY the provided policy data.
+DEEP ANALYSIS MODE: You have access to both the policy summary spreadsheet AND the actual regulatory documents.
 
-IMPORTANT GUIDELINES:
-1. Base your answers ONLY on the provided policy information
-2. If the answer isn't in the provided data, say "I don't have information about that in the ${state} policies provided"
-3. Always cite your sources by mentioning the policy name and category
-4. Be specific and accurate
-5. If a policy has detailed source language, reference it
-6. Format your response clearly with proper sections
-7. At the end of your response, include a "Sources" section listing the specific policies you referenced
+Your task is to provide comprehensive answers by analyzing BOTH:
+1. The policy summaries (for quick reference)
+2. The full regulatory documents (for detailed information)
+
+CRITICAL FORMATTING REQUIREMENTS:
+1. Structure your response like a textbook with clear hierarchy:
+   - Use descriptive section headers (##) for major topics
+   - Use bullet points for lists
+   - Use numbered steps for procedures
+
+2. Format ALL mathematical formulas and calculations as STANDALONE blocks:
+   - Put each formula on its own line
+   - Use clear variable definitions before the formula
+   - Show calculation steps separately
+   - Example format:
+
+     **Formula:**
+     Rate = (Total Allowable Costs ÷ Patient Days) × Inflation Factor
+
+     **Where:**
+     - Total Allowable Costs = sum of all cost centers
+     - Patient Days = annual patient days
+     - Inflation Factor = DRI Market Basket Index
+
+3. Break complex information into digestible chunks:
+   - No long run-on paragraphs
+   - Maximum 3-4 sentences per paragraph
+   - Use white space generously
+   - Add visual breaks between concepts
+
+4. Make calculations intuitive:
+   - Show examples with actual numbers when possible
+   - Explain what each component means in plain language
+   - Highlight key thresholds or limits
+
+5. Content guidelines:
+   - Prioritize information from the actual regulatory documents
+   - Be specific and accurate with regulatory citations
+   - If information differs between summary and documents, note this clearly
+
+6. Always end with a "## Sources" section listing:
+   - Policy category and name
+   - Specific document URLs referenced
+   - Any relevant regulatory citations
+
+Here are the Medicaid policy summaries for ${state}:
+
+${policiesContext}
+
+${additionalContext}`
+      : `You are a knowledgeable assistant specializing in Medicaid Fee-for-Service Nursing Facility Payment Policies for ${state}.
+
+Your task is to answer questions about ${state}'s Medicaid policies using the provided policy summary data.
+
+CRITICAL FORMATTING REQUIREMENTS:
+1. Structure your response like a textbook with clear hierarchy:
+   - Use descriptive section headers (##) for major topics
+   - Use bullet points for lists
+   - Use numbered steps for procedures
+
+2. Format ALL mathematical formulas and calculations as STANDALONE blocks:
+   - Put each formula on its own line
+   - Use clear variable definitions before the formula
+   - Show calculation steps separately
+   - Example format:
+
+     **Formula:**
+     Rate = (Total Allowable Costs ÷ Patient Days) × Inflation Factor
+
+     **Where:**
+     - Total Allowable Costs = sum of all cost centers
+     - Patient Days = annual patient days
+     - Inflation Factor = DRI Market Basket Index
+
+3. Break complex information into digestible chunks:
+   - No long run-on paragraphs
+   - Maximum 3-4 sentences per paragraph
+   - Use white space generously
+   - Add visual breaks between concepts
+
+4. Make calculations intuitive:
+   - Show examples with actual numbers when possible
+   - Explain what each component means in plain language
+   - Highlight key thresholds or limits
+
+5. Content guidelines:
+   - Base answers on the provided policy information
+   - If the answer requires more detail than available, suggest enabling "Deep Analysis"
+   - Always cite sources by mentioning policy name and category
+   - Include source document URLs when relevant
+
+6. Always end with a "## Sources" section listing:
+   - Policy category and name
+   - Relevant URLs from the policy data
 
 Here are the Medicaid policies for ${state}:
 
-${policiesContext}`;
+${policiesContext}`;`
 
-    // Call Claude API
+    // Call Claude API with extended context for deep analysis
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      max_tokens: deepAnalysis ? 4096 : 2048,
       system: systemPrompt,
       messages: messages
     });
@@ -130,10 +251,25 @@ ${policiesContext}`;
       }
     });
 
+    // Add fetched document URLs to citations
+    if (fetchedDocuments.length > 0) {
+      fetchedDocuments.forEach(doc => {
+        if (!citations.find(c => c.sources && c.sources.includes(doc.url))) {
+          citations.push({
+            category: 'Regulatory Document',
+            policyName: 'Full Regulation',
+            sources: doc.url
+          });
+        }
+      });
+    }
+
     res.json({
       response: assistantMessage,
       citations: citations.length > 0 ? citations : null,
-      state: state
+      state: state,
+      deepAnalysis: deepAnalysis,
+      documentsFetched: fetchedDocuments.length
     });
 
   } catch (error) {
