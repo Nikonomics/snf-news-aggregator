@@ -383,110 +383,148 @@ function MATrackerEnhanced() {
         )}
       </div>
 
-      {/* Deal Cards with Enhanced Data */}
+      {/* Deal Cards with Enhanced Data - Compact Grid Layout */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: '1.3em', fontWeight: '700', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Building2 size={20} />
           Recent Deals ({recentDeals.length})
         </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {recentDeals.map((deal) => (
-            <div
-              key={deal.id}
-              onClick={() => setSelectedDeal(deal)}
-              style={{
-                padding: '20px',
-                backgroundColor: '#f9fafb',
-                borderRadius: '8px',
-                borderLeft: '4px solid #3b82f6',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#f3f4f6'
-                e.currentTarget.style.transform = 'translateX(4px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f9fafb'
-                e.currentTarget.style.transform = 'translateX(0)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: '1.1em', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>
-                    {deal.maDetails.acquirer} → {deal.maDetails.target}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.85em', color: '#6b7280' }}>
-                    {deal.date && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={14} />
-                        {format(new Date(deal.date), 'MMM d, yyyy')}
-                      </div>
-                    )}
-                    {deal.maDetails.dealType && (
-                      <div style={{ padding: '2px 8px', backgroundColor: '#dbeafe', color: '#1e40af', borderRadius: '4px', fontWeight: '500' }}>
-                        {deal.maDetails.dealType}
-                      </div>
-                    )}
-                    {deal.maDetails.facilityCount && (
-                      <div>{deal.maDetails.facilityCount} {deal.maDetails.facilityCount === 1 ? 'facility' : 'facilities'}</div>
-                    )}
-                    {deal.maDetails.states?.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={14} />
-                        {deal.maDetails.states.join(', ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {deal.maDetails.dealValue && deal.maDetails.dealValue !== 'Undisclosed' && deal.maDetails.dealValue !== 'N/A' && (
-                  <div style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#dcfce7',
-                    color: '#166534',
-                    borderRadius: '6px',
-                    fontWeight: '700',
-                    fontSize: '1em',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {deal.maDetails.dealValue}
-                  </div>
-                )}
-              </div>
 
-              {/* Competitive Signal Preview */}
-              {deal.maDetails.competitiveImplications && (
+        {/* Group deals by year and render */}
+        {(() => {
+          const dealsByYear = {}
+          recentDeals.forEach(deal => {
+            const year = new Date(deal.date).getFullYear()
+            if (!dealsByYear[year]) dealsByYear[year] = []
+            dealsByYear[year].push(deal)
+          })
+
+          return Object.entries(dealsByYear)
+            .sort(([yearA], [yearB]) => Number(yearB) - Number(yearA))
+            .map(([year, deals]) => (
+              <div key={year} style={{ marginBottom: '32px' }}>
+                {/* Year Separator */}
                 <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
-                  backgroundColor: '#fef3c7',
-                  borderRadius: '6px',
-                  borderLeft: '3px solid #f59e0b'
+                  marginBottom: '16px',
+                  paddingBottom: '8px',
+                  borderBottom: '2px solid #e5e7eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <Target size={14} style={{ color: '#f59e0b' }} />
-                    <span style={{ fontSize: '0.8em', fontWeight: '600', color: '#92400e' }}>COMPETITIVE SIGNAL</span>
-                  </div>
-                  <p style={{ margin: 0, color: '#78350f', fontSize: '0.9em', lineHeight: '1.5' }}>
-                    {deal.maDetails.competitiveImplications.substring(0, 150)}...
-                  </p>
+                  <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#374151', margin: 0 }}>
+                    {year}
+                  </h3>
+                  <span style={{ fontSize: '0.9em', color: '#6b7280' }}>
+                    ({deals.length} deal{deals.length !== 1 ? 's' : ''})
+                  </span>
                 </div>
-              )}
 
-              <div style={{
-                marginTop: '12px',
-                fontSize: '0.85em',
-                color: '#3b82f6',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                Click for full analysis →
+                {/* Compact Deal Cards Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {deals.map((deal) => (
+                    <div
+                      key={deal.id}
+                      onClick={() => setSelectedDeal(deal)}
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '8px',
+                        borderLeft: '3px solid #3b82f6',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: '180px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f3f4f6'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f9fafb'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      {/* Deal Title */}
+                      <h4 style={{
+                        fontSize: '0.95em',
+                        fontWeight: '600',
+                        color: '#111827',
+                        margin: '0 0 8px 0',
+                        lineHeight: '1.3'
+                      }}>
+                        {deal.maDetails.acquirer} → {deal.maDetails.target}
+                      </h4>
+
+                      {/* Date and Type */}
+                      <div style={{ fontSize: '0.75em', color: '#6b7280', marginBottom: '8px' }}>
+                        {deal.date && format(new Date(deal.date), 'MMM d, yyyy')}
+                        {deal.maDetails.dealType && (
+                          <span style={{
+                            marginLeft: '8px',
+                            padding: '2px 6px',
+                            backgroundColor: '#dbeafe',
+                            color: '#1e40af',
+                            borderRadius: '3px',
+                            fontWeight: '500',
+                            fontSize: '0.95em'
+                          }}>
+                            {deal.maDetails.dealType}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Deal Value Badge */}
+                      {deal.maDetails.dealValue && deal.maDetails.dealValue !== 'Undisclosed' && deal.maDetails.dealValue !== 'N/A' && (
+                        <div style={{
+                          padding: '4px 10px',
+                          backgroundColor: '#dcfce7',
+                          color: '#166534',
+                          borderRadius: '4px',
+                          fontWeight: '700',
+                          fontSize: '0.85em',
+                          marginBottom: '8px',
+                          alignSelf: 'flex-start'
+                        }}>
+                          {deal.maDetails.dealValue}
+                        </div>
+                      )}
+
+                      {/* Facility Count and States */}
+                      <div style={{ fontSize: '0.75em', color: '#6b7280', marginTop: 'auto' }}>
+                        {deal.maDetails.facilityCount && (
+                          <div style={{ marginBottom: '4px' }}>
+                            📍 {deal.maDetails.facilityCount} facilit{deal.maDetails.facilityCount === 1 ? 'y' : 'ies'}
+                          </div>
+                        )}
+                        {deal.maDetails.states?.length > 0 && (
+                          <div>
+                            {deal.maDetails.states.join(', ')}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Click Hint */}
+                      <div style={{
+                        marginTop: '12px',
+                        paddingTop: '8px',
+                        borderTop: '1px solid #e5e7eb',
+                        fontSize: '0.7em',
+                        color: '#3b82f6',
+                        fontWeight: '500',
+                        textAlign: 'center'
+                      }}>
+                        Click for analysis
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))
+        })()}
       </div>
 
       {/* Deal Detail Modal */}
