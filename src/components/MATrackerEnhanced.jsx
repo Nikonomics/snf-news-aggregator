@@ -278,47 +278,53 @@ function MATrackerEnhanced() {
         </div>
       )}
 
-      {/* Overview Stats and Leaderboard Side-by-Side */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'flex-start' }}>
+      {/* Main Dashboard Layout: Stats + Chart on Left, Leaderboard on Right */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'stretch' }}>
 
-        {/* Stats Cards */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <Building2 size={20} style={{ color: '#3b82f6' }} />
-              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Deals</h3>
+        {/* Left Column: Stats Cards + Quarterly Chart */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Stats Cards in 2x2 Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <Building2 size={20} style={{ color: '#3b82f6' }} />
+                <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Deals</h3>
+              </div>
+              <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalDeals}</div>
             </div>
-            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalDeals}</div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <MapPin size={20} style={{ color: '#10b981' }} />
+                <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Facilities</h3>
+              </div>
+              <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalFacilities}</div>
+            </div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <DollarSign size={20} style={{ color: '#f59e0b' }} />
+                <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Deals w/ Value</h3>
+              </div>
+              <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.dealsWithValue}</div>
+            </div>
+
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <Users size={20} style={{ color: '#8b5cf6' }} />
+                <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Active Acquirers</h3>
+              </div>
+              <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.topAcquirers.length}</div>
+            </div>
           </div>
 
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <MapPin size={20} style={{ color: '#10b981' }} />
-              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Facilities</h3>
-            </div>
-            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalFacilities}</div>
-          </div>
-
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <DollarSign size={20} style={{ color: '#f59e0b' }} />
-              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Deals w/ Value</h3>
-            </div>
-            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.dealsWithValue}</div>
-          </div>
-
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <Users size={20} style={{ color: '#8b5cf6' }} />
-              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Active Acquirers</h3>
-            </div>
-            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.topAcquirers.length}</div>
-          </div>
+          {/* Quarterly Chart */}
+          <QuarterlyDealsChart dealsByMonth={stats.dealsByMonth} />
         </div>
 
-        {/* YTD Leaderboard - Compact Right Column */}
+        {/* Right Column: YTD Leaderboard */}
         {leaderboard && leaderboard.leaderboard && leaderboard.leaderboard.length > 0 && (
-          <div style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '2px solid #f59e0b' }}>
               <h3 style={{ fontSize: '0.95em', fontWeight: '700', color: '#111827', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Award size={18} style={{ color: '#f59e0b' }} />
@@ -329,7 +335,7 @@ function MATrackerEnhanced() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
               {leaderboard.leaderboard.slice(0, 10).map((acquirer, index) => (
                 <div
                   key={acquirer.acquirer}
@@ -375,14 +381,6 @@ function MATrackerEnhanced() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Quarterly Deals Chart - Left Column Only */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <QuarterlyDealsChart dealsByMonth={stats.dealsByMonth} />
-        </div>
-        <div style={{ width: '320px', flexShrink: 0 }}></div>
       </div>
 
       {/* Deal Cards with Enhanced Data */}
