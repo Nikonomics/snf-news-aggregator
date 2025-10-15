@@ -279,7 +279,7 @@ function MATrackerEnhanced() {
       )}
 
       {/* Main Dashboard Layout: Stats + Chart on Left, Leaderboard on Right */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'flex-start' }}>
 
         {/* Left Column: Stats Cards + Quarterly Chart */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -324,7 +324,7 @@ function MATrackerEnhanced() {
 
         {/* Right Column: YTD Leaderboard */}
         {leaderboard && leaderboard.leaderboard && leaderboard.leaderboard.length > 0 && (
-          <div style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '2px solid #f59e0b' }}>
               <h3 style={{ fontSize: '0.95em', fontWeight: '700', color: '#111827', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Award size={18} style={{ color: '#f59e0b' }} />
@@ -335,7 +335,7 @@ function MATrackerEnhanced() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
               {leaderboard.leaderboard.slice(0, 10).map((acquirer, index) => (
                 <div
                   key={acquirer.acquirer}
