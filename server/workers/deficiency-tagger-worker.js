@@ -22,6 +22,10 @@ function parseDate(dateStr) {
 
 async function fetchAndUpdateDeficienciesForProvider(providerId) {
   try {
+    // Only fetch deficiencies from the last 3 years
+    const threeYearsAgo = new Date()
+    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
+
     const url = `${CMS_API_URL}?filters[cms_certification_number_ccn]=${providerId}&limit=1000`
     const response = await fetch(url)
     const data = await response.json()
@@ -33,6 +37,12 @@ async function fetchAndUpdateDeficienciesForProvider(providerId) {
     let updated = 0
 
     for (const record of data.results) {
+      // Only update if the survey is from the last 3 years
+      const surveyDate = parseDate(record.survey_date)
+      if (!surveyDate || surveyDate < threeYearsAgo) {
+        continue // Skip old deficiencies
+      }
+
       const result = await pool.query(`
         UPDATE cms_facility_deficiencies
         SET
@@ -44,14 +54,16 @@ async function fetchAndUpdateDeficienciesForProvider(providerId) {
           federal_provider_number = $5
           AND survey_date = $6
           AND survey_type = $7
+          AND survey_date >= $8
       `, [
         record.deficiency_tag_number,
         record.deficiency_prefix,
         record.scope_severity_code,
         record.deficiency_description,
         record.cms_certification_number_ccn,
-        parseDate(record.survey_date),
-        record.survey_type
+        surveyDate,
+        record.survey_type,
+        threeYearsAgo
       ])
 
       if (result.rowCount > 0) {
