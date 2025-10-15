@@ -144,6 +144,154 @@
   margin-top: 12px;
 }
 
+.results-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.search-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 80px;
+}
+
+.main-results-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.new-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.new-search-btn:hover {
+  background: #1d4ed8;
+}
+
+.sidebar-results-info {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-results-info h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.sidebar-applied-filters {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-applied-filters .filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.sidebar-applied-filters .filter-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-applied-filters .filter-tag {
+  padding: 6px 10px;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* Sidebar Chain Filter */
+.sidebar-chain-filter {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.sidebar-chain-filter h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.sidebar-chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-chain-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar-chain-checkbox:hover {
+  background: #f9fafb;
+}
+
+.sidebar-chain-checkbox input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-chain-checkbox .chain-name {
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.sidebar-chain-checkbox .chain-count {
+  color: #6b7280;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
 .results-header {
   margin-bottom: 8px;
 }
@@ -188,6 +336,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .ownership-group {
@@ -197,6 +347,9 @@
   border: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   margin-bottom: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .ownership-group.selected {
@@ -281,13 +434,15 @@
 
 .facilities-scroll-container {
   position: relative;
+  width: 100%;
+  max-width: 100%;
 }
 
 .facilities-horizontal-grid {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(340px, 380px);
-  gap: 16px;
+  grid-auto-columns: minmax(224px, 320px);
+  gap: 13px;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 12px;
@@ -316,22 +471,23 @@
 
 .facilities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+  gap: 13px;
 }
 
 .facility-card {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 10px;
+  padding: 13px;
   transition: all 0.2s;
-  min-width: 280px;
-  max-width: 300px;
+  min-width: 224px;
+  min-height: 144px;
+  max-height: 320px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  font-size: 0.9rem;
+  overflow: hidden;
 }
 
 .facility-card:hover {
@@ -555,6 +711,10 @@
   padding: 20px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .map-header {

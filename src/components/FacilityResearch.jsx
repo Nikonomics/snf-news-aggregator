@@ -431,34 +431,38 @@ function FacilityResearch() {
     )
   }
 
+  const handleNewSearch = () => {
+    setQuery('')
+    setResults(null)
+    setError(null)
+    setSelectedStates([])
+    setSelectedChains([])
+    setGeocodedFacilities([])
+  }
+
   return (
     <div className="facility-research">
-      <div className="research-header">
-        <h1>Facility Research</h1>
-        <p className="subtitle">Search skilled nursing facilities using natural language</p>
-      </div>
+      {!results && !loading && (
+        <div className="search-section">
+          <div className="search-box">
+            <Search className="search-icon" size={20} />
+            <input
+              type="text"
+              placeholder="e.g., Show me all facilities in the Pacific Northwest with 4+ star ratings..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={loading}
+            />
+            <button
+              className="search-button"
+              onClick={() => handleSearch()}
+              disabled={loading || !query.trim()}
+            >
+              {loading ? <Loader className="spinning" size={20} /> : 'Search'}
+            </button>
+          </div>
 
-      <div className="search-section">
-        <div className="search-box">
-          <Search className="search-icon" size={20} />
-          <input
-            type="text"
-            placeholder="e.g., Show me all facilities in the Pacific Northwest with 4+ star ratings..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={loading}
-          />
-          <button
-            className="search-button"
-            onClick={() => handleSearch()}
-            disabled={loading || !query.trim()}
-          >
-            {loading ? <Loader className="spinning" size={20} /> : 'Search'}
-          </button>
-        </div>
-
-        {!results && !loading && (
           <div className="examples-section">
             <h3>Try these examples:</h3>
             <div className="example-queries">
@@ -473,8 +477,8 @@ function FacilityResearch() {
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && (
         <div className="error-message">
@@ -485,88 +489,112 @@ function FacilityResearch() {
 
       {results && (
         <div className="results-section">
-          <div className="results-header">
-            <div className="results-title-row">
-              <h2>
-                Found {filteredResults.total.toLocaleString()} facilities
-                {results.hasMore && ' (showing first 1000)'}
-              </h2>
-              <button
-                className="filter-toggle-btn"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter size={16} />
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
+          <div className="results-layout">
+            {/* Left Sidebar with Search */}
+            <aside className="search-sidebar">
+              <button className="new-search-btn" onClick={handleNewSearch}>
+                <Search size={16} />
+                New Search
               </button>
-            </div>
 
-            {results.filters && Object.keys(results.filters).length > 0 && (
-              <div className="applied-filters">
-                <span className="filter-label">AI Search filters:</span>
-                <div className="filter-tags">
-                  {results.filters.states && results.filters.states.length > 0 && (
-                    <span className="filter-tag">
-                      States: {results.filters.states.join(', ')}
-                    </span>
-                  )}
-                  {results.filters.chainSizeMax && (
-                    <span className="filter-tag">
-                      Chain size ≤ {results.filters.chainSizeMax}
-                    </span>
-                  )}
-                  {results.filters.chainSizeMin && (
-                    <span className="filter-tag">
-                      Chain size ≥ {results.filters.chainSizeMin}
-                    </span>
-                  )}
-                  {results.filters.minOverallRating && (
-                    <span className="filter-tag">
-                      Rating ≥ {results.filters.minOverallRating} stars
-                    </span>
-                  )}
-                  {results.filters.minBeds && (
-                    <span className="filter-tag">
-                      Beds ≥ {results.filters.minBeds}
-                    </span>
-                  )}
-                  {results.filters.maxBeds && (
-                    <span className="filter-tag">
-                      Beds ≤ {results.filters.maxBeds}
-                    </span>
-                  )}
-                  {results.filters.multiFacilityChain === false && (
-                    <span className="filter-tag">Independent</span>
-                  )}
-                  {results.filters.multiFacilityChain === true && (
-                    <span className="filter-tag">Chain-owned</span>
-                  )}
-                  {results.filters.ownershipTypes && results.filters.ownershipTypes.length > 0 && (
-                    <span className="filter-tag">
-                      {results.filters.ownershipTypes.join(', ')}
-                    </span>
-                  )}
-                </div>
+              <div className="sidebar-results-info">
+                <h3>
+                  Found {filteredResults.total.toLocaleString()} facilities
+                  {results.hasMore && ' (showing first 1000)'}
+                </h3>
               </div>
-            )}
-          </div>
 
-          {showFilters && (
-            <div className="filters-panel">
-              {/* Map */}
-              <div className="filter-section map-section">
-                <div className="map-header">
-                  <div className="map-title-section">
-                    <h3>Filter by State (click on map)</h3>
-                    {filteredResults && (
-                      <div className="map-stats">
-                        {geocoding ? (
-                          <>Geocoding addresses... ({geocodedFacilities.length} of {Math.min(100, filteredResults.total)} complete)</>
-                        ) : (
-                          <>{getFacilitiesForMap().length} facilities mapped{filteredResults.total > 100 && ' (showing first 100)'}</>
-                        )}
-                      </div>
+              {/* Applied AI Filters in Sidebar */}
+              {results.filters && Object.keys(results.filters).length > 0 && (
+                <div className="sidebar-applied-filters">
+                  <span className="filter-label">AI Search filters:</span>
+                  <div className="filter-tags">
+                    {results.filters.states && results.filters.states.length > 0 && (
+                      <span className="filter-tag">
+                        States: {results.filters.states.join(', ')}
+                      </span>
+                    )}
+                    {results.filters.chainSizeMax && (
+                      <span className="filter-tag">
+                        Chain size ≤ {results.filters.chainSizeMax}
+                      </span>
+                    )}
+                    {results.filters.chainSizeMin && (
+                      <span className="filter-tag">
+                        Chain size ≥ {results.filters.chainSizeMin}
+                      </span>
+                    )}
+                    {results.filters.minOverallRating && (
+                      <span className="filter-tag">
+                        Rating ≥ {results.filters.minOverallRating} stars
+                      </span>
+                    )}
+                    {results.filters.minBeds && (
+                      <span className="filter-tag">
+                        Beds ≥ {results.filters.minBeds}
+                      </span>
+                    )}
+                    {results.filters.maxBeds && (
+                      <span className="filter-tag">
+                        Beds ≤ {results.filters.maxBeds}
+                      </span>
+                    )}
+                    {results.filters.multiFacilityChain === false && (
+                      <span className="filter-tag">Independent</span>
+                    )}
+                    {results.filters.multiFacilityChain === true && (
+                      <span className="filter-tag">Chain-owned</span>
+                    )}
+                    {results.filters.ownershipTypes && results.filters.ownershipTypes.length > 0 && (
+                      <span className="filter-tag">
+                        {results.filters.ownershipTypes.join(', ')}
+                      </span>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Owner/Chain Filter in Sidebar */}
+              {showFilters && availableChains.length > 0 && (
+                <div className="sidebar-chain-filter">
+                  <h4>Filter by Chain/Owner</h4>
+                  <div className="sidebar-chain-list">
+                    {availableChains.map(chain => {
+                      const facilityCount = results.results.filter(
+                        f => f.ownership_chain === chain
+                      ).length
+                      return (
+                        <label key={chain} className="sidebar-chain-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={selectedChains.includes(chain)}
+                            onChange={() => toggleChain(chain)}
+                          />
+                          <span className="chain-name">
+                            {chain}
+                            <span className="chain-count">({facilityCount})</span>
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters in Sidebar */}
+              {(selectedStates.length > 0 || selectedChains.length > 0) && (
+                <button className="clear-filters-btn" onClick={clearFilters}>
+                  <X size={16} />
+                  Clear All Filters
+                </button>
+              )}
+            </aside>
+
+            {/* Main Content */}
+            <div className="main-results-content">
+              {/* Map - Always visible */}
+              <div className="map-section">
+                <div className="map-header">
                   <div className="map-legend">
                     <div className="legend-item">
                       <div className="legend-color" style={{ backgroundColor: '#22c55e' }}></div>
@@ -587,8 +615,9 @@ function FacilityResearch() {
                   </div>
                 </div>
                 {mapsLoaded && (
-                  <div style={{ position: 'relative', height: '600px', width: '100%' }}>
+                  <div style={{ position: 'relative', height: '600px', width: '100%', minWidth: '600px' }}>
                     <GoogleMap
+                      key="facility-map"
                       mapContainerStyle={{ width: '100%', height: '100%', borderRadius: '8px' }}
                       center={{ lat: 39.8283, lng: -98.5795 }} // Center of USA
                       zoom={4}
@@ -671,44 +700,8 @@ function FacilityResearch() {
                 )}
               </div>
 
-              {/* Chain Filter */}
-              {availableChains.length > 0 && (
-                <div className="filter-section">
-                  <h3>Filter by Chain/Owner</h3>
-                  <div className="chain-filter-grid">
-                    {availableChains.map(chain => {
-                      const facilityCount = results.results.filter(
-                        f => f.ownership_chain === chain
-                      ).length
-                      return (
-                        <label key={chain} className="chain-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={selectedChains.includes(chain)}
-                            onChange={() => toggleChain(chain)}
-                          />
-                          <span className="chain-name">
-                            {chain}
-                            <span className="chain-count">({facilityCount})</span>
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Clear Filters */}
-              {(selectedStates.length > 0 || selectedChains.length > 0) && (
-                <button className="clear-filters-btn" onClick={clearFilters}>
-                  <X size={16} />
-                  Clear All Filters
-                </button>
-              )}
-            </div>
-          )}
-
-          <div className="facilities-by-ownership">
+              {/* Facilities by Ownership */}
+              <div className="facilities-by-ownership">
             {Object.entries(groupedFacilities()).map(([chain, facilities]) => (
               <div key={chain} className="ownership-group">
                 <div className="ownership-header">
@@ -730,6 +723,8 @@ function FacilityResearch() {
                 </div>
               </div>
             ))}
+          </div>
+            </div>
           </div>
         </div>
       )}
