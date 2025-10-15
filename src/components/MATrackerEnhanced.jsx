@@ -493,11 +493,12 @@ function MATrackerEnhanced() {
                         </div>
                       )}
 
-                      {/* Facility Count and States */}
-                      <div style={{ fontSize: '0.75em', color: '#6b7280', marginTop: 'auto' }}>
+                      {/* Facility Count, Beds, and States */}
+                      <div style={{ fontSize: '0.75em', color: '#6b7280', marginBottom: '10px' }}>
                         {deal.maDetails.facilityCount && (
                           <div style={{ marginBottom: '4px' }}>
                             📍 {deal.maDetails.facilityCount} facilit{deal.maDetails.facilityCount === 1 ? 'y' : 'ies'}
+                            {deal.maDetails.totalBeds > 0 && ` • ${deal.maDetails.totalBeds} beds`}
                           </div>
                         )}
                         {deal.maDetails.states?.length > 0 && (
@@ -507,9 +508,47 @@ function MATrackerEnhanced() {
                         )}
                       </div>
 
+                      {/* Strategic Rationale or Competitive Signal Preview */}
+                      {(deal.maDetails.strategicRationale || deal.maDetails.competitiveImplications) && (
+                        <div style={{
+                          padding: '8px',
+                          backgroundColor: deal.maDetails.competitiveImplications ? '#fef3c7' : '#f3f4f6',
+                          borderRadius: '4px',
+                          borderLeft: deal.maDetails.competitiveImplications ? '2px solid #f59e0b' : '2px solid #9ca3af',
+                          marginBottom: '10px',
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          {deal.maDetails.competitiveImplications && (
+                            <div style={{ marginBottom: '4px' }}>
+                              <span style={{
+                                fontSize: '0.65em',
+                                fontWeight: '700',
+                                color: '#92400e',
+                                letterSpacing: '0.5px'
+                              }}>
+                                🎯 COMPETITIVE SIGNAL
+                              </span>
+                            </div>
+                          )}
+                          <p style={{
+                            margin: 0,
+                            fontSize: '0.75em',
+                            lineHeight: '1.4',
+                            color: deal.maDetails.competitiveImplications ? '#78350f' : '#4b5563',
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {deal.maDetails.competitiveImplications || deal.maDetails.strategicRationale}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Click Hint */}
                       <div style={{
-                        marginTop: '12px',
                         paddingTop: '8px',
                         borderTop: '1px solid #e5e7eb',
                         fontSize: '0.7em',
@@ -517,7 +556,7 @@ function MATrackerEnhanced() {
                         fontWeight: '500',
                         textAlign: 'center'
                       }}>
-                        Click for analysis
+                        Click for full analysis
                       </div>
                     </div>
                   ))}
