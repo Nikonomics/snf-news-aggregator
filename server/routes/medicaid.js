@@ -349,4 +349,117 @@ ${policiesContext}`;
   }
 });
 
+// GET revenue levers for a specific state
+router.get('/revenue-levers/:state', (req, res) => {
+  try {
+    const { state } = req.params;
+    const stateData = medicaidPolicies[state];
+
+    if (!stateData) {
+      return res.status(404).json({ error: 'State not found' });
+    }
+
+    // Extract revenue-relevant policies
+    const revenueLevers = {
+      state: state,
+      addOns: [],
+      incentives: [],
+      keyTimingFactors: {},
+      revenueProtection: {}
+    };
+
+    // Process each policy
+    stateData.policies.forEach(policy => {
+      const policyName = policy.policyName.toLowerCase();
+      const category = policy.category.toLowerCase();
+
+      // Add-on services (ventilator, mental health, etc.)
+      if (policyName.includes('ventilator') ||
+          policyName.includes('mental health') ||
+          policyName.includes('cognitive impairment') ||
+          policyName.includes('high-need') ||
+          policyName.includes('bariatric') ||
+          policyName.includes('trach')) {
+        revenueLevers.addOns.push({
+          name: policy.policyName,
+          summary: policy.summary,
+          available: policy.summary && policy.summary !== 'None found',
+          details: policy.sourceLanguage
+        });
+      }
+
+      // Incentive payments
+      if (category.includes('incentive') ||
+          policyName.includes('quality') ||
+          policyName.includes('pay for performance') ||
+          policyName.includes('efficiency')) {
+        revenueLevers.incentives.push({
+          name: policy.policyName,
+          summary: policy.summary,
+          available: policy.summary && policy.summary !== 'None found',
+          details: policy.sourceLanguage
+        });
+      }
+
+      // Rebasing frequency (critical timing)
+      if (policyName.includes('rebasing')) {
+        revenueLevers.keyTimingFactors.rebasing = {
+          frequency: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Cost report (critical for rate setting)
+      if (policyName.includes('cost report')) {
+        revenueLevers.keyTimingFactors.costReport = {
+          type: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Basic payment approach
+      if (policyName.includes('basic payment')) {
+        revenueLevers.keyTimingFactors.paymentApproach = {
+          method: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Bed-hold policy (revenue protection)
+      if (policyName.includes('bed-hold') || policyName.includes('bed hold')) {
+        revenueLevers.revenueProtection.bedHold = {
+          policy: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Acuity system (impacts rates)
+      if (policyName.includes('acuity')) {
+        revenueLevers.keyTimingFactors.acuitySystem = {
+          system: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+    });
+
+    // Calculate summary stats
+    const availableAddOns = revenueLevers.addOns.filter(a => a.available).length;
+    const availableIncentives = revenueLevers.incentives.filter(i => i.available).length;
+
+    res.json({
+      success: true,
+      ...revenueLevers,
+      summary: {
+        totalAddOns: availableAddOns,
+        totalIncentives: availableIncentives,
+        hasRebasingInfo: !!revenueLevers.keyTimingFactors.rebasing,
+        hasBedHoldPolicy: !!revenueLevers.revenueProtection.bedHold
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching revenue levers:', error);
+    res.status(500).json({ error: 'Failed to fetch revenue levers' });
+  }
+});
+
 export default router;

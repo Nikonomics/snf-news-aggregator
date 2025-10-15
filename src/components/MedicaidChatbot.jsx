@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, FileText, ExternalLink, Loader, AlertCircle, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Send, FileText, ExternalLink, Loader, AlertCircle, Zap, ChevronDown, ChevronUp, DollarSign, TrendingUp, Calendar, Award, Shield, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { getMedicaidStates, askMedicaidQuestion } from '../services/apiService';
+import { getMedicaidStates, askMedicaidQuestion, getRevenueLevers } from '../services/apiService';
 import './MedicaidChatbot.css';
 
 function MedicaidChatbot() {
@@ -13,6 +13,7 @@ function MedicaidChatbot() {
   const [error, setError] = useState(null);
   const [deepAnalysis, setDeepAnalysis] = useState(false);
   const [expandedCitations, setExpandedCitations] = useState({});
+  const [stateRevenueLevers, setStateRevenueLevers] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Load states on mount
@@ -167,12 +168,12 @@ function MedicaidChatbot() {
   };
 
   const exampleQuestions = [
-    "What is the basic payment policy approach?",
-    "How often are rates rebased?",
-    "What is the bed-hold policy?",
-    "Are there any quality incentive payments?",
-    "What cost centers are used for rate calculation?",
-    "How are case-mix adjustments calculated?"
+    "What add-on services can increase my reimbursement?",
+    "Are there quality incentive payments available?",
+    "When do rates get rebased in this state?",
+    "What's the bed-hold policy?",
+    "Are there payments for ventilator or behavioral health units?",
+    "How can I maximize revenue through cost reporting?"
   ];
 
   return (
