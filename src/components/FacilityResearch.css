@@ -1,39 +1,39 @@
 .facility-research {
-  padding: 24px;
+  padding: 16px 24px 24px 24px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .research-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 12px;
 }
 
 .research-header h1 {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #1f2937;
 }
 
 .research-header .subtitle {
-  font-size: 16px;
+  font-size: 14px;
   color: #6b7280;
 }
 
 .search-section {
-  margin-bottom: 32px;
+  margin-bottom: 12px;
 }
 
 .search-box {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 10px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
 }
 
 .search-icon {
@@ -54,17 +54,17 @@
 }
 
 .search-button {
-  padding: 12px 24px;
+  padding: 8px 16px;
   background: #2563eb;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: background 0.2s;
 }
 
@@ -79,8 +79,8 @@
 
 .examples-section {
   background: #f9fafb;
-  padding: 24px;
-  border-radius: 12px;
+  padding: 12px;
+  border-radius: 8px;
 }
 
 .examples-section h3 {
@@ -141,17 +141,17 @@
 }
 
 .results-section {
-  margin-top: 32px;
+  margin-top: 12px;
 }
 
 .results-header {
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 
 .results-header h2 {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
   color: #1f2937;
 }
 
@@ -187,15 +187,16 @@
 .facilities-by-ownership {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 12px;
 }
 
 .ownership-group {
   background: #f9fafb;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
   border: 1px solid #e5e7eb;
   transition: all 0.3s ease;
+  margin-bottom: 8px;
 }
 
 .ownership-group.selected {
@@ -208,7 +209,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   padding-bottom: 12px;
   border-bottom: 2px solid #e5e7eb;
   transition: all 0.2s ease;
@@ -315,21 +316,22 @@
 
 .facilities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
 }
 
 .facility-card {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 10px;
   transition: all 0.2s;
-  min-width: 340px;
-  max-width: 380px;
+  min-width: 280px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   height: 100%;
+  font-size: 0.9rem;
 }
 
 .facility-card:hover {
@@ -342,7 +344,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   gap: 12px;
 }
 
@@ -527,13 +529,13 @@
 .filters-panel {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
 }
 
 .filter-section {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .filter-section:last-child {
@@ -602,6 +604,12 @@
 .clear-ownership-btn:hover {
   background: #2563eb;
   color: white;
+}
+
+.map-stats {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .map-legend {

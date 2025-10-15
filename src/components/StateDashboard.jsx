@@ -3,13 +3,14 @@ import { useParams, Link } from 'react-router-dom'
 import {
   MapPin, TrendingUp, TrendingDown, Minus, Building2,
   ExternalLink, Linkedin, Globe, AlertCircle, Calendar,
-  ArrowLeft, Loader, Newspaper, BarChart3, Users
+  ArrowLeft, Loader, Newspaper, BarChart3, Users, AlertTriangle
 } from 'lucide-react'
 import ArticleList from './ArticleList'
 import MetricsCardGrid from './MetricsCardGrid'
 import FacilityTable from './FacilityTable'
 import RegulatoryAlerts from './RegulatoryAlerts'
 import DashboardSkeleton from './DashboardSkeleton'
+import GoogleStateMarketMap from './GoogleStateMarketMap'
 import StateMarketMap from './StateMarketMap'
 import './StateDashboard.css'
 
@@ -21,6 +22,7 @@ function StateDashboard() {
   const [error, setError] = useState(null)
   const [stateData, setStateData] = useState(null)
   const [activeTab, setActiveTab] = useState('news')
+  const [intelligenceSubTab, setIntelligenceSubTab] = useState('facilities') // 'facilities' or 'market-analysis'
   const [dashboardData, setDashboardData] = useState(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
   const [scorecardData, setScorecardData] = useState(null)
@@ -659,28 +661,61 @@ function StateDashboard() {
             </div>
           ) : dashboardData ? (
             <>
-              {/* State Market Map */}
-              <section className="market-map-section">
-                <h2 className="section-title">
-                  <MapPin size={24} />
-                  {stateCode} Market Map
-                </h2>
-                <StateMarketMap stateCode={stateCode} />
-              </section>
+              {/* Sub-tabs for Market Intelligence */}
+              <div className="intelligence-subtabs">
+                <button
+                  className={`subtab-btn ${intelligenceSubTab === 'facilities' ? 'active' : ''}`}
+                  onClick={() => setIntelligenceSubTab('facilities')}
+                >
+                  <Building2 size={18} />
+                  Facility Explorer
+                </button>
+                <button
+                  className={`subtab-btn ${intelligenceSubTab === 'market-analysis' ? 'active' : ''}`}
+                  onClick={() => setIntelligenceSubTab('market-analysis')}
+                >
+                  <BarChart3 size={18} />
+                  Market Analysis
+                </button>
+                <button
+                  className={`subtab-btn ${intelligenceSubTab === 'regulatory' ? 'active' : ''}`}
+                  onClick={() => setIntelligenceSubTab('regulatory')}
+                >
+                  <AlertTriangle size={18} />
+                  Regulatory
+                </button>
+              </div>
 
-              {/* Regulatory Alerts */}
-              {dashboardData.regulatoryAlerts && (
-                <RegulatoryAlerts alerts={dashboardData.regulatoryAlerts} />
+              {/* Facility Explorer Sub-tab */}
+              {intelligenceSubTab === 'facilities' && (
+                <>
+                  {/* Google Map with Filters */}
+                  <section className="market-map-section">
+                    <GoogleStateMarketMap stateCode={stateCode} />
+                  </section>
+
+                  {/* Facility Table */}
+                  {dashboardData.facilities && (
+                    <section className="table-section">
+                      <FacilityTable facilities={dashboardData.facilities} />
+                    </section>
+                  )}
+                </>
               )}
 
-              {/* Facility Table */}
-              {dashboardData.facilities && (
-                <section className="table-section">
-                  <FacilityTable facilities={dashboardData.facilities} />
-                </section>
-              )}
+              {/* Market Analysis Sub-tab */}
+              {intelligenceSubTab === 'market-analysis' && (
+                <>
+                  {/* County Analysis Map */}
+                  <section className="market-map-section">
+                    <h2 className="section-title">
+                      <MapPin size={24} />
+                      County Analysis
+                    </h2>
+                    <StateMarketMap stateCode={stateCode} />
+                  </section>
 
-              {/* Top Operators */}
+                  {/* Top Operators */}
               {dashboardData.topOperators && (dashboardData.topOperators.byFacilities || dashboardData.topOperators.byBeds) && (
                 <section className="top-operators-section">
                   <h2 className="section-title">
@@ -772,6 +807,19 @@ function StateDashboard() {
                     </div>
                   ))}
                 </section>
+              )}
+
+                </>
+              )}
+
+              {/* Regulatory Sub-tab */}
+              {intelligenceSubTab === 'regulatory' && (
+                <>
+                  {/* Regulatory Alerts */}
+                  {dashboardData.regulatoryAlerts && (
+                    <RegulatoryAlerts alerts={dashboardData.regulatoryAlerts} />
+                  )}
+                </>
               )}
 
               {/* Prototype Notice */}

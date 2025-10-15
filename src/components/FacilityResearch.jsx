@@ -1,22 +1,66 @@
 import { useState, useEffect } from 'react'
 import { Search, Loader, MapPin, Building2, Star, Users, TrendingUp, AlertCircle, Filter, X } from 'lucide-react'
-import { geoPath, geoAlbersUsa } from 'd3-geo'
-import { feature } from 'topojson-client'
+import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api'
 import './FacilityResearch.css'
+
+const GOOGLE_MAPS_LIBRARIES = ['places', 'geocoding']
+
+// Minimal Google Maps styling
+const mapStyles = [
+  {
+    featureType: 'all',
+    elementType: 'labels',
+    stylers: [{ visibility: 'on' }, { saturation: -100 }, { lightness: 40 }]
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ lightness: 100 }, { visibility: 'simplified' }]
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#d4e9f7' }]
+  },
+  {
+    featureType: 'landscape',
+    elementType: 'geometry',
+    stylers: [{ color: '#f5f5f5' }]
+  },
+  {
+    featureType: 'poi',
+    elementType: 'all',
+    stylers: [{ visibility: 'off' }]
+  },
+  {
+    featureType: 'transit',
+    elementType: 'all',
+    stylers: [{ visibility: 'off' }]
+  },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#c9c9c9' }, { weight: 1 }]
+  }
+]
 
 function FacilityResearch() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
-  const [topoStatesData, setTopoStatesData] = useState(null)
   const [selectedStates, setSelectedStates] = useState([])
   const [selectedChains, setSelectedChains] = useState([])
   const [showFilters, setShowFilters] = useState(true)
   const [availableChains, setAvailableChains] = useState([])
-  const [hoveredState, setHoveredState] = useState(null)
-  const [hoveredFacility, setHoveredFacility] = useState(null)
-  const [selectedOwnership, setSelectedOwnership] = useState(null)
+  const [selectedFacility, setSelectedFacility] = useState(null)
+  const [geocodedFacilities, setGeocodedFacilities] = useState([])
+  const [geocoding, setGeocoding] = useState(false)
+
+  const { isLoaded: mapsLoaded } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES
+  })
 
   const exampleQueries = [
     "Show me all skilled nursing facilities that are part of an ownership group of 10 or less in the Pacific Northwest",
@@ -60,18 +104,7 @@ function FacilityResearch() {
     Object.entries(stateCodeToFips).map(([code, fips]) => [fips, code])
   )
 
-  // Load TopoJSON data for map
-  useEffect(() => {
-    fetch('/us-states-10m.json')
-      .then(response => response.json())
-      .then(topology => {
-        const geojson = feature(topology, topology.objects.states)
-        setTopoStatesData(geojson.features)
-      })
-      .catch(error => {
-        console.error('Error loading state data:', error)
-      })
-  }, [])
+  // Removed TopoJSON loading - now using Google Maps
 
   // Load available chains
   useEffect(() => {
@@ -84,6 +117,54 @@ function FacilityResearch() {
       setAvailableChains(chains)
     }
   }, [results])
+
+  // Geocode facilities when results change
+  useEffect(() => {
+    if (!mapsLoaded || !results || !results.results) return
+
+    const geocodeFacilities = async () => {
+      setGeocoding(true)
+      const geocoder = new window.google.maps.Geocoder()
+      const geocoded = []
+
+      // Limit to first 100 facilities to avoid API rate limits
+      const facilitiesToGeocode = results.results.slice(0, 100)
+
+      for (const facility of facilitiesToGeocode) {
+        const address = `${facility.address || ''}, ${facility.city || ''}, ${facility.state || ''} ${facility.zip || ''}`.trim()
+
+        if (!address || address === ', ,') continue
+
+        try {
+          const result = await new Promise((resolve, reject) => {
+            geocoder.geocode({ address }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                resolve(results[0])
+              } else {
+                reject(status)
+              }
+            })
+          })
+
+          geocoded.push({
+            ...facility,
+            lat: result.geometry.location.lat(),
+            lng: result.geometry.location.lng()
+          })
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 50))
+        } catch (error) {
+          console.warn(`Failed to geocode ${facility.facility_name}:`, error)
+        }
+      }
+
+      setGeocodedFacilities(geocoded)
+      setGeocoding(false)
+    }
+
+    geocodeFacilities()
+  }, [results, mapsLoaded])
 
   const handleSearch = async (searchQuery = query) => {
     if (!searchQuery.trim()) return
@@ -210,28 +291,19 @@ function FacilityResearch() {
 
   // Get facilities with valid coordinates for mapping
   const getFacilitiesForMap = () => {
-    if (!filteredResults || !filteredResults.results) return []
+    let facilities = geocodedFacilities.filter(f => f.lat && f.lng)
 
-    let facilities = filteredResults.results.filter(f =>
-      f.latitude && f.longitude &&
-      !isNaN(f.latitude) && !isNaN(f.longitude)
-    )
-
-    // If an ownership is selected, only show those facilities
-    if (selectedOwnership) {
+    // Filter by selected chains (from checkboxes)
+    if (selectedChains.length > 0) {
       facilities = facilities.filter(f => {
         const chain = f.ownership_chain || 'Independent / Other'
-        return chain === selectedOwnership
+        return selectedChains.includes(chain)
       })
     }
 
     return facilities
   }
 
-  const handleOwnershipClick = (chain) => {
-    // Toggle selection - if already selected, deselect it
-    setSelectedOwnership(selectedOwnership === chain ? null : chain)
-  }
 
   // Get marker color based on facility rating
   const getMarkerColor = (facility) => {
@@ -485,19 +557,13 @@ function FacilityResearch() {
                 <div className="map-header">
                   <div className="map-title-section">
                     <h3>Filter by State (click on map)</h3>
-                    {selectedOwnership && (
-                      <div className="map-filter-notice">
-                        Showing: <strong>{selectedOwnership}</strong>
-                        <button
-                          className="clear-ownership-btn"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedOwnership(null)
-                          }}
-                          title="Show all facilities"
-                        >
-                          <X size={14} />
-                        </button>
+                    {filteredResults && (
+                      <div className="map-stats">
+                        {geocoding ? (
+                          <>Geocoding addresses... ({geocodedFacilities.length} of {Math.min(100, filteredResults.total)} complete)</>
+                        ) : (
+                          <>{getFacilitiesForMap().length} facilities mapped{filteredResults.total > 100 && ' (showing first 100)'}</>
+                        )}
                       </div>
                     )}
                   </div>
@@ -520,93 +586,72 @@ function FacilityResearch() {
                     </div>
                   </div>
                 </div>
-                {topoStatesData && (
-                  <div style={{ position: 'relative' }}>
-                    <svg viewBox="0 0 960 600" className="us-map">
-                      {/* States */}
-                      <g>
-                        {topoStatesData.map((state) => {
-                          const projection = geoAlbersUsa()
-                          const pathGenerator = geoPath().projection(projection)
-                          const stateCode = fipsToStateCode[state.id]
-
-                          return (
-                            <path
-                              key={state.id}
-                              d={pathGenerator(state)}
-                              fill={getStateFillColor(stateCode)}
-                              stroke="#fff"
-                              strokeWidth={1}
-                              className="state-path"
-                              onMouseEnter={() => setHoveredState(stateCode)}
-                              onMouseLeave={() => setHoveredState(null)}
-                              onClick={() => handleStateClick(stateCode)}
-                              style={{ cursor: 'pointer' }}
-                            />
-                          )
-                        })}
-                      </g>
-
+                {mapsLoaded && (
+                  <div style={{ position: 'relative', height: '600px', width: '100%' }}>
+                    <GoogleMap
+                      mapContainerStyle={{ width: '100%', height: '100%', borderRadius: '8px' }}
+                      center={{ lat: 39.8283, lng: -98.5795 }} // Center of USA
+                      zoom={4}
+                      options={{
+                        styles: mapStyles,
+                        disableDefaultUI: false,
+                        zoomControl: true,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: true,
+                      }}
+                    >
                       {/* Facility Markers */}
-                      <g className="facility-markers">
-                        {getFacilitiesForMap().map((facility) => {
-                          const projection = geoAlbersUsa()
-                          const coords = projection([
-                            parseFloat(facility.longitude),
-                            parseFloat(facility.latitude)
-                          ])
+                      {getFacilitiesForMap().map((facility) => (
+                        <Marker
+                          key={facility.id || facility.federal_provider_number}
+                          position={{ lat: facility.lat, lng: facility.lng }}
+                          onClick={() => setSelectedFacility(facility)}
+                          icon={{
+                            path: window.google.maps.SymbolPath.CIRCLE,
+                            fillColor: getMarkerColor(facility),
+                            fillOpacity: 0.85,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2,
+                            scale: 7
+                          }}
+                        />
+                      ))}
 
-                          if (!coords) return null // Skip if projection fails (e.g., Alaska, Hawaii)
-
-                          const [x, y] = coords
-                          const markerSize = getMarkerSize(facility)
-                          const markerColor = getMarkerColor(facility)
-                          const isHovered = hoveredFacility?.id === facility.id
-
-                          return (
-                            <g key={facility.id}>
-                              <circle
-                                cx={x}
-                                cy={y}
-                                r={isHovered ? markerSize * 1.5 : markerSize}
-                                fill={markerColor}
-                                stroke={isHovered ? '#1f2937' : '#fff'}
-                                strokeWidth={isHovered ? 2 : 1}
-                                opacity={0.8}
-                                className="facility-marker"
-                                onMouseEnter={() => setHoveredFacility(facility)}
-                                onMouseLeave={() => setHoveredFacility(null)}
-                                style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                              />
-                            </g>
-                          )
-                        })}
-                      </g>
-                    </svg>
-
-                    {/* Tooltip for hovered facility */}
-                    {hoveredFacility && (
-                      <div className="map-tooltip">
-                        <div className="tooltip-header">
-                          <strong>{hoveredFacility.facility_name}</strong>
-                          {hoveredFacility.overall_rating && (
-                            <div className="tooltip-rating">
-                              <Star size={12} fill="#fbbf24" stroke="#fbbf24" />
-                              {hoveredFacility.overall_rating}
+                      {/* Info Window */}
+                      {selectedFacility && selectedFacility.lat && selectedFacility.lng && (
+                        <InfoWindow
+                          position={{
+                            lat: selectedFacility.lat,
+                            lng: selectedFacility.lng
+                          }}
+                          onCloseClick={() => setSelectedFacility(null)}
+                        >
+                          <div style={{ padding: '0.5rem', maxWidth: '300px' }}>
+                            <div style={{ marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid #e2e8f0' }}>
+                              <strong style={{ fontSize: '1rem', color: '#1e293b' }}>{selectedFacility.facility_name}</strong>
+                              {selectedFacility.overall_rating && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem', color: '#fbbf24' }}>
+                                  <Star size={12} fill="#fbbf24" stroke="#fbbf24" />
+                                  <span>{selectedFacility.overall_rating} stars</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="tooltip-details">
-                          <div>{hoveredFacility.city}, {hoveredFacility.state}</div>
-                          {hoveredFacility.total_beds && (
-                            <div>{hoveredFacility.total_beds} beds</div>
-                          )}
-                          {hoveredFacility.ownership_chain && (
-                            <div className="tooltip-chain">{hoveredFacility.ownership_chain}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                            <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                              <div style={{ marginBottom: '0.25rem' }}>{selectedFacility.city}, {selectedFacility.state}</div>
+                              {selectedFacility.total_beds && (
+                                <div style={{ marginBottom: '0.25rem' }}>{selectedFacility.total_beds} beds</div>
+                              )}
+                              {selectedFacility.ownership_chain && (
+                                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0', fontSize: '0.85rem', fontWeight: 500 }}>
+                                  {selectedFacility.ownership_chain}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </InfoWindow>
+                      )}
+                    </GoogleMap>
                   </div>
                 )}
                 {selectedStates.length > 0 && (
@@ -665,26 +710,12 @@ function FacilityResearch() {
 
           <div className="facilities-by-ownership">
             {Object.entries(groupedFacilities()).map(([chain, facilities]) => (
-              <div
-                key={chain}
-                className={`ownership-group ${selectedOwnership === chain ? 'selected' : ''}`}
-              >
-                <div
-                  className="ownership-header"
-                  onClick={() => handleOwnershipClick(chain)}
-                  style={{ cursor: 'pointer' }}
-                  title="Click to show/hide these facilities on map"
-                >
+              <div key={chain} className="ownership-group">
+                <div className="ownership-header">
                   <div className="ownership-info">
                     <Building2 size={20} />
                     <h3>{chain}</h3>
                     <span className="facility-count">{facilities.length} facilities</span>
-                    {selectedOwnership === chain && (
-                      <span className="map-indicator">
-                        <MapPin size={14} />
-                        On map
-                      </span>
-                    )}
                   </div>
                   {chain !== 'Independent / Other' && facilities[0]?.chain_facility_count && (
                     <span className="total-chain-size">

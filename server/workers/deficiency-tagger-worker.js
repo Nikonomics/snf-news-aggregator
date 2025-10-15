@@ -37,34 +37,34 @@ async function fetchAndUpdateDeficienciesForProvider(providerId) {
     let updated = 0
 
     for (const record of data.results) {
-      // Only update if the survey is from the last 3 years
+      // Only process if the survey is from the last 3 years
       const surveyDate = parseDate(record.survey_date)
       if (!surveyDate || surveyDate < threeYearsAgo) {
         continue // Skip old deficiencies
       }
 
+      // Match by deficiency_text since that's what's already in the DB
+      // Update records that have matching text but missing tags
       const result = await pool.query(`
         UPDATE cms_facility_deficiencies
         SET
           deficiency_tag = $1,
           deficiency_prefix = $2,
-          scope_severity = $3,
-          deficiency_text = $4
+          scope_severity = $3
         WHERE
-          federal_provider_number = $5
-          AND survey_date = $6
-          AND survey_type = $7
-          AND survey_date >= $8
+          federal_provider_number = $4
+          AND survey_date = $5
+          AND survey_type = $6
+          AND deficiency_text = $7
           AND (deficiency_tag IS NULL OR scope_severity IS NULL)
       `, [
         record.deficiency_tag_number,
         record.deficiency_prefix,
         record.scope_severity_code,
-        record.deficiency_description,
         record.cms_certification_number_ccn,
         surveyDate,
         record.survey_type,
-        threeYearsAgo
+        record.deficiency_description
       ])
 
       if (result.rowCount > 0) {

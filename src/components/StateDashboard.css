@@ -234,6 +234,43 @@
   transition: all 0.15s ease;
 }
 
+/* Intelligence Sub-tabs */
+.intelligence-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+  background: #f8fafc;
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.subtab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.subtab-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #475569;
+}
+
+.subtab-btn.active {
+  background: white;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .tab-button svg {
   width: 16px;
   height: 16px;
