@@ -55,6 +55,7 @@ async function fetchAndUpdateDeficienciesForProvider(providerId) {
           AND survey_date = $6
           AND survey_type = $7
           AND survey_date >= $8
+          AND (deficiency_tag IS NULL OR scope_severity IS NULL)
       `, [
         record.deficiency_tag_number,
         record.deficiency_prefix,
