@@ -377,8 +377,13 @@ function MATrackerEnhanced() {
         )}
       </div>
 
-      {/* Quarterly Deals Chart */}
-      <QuarterlyDealsChart dealsByMonth={stats.dealsByMonth} />
+      {/* Quarterly Deals Chart - Left Column Only */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <QuarterlyDealsChart dealsByMonth={stats.dealsByMonth} />
+        </div>
+        <div style={{ width: '320px', flexShrink: 0 }}></div>
+      </div>
 
       {/* Deal Cards with Enhanced Data */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -537,7 +542,7 @@ function QuarterlyDealsChart({ dealsByMonth }) {
   const maxCount = Math.max(...data.map(d => d.count), 1)
 
   return (
-    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', marginBottom: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <PieChart size={20} style={{ color: '#3b82f6' }} />
         Quarterly Deal Activity
