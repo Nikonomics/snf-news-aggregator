@@ -23,3 +23,17 @@ services:
         value: 500
       - key: DEDUP_MAX_CANDIDATES
         value: 5
+
+  # Background worker for deficiency tagging
+  - type: worker
+    name: deficiency-tagger-worker
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && node workers/deficiency-tagger-worker.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: DATABASE_URL
+        sync: false
