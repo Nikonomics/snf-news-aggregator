@@ -278,115 +278,104 @@ function MATrackerEnhanced() {
         </div>
       )}
 
-      {/* Overview Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <Building2 size={24} style={{ color: '#3b82f6' }} />
-            <h3 style={{ fontSize: '0.9em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Deals</h3>
+      {/* Overview Stats and Leaderboard Side-by-Side */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', alignItems: 'flex-start' }}>
+
+        {/* Stats Cards */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <Building2 size={20} style={{ color: '#3b82f6' }} />
+              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Deals</h3>
+            </div>
+            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalDeals}</div>
           </div>
-          <div style={{ fontSize: '2.5em', fontWeight: '700', color: '#111827' }}>{stats.totalDeals}</div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <MapPin size={20} style={{ color: '#10b981' }} />
+              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Facilities</h3>
+            </div>
+            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.totalFacilities}</div>
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <DollarSign size={20} style={{ color: '#f59e0b' }} />
+              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Deals w/ Value</h3>
+            </div>
+            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.dealsWithValue}</div>
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <Users size={20} style={{ color: '#8b5cf6' }} />
+              <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Active Acquirers</h3>
+            </div>
+            <div style={{ fontSize: '2.2em', fontWeight: '700', color: '#111827' }}>{stats.topAcquirers.length}</div>
+          </div>
         </div>
 
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <MapPin size={24} style={{ color: '#10b981' }} />
-            <h3 style={{ fontSize: '0.9em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Total Facilities</h3>
-          </div>
-          <div style={{ fontSize: '2.5em', fontWeight: '700', color: '#111827' }}>{stats.totalFacilities}</div>
-        </div>
+        {/* YTD Leaderboard - Compact Right Column */}
+        {leaderboard && leaderboard.leaderboard && leaderboard.leaderboard.length > 0 && (
+          <div style={{ width: '320px', flexShrink: 0, backgroundColor: 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '2px solid #f59e0b' }}>
+              <h3 style={{ fontSize: '0.95em', fontWeight: '700', color: '#111827', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Award size={18} style={{ color: '#f59e0b' }} />
+                {leaderboard.year} Leaderboard
+              </h3>
+              <p style={{ color: '#6b7280', fontSize: '0.75em', margin: 0 }}>
+                Top acquirers by deal count
+              </p>
+            </div>
 
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <DollarSign size={24} style={{ color: '#f59e0b' }} />
-            <h3 style={{ fontSize: '0.9em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Deals w/ Value</h3>
-          </div>
-          <div style={{ fontSize: '2.5em', fontWeight: '700', color: '#111827' }}>{stats.dealsWithValue}</div>
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+              {leaderboard.leaderboard.slice(0, 10).map((acquirer, index) => (
+                <div
+                  key={acquirer.acquirer}
+                  style={{
+                    padding: '10px',
+                    backgroundColor: index < 3 ? '#fef3c7' : '#f9fafb',
+                    borderRadius: '6px',
+                    border: index < 3 ? '1px solid #fbbf24' : '1px solid #e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  {/* Rank */}
+                  <div style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    backgroundColor: index === 0 ? '#fbbf24' : index === 1 ? '#d1d5db' : index === 2 ? '#f59e0b' : '#e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '700',
+                    fontSize: '0.8em',
+                    color: index < 3 ? 'white' : '#6b7280',
+                    flexShrink: 0
+                  }}>
+                    {index + 1}
+                  </div>
 
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <Users size={24} style={{ color: '#8b5cf6' }} />
-            <h3 style={{ fontSize: '0.9em', fontWeight: '600', color: '#6b7280', margin: 0 }}>Active Acquirers</h3>
+                  {/* Acquirer Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: '600', fontSize: '0.85em', color: '#111827', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {acquirer.acquirer}
+                    </div>
+                    <div style={{ fontSize: '0.7em', color: '#6b7280' }}>
+                      {acquirer.dealCount} deal{acquirer.dealCount !== 1 ? 's' : ''}
+                      {acquirer.totalBeds > 0 && ` • ${acquirer.totalBeds} beds`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ fontSize: '2.5em', fontWeight: '700', color: '#111827' }}>{stats.topAcquirers.length}</div>
-        </div>
+        )}
       </div>
-
-      {/* YTD Leaderboard */}
-      {leaderboard && leaderboard.leaderboard && leaderboard.leaderboard.length > 0 && (
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', marginBottom: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '1.3em', fontWeight: '700', color: '#111827', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Award size={24} style={{ color: '#f59e0b' }} />
-              {leaderboard.year} YTD Acquisition Leaderboard
-            </h2>
-            <p style={{ color: '#6b7280', fontSize: '0.95em' }}>
-              Top acquirers ranked by total beds acquired • {leaderboard.summary.totalDeals} deals • {leaderboard.summary.totalBeds.toLocaleString()} beds • {leaderboard.summary.totalFacilities.toLocaleString()} facilities
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {leaderboard.leaderboard.slice(0, 10).map((acquirer, index) => (
-              <div
-                key={acquirer.acquirer}
-                style={{
-                  padding: '16px',
-                  backgroundColor: index < 3 ? '#fef3c7' : '#f9fafb',
-                  borderRadius: '8px',
-                  border: index < 3 ? '2px solid #fbbf24' : '1px solid #e5e7eb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px'
-                }}
-              >
-                {/* Rank */}
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: index === 0 ? '#fbbf24' : index === 1 ? '#d1d5db' : index === 2 ? '#f59e0b' : '#e5e7eb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '700',
-                  fontSize: '1.1em',
-                  color: index < 3 ? 'white' : '#6b7280',
-                  flexShrink: 0
-                }}>
-                  #{index + 1}
-                </div>
-
-                {/* Acquirer Name */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '700', fontSize: '1.05em', color: '#111827', marginBottom: '4px' }}>
-                    {acquirer.acquirer}
-                  </div>
-                  <div style={{ fontSize: '0.85em', color: '#6b7280' }}>
-                    {acquirer.dealCount} {acquirer.dealCount === 1 ? 'deal' : 'deals'}
-                  </div>
-                </div>
-
-                {/* Metrics */}
-                <div style={{ display: 'flex', gap: '24px', flexShrink: 0 }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75em', color: '#6b7280', fontWeight: '600', marginBottom: '2px' }}>BEDS</div>
-                    <div style={{ fontSize: '1.3em', fontWeight: '700', color: '#3b82f6' }}>
-                      {acquirer.totalBeds.toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75em', color: '#6b7280', fontWeight: '600', marginBottom: '2px' }}>FACILITIES</div>
-                    <div style={{ fontSize: '1.3em', fontWeight: '700', color: '#10b981' }}>
-                      {acquirer.totalFacilities.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Deal Cards with Enhanced Data */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
