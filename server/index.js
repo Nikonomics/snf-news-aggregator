@@ -1305,10 +1305,16 @@ app.get('/api/ma/acquirer-leaderboard', async (req, res) => {
       })
     })
 
-    // Convert to array and sort by total beds
+    // Convert to array and sort by deal count, then total beds
     const leaderboard = Object.values(acquirerStats)
-      .filter(a => a.totalBeds > 0)  // Only include acquirers with bed data
-      .sort((a, b) => b.totalBeds - a.totalBeds)
+      .sort((a, b) => {
+        // Primary sort by deal count
+        if (b.dealCount !== a.dealCount) {
+          return b.dealCount - a.dealCount
+        }
+        // Secondary sort by total beds (if available)
+        return b.totalBeds - a.totalBeds
+      })
 
     res.json({
       success: true,
