@@ -67,26 +67,36 @@ async function fetchAndUpdateDeficienciesForProvider(providerId) {
 }
 
 async function getProvidersNeedingUpdates(limit) {
+  // Only process deficiencies from the last 3 years
+  const threeYearsAgo = new Date()
+  threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
+
   const query = `
     SELECT DISTINCT federal_provider_number, COUNT(*) as deficiency_count
     FROM cms_facility_deficiencies
-    WHERE deficiency_tag IS NULL OR scope_severity IS NULL
+    WHERE (deficiency_tag IS NULL OR scope_severity IS NULL)
+      AND survey_date >= $1
     GROUP BY federal_provider_number
     ORDER BY deficiency_count DESC
-    LIMIT $1
+    LIMIT $2
   `
-  const result = await pool.query(query, [limit])
+  const result = await pool.query(query, [threeYearsAgo, limit])
   return result.rows
 }
 
 async function getProgress() {
+  // Only count deficiencies from the last 3 years
+  const threeYearsAgo = new Date()
+  threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
+
   const result = await pool.query(`
     SELECT
       COUNT(*) as total,
       COUNT(deficiency_tag) as tagged,
       COUNT(*) - COUNT(deficiency_tag) as remaining
     FROM cms_facility_deficiencies
-  `)
+    WHERE survey_date >= $1
+  `, [threeYearsAgo])
   return result.rows[0]
 }
 
