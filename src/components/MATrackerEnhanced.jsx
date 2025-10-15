@@ -377,6 +377,9 @@ function MATrackerEnhanced() {
         )}
       </div>
 
+      {/* Quarterly Deals Chart */}
+      <QuarterlyDealsChart dealsByMonth={stats.dealsByMonth} />
+
       {/* Deal Cards with Enhanced Data */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: '1.3em', fontWeight: '700', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -490,6 +493,124 @@ function MATrackerEnhanced() {
           onClose={() => setSelectedDeal(null)}
         />
       )}
+    </div>
+  )
+}
+
+// Quarterly Deals Chart Component
+function QuarterlyDealsChart({ dealsByMonth }) {
+  // Convert monthly data to quarterly data for last 3 years
+  const getQuarterlyData = () => {
+    const currentYear = new Date().getFullYear()
+    const startYear = currentYear - 2 // Last 3 years
+
+    const quarterlyData = {}
+
+    // Initialize all quarters for last 3 years
+    for (let year = startYear; year <= currentYear; year++) {
+      for (let q = 1; q <= 4; q++) {
+        quarterlyData[`${year} Q${q}`] = 0
+      }
+    }
+
+    // Aggregate monthly data into quarters
+    Object.entries(dealsByMonth || {}).forEach(([monthStr, count]) => {
+      const [year, month] = monthStr.split('-').map(Number)
+      if (year >= startYear && year <= currentYear) {
+        const quarter = Math.ceil(month / 3)
+        const key = `${year} Q${quarter}`
+        quarterlyData[key] += count
+      }
+    })
+
+    // Convert to array and sort chronologically
+    return Object.entries(quarterlyData)
+      .sort(([a], [b]) => {
+        const [yearA, qA] = a.split(' Q')
+        const [yearB, qB] = b.split(' Q')
+        return yearA === yearB ? Number(qA) - Number(qB) : Number(yearA) - Number(yearB)
+      })
+      .map(([quarter, count]) => ({ quarter, count }))
+  }
+
+  const data = getQuarterlyData()
+  const maxCount = Math.max(...data.map(d => d.count), 1)
+
+  return (
+    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', marginBottom: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <PieChart size={20} style={{ color: '#3b82f6' }} />
+        Quarterly Deal Activity
+      </h3>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '200px', padding: '0 10px' }}>
+        {data.map(({ quarter, count }) => {
+          const height = maxCount > 0 ? (count / maxCount) * 160 : 0
+
+          return (
+            <div key={quarter} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              {/* Bar */}
+              <div style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                height: '160px',
+                position: 'relative'
+              }}>
+                <div
+                  style={{
+                    width: '100%',
+                    height: `${height}px`,
+                    backgroundColor: count > 0 ? '#3b82f6' : '#e5e7eb',
+                    borderRadius: '4px 4px 0 0',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (count > 0) {
+                      e.currentTarget.style.backgroundColor = '#2563eb'
+                      e.currentTarget.style.transform = 'scaleY(1.05)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (count > 0) {
+                      e.currentTarget.style.backgroundColor = '#3b82f6'
+                      e.currentTarget.style.transform = 'scaleY(1)'
+                    }
+                  }}
+                >
+                  {count > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-20px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: '0.75em',
+                      fontWeight: '600',
+                      color: '#111827'
+                    }}>
+                      {count}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Label */}
+              <div style={{
+                fontSize: '0.7em',
+                color: '#6b7280',
+                fontWeight: '500',
+                textAlign: 'center',
+                whiteSpace: 'nowrap'
+              }}>
+                {quarter}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
