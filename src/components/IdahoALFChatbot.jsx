@@ -51,9 +51,7 @@ const IdahoALFChatbot = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (selectedRegulation) {
-      console.log('Selected regulation changed:', selectedRegulation);
-    }
+    // Handle selected regulation changes
   }, [selectedRegulation]);
 
   // Show welcome message on first load
@@ -61,7 +59,7 @@ const IdahoALFChatbot = () => {
     if (messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: "👋 Hello! I'm your Idaho Assisted Living Facility regulation expert. Ask me anything about IDAPA 16.03.22 regulations.\n\n**Example questions:**\n- What are the staffing requirements for a 20-bed facility?\n- How much square footage is required per resident?\n- What are the bathroom requirements?\n- Do I need a sprinkler system?\n- Can staff assist with insulin?"
+        content: "# RegNavigator\n\n👋 Hello! I'm your Idaho Assisted Living Facility regulation expert. Ask me anything about IDAPA 16.03.22 regulations.\n\n**Example questions:**\n- What are the staffing requirements for a 20-bed facility?\n- How much square footage is required per resident?\n- What are the bathroom requirements?\n- Do I need a sprinkler system?\n- Can staff assist with insulin?"
       }]);
     }
   }, []);
@@ -202,42 +200,53 @@ const IdahoALFChatbot = () => {
       <div className="flex h-screen">
         {/* Left Side - Chat Interface */}
         <div className="flex-1 flex flex-col bg-white border-r border-gray-200 relative">
-          {/* Chat Header */}
-          <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
-                <p className="text-sm text-gray-600">Ask questions about Idaho ALF regulations</p>
-              </div>
-            </div>
-      </div>
 
-      {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+          {/* Input Area - Right below RegNavigator */}
+          <div className="px-6 py-4 bg-white border-b border-gray-200">
+            <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about Idaho regulations..."
+                  className="flex-1 px-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                  className="px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isLoading ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Messages Area - Cleaner */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-white">
         {messages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-                  className={`max-w-2xl rounded-lg px-4 py-3 ${
+                  className={`max-w-3xl rounded-xl px-5 py-4 ${
                 message.role === 'user'
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-blue-500 text-white ml-8'
                   : message.error
-                      ? 'bg-red-50 border border-red-200 text-red-800'
-                      : 'bg-white border border-gray-200 shadow-sm'
+                      ? 'bg-red-50 border border-red-200 text-red-800 mr-8'
+                      : 'bg-gray-50 border border-gray-200 mr-8'
                   }`}
                 >
                   {message.role === 'assistant' && !message.error && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Building className="w-3 h-3 text-blue-600" />
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                        <Building className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-xs font-medium text-gray-600">RegNavigator</span>
-              </div>
+                      <span className="text-sm font-medium text-gray-700">RegNavigator</span>
+                    </div>
                   )}
                   
                   <div className="prose prose-sm max-w-none" style={{fontSize: '16px', lineHeight: '1.5'}}>
@@ -247,32 +256,20 @@ const IdahoALFChatbot = () => {
                   </div>
 
                   {message.citations && message.citations.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-                        <FileText size={12} />
-                        Sources
-                      </p>
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Sources</p>
                       <div className="flex flex-wrap gap-1">
-                    {message.citations.map((citation, idx) => (
-                          <button
-                        key={idx}
-                            onClick={() => setSelectedCitations(prev => 
-                              prev.includes(citation.chunk_id) 
-                                ? prev.filter(id => id !== citation.chunk_id)
-                                : [...prev, citation.chunk_id]
-                            )}
-                            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                              selectedCitations.includes(citation.chunk_id)
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                        {message.citations.map((citation, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium"
                           >
-                          {citation.citation}
-                          </button>
+                            {citation.citation}
+                          </span>
                         ))}
-                  </div>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  )}
             </div>
           </div>
         ))}
@@ -300,84 +297,55 @@ const IdahoALFChatbot = () => {
 
         <div ref={messagesEndRef} />
       </div>
-
-          {/* Input Area - Positioned in center of chat area */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white border border-gray-300 rounded-lg shadow-lg px-6 py-4 pointer-events-auto max-w-2xl w-full mx-6">
-              <form onSubmit={handleSubmit} className="flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about Idaho ALF regulations..."
-                  className="flex-1 healthcare-input"
-            disabled={isLoading}
-                  style={{fontSize: '16px'}}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-                  className="healthcare-button"
-          >
-            {isLoading ? 'Sending...' : 'Send'}
-          </button>
-        </form>
-            </div>
-          </div>
         </div>
 
         {/* Right Side - Regulation Library */}
-        <div className="w-2/5 flex flex-col bg-white">
-          {/* Library Header */}
-          <div className="bg-green-50 border-b border-green-200 px-6 py-4">
+        <div className="w-2/5 flex flex-col bg-white border-l border-gray-200">
+          {/* Library Header - Cleaner */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Regulation Library</h2>
-                <p className="text-sm text-gray-600">Browse and search regulations</p>
+                <h2 className="text-xl font-bold text-gray-900">Regulation Library</h2>
+                <p className="text-sm text-gray-500">Browse and search regulations</p>
               </div>
             </div>
           </div>
 
-          {/* Search Bar - Moved to center of library */}
-          <div className="p-6 border-b border-gray-200 bg-gray-50">
+          {/* Search Bar - Simplified */}
+          <div className="p-4 border-b border-gray-200">
             <form onSubmit={handleSearch} className="mb-4">
-              <div className="relative">
+              <div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search regulations..."
-                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
             </form>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => {
-                const IconComponent = category.icon;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      setSelectedCategory(category.id);
-                      setSearchResults([]);
-                    }}
-                    className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      selectedCategory === category.id
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <IconComponent size={12} />
-                    {category.name}
-                  </button>
-                );
-              })}
+            {/* Category Filter - Simplified */}
+            <div className="flex flex-wrap gap-1">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category.id);
+                    setSearchResults([]);
+                  }}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    selectedCategory === category.id
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -401,42 +369,30 @@ const IdahoALFChatbot = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {(searchResults.length > 0 ? searchResults : regulations)
                   .filter(reg => selectedCategory === 'all' || reg.category === selectedCategory)
-                  .slice(0, 20)
-                  .map((regulation, index) => {
-                    const CategoryIcon = getCategoryIcon(regulation.category);
-                    const categoryColor = getCategoryColor(regulation.category);
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          console.log('Selected regulation:', regulation);
-                          setSelectedRegulation(regulation);
-                        }}
-                        className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                          selectedRegulation?.chunk_id === regulation.chunk_id
-                            ? 'bg-blue-50 border-blue-300 shadow-sm'
-                            : 'bg-white border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className={`p-1.5 rounded ${categoryColor}`}>
-                            <CategoryIcon size={14} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-blue-600 mb-1">
-                              {regulation.citation}
-                            </div>
-                            <div className="text-sm text-gray-700 line-clamp-2">
-                              {regulation.section_title}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  .slice(0, 15)
+                  .map((regulation, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedRegulation(regulation);
+                      }}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                        selectedRegulation?.chunk_id === regulation.chunk_id
+                          ? 'bg-blue-50 border-blue-300'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900 mb-1">
+                        {regulation.citation}
+                      </div>
+                      <div className="text-xs text-gray-600 line-clamp-1">
+                        {regulation.section_title}
+                      </div>
+                    </button>
+                  ))}
               </div>
             )}
           </div>
@@ -446,15 +402,30 @@ const IdahoALFChatbot = () => {
       {/* Regulation Detail Modal */}
       {selectedRegulation && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
           onClick={() => {
-            console.log('Clicked outside modal');
             setSelectedRegulation(null);
+          }}
+          style={{ 
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           <div
             className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              position: 'relative',
+              zIndex: 10000
+            }}
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
@@ -463,7 +434,6 @@ const IdahoALFChatbot = () => {
                 </div>
               <button
                 onClick={() => {
-                  console.log('Closing modal');
                   setSelectedRegulation(null);
                 }}
                 className="text-gray-400 hover:text-gray-600 p-2"
@@ -480,10 +450,68 @@ const IdahoALFChatbot = () => {
             
             <div className="p-6 border-t border-gray-200 bg-gray-50">
             <button
-                onClick={() => {
-                  console.log('Asking about regulation:', selectedRegulation.citation);
+                onClick={async () => {
+                  const question = `What are the requirements for ${selectedRegulation.citation} - ${selectedRegulation.section_title}?`;
                   setSelectedRegulation(null);
-                  setInput(`Tell me about ${selectedRegulation.citation}`);
+                  setInput(question);
+                  
+                  // Automatically submit the query
+                  setIsLoading(true);
+                  try {
+                    const response = await fetch('https://alf-chatbot.onrender.com/query', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        question: question,
+                        conversation_history: messages,
+                        top_k: 5,
+                        temperature: 0.3
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    // Add user message
+                    const userMessage = {
+                      role: 'user',
+                      content: question,
+                      timestamp: new Date().toISOString()
+                    };
+                    
+                    // Add assistant response
+                    const assistantMessage = {
+                      role: 'assistant',
+                      content: data.response,
+                      citations: data.citations,
+                      retrieved_chunks: data.retrieved_chunks,
+                      usage: data.usage,
+                      timestamp: new Date().toISOString()
+                    };
+                    
+                    setMessages(prev => [...prev, userMessage, assistantMessage]);
+                    setInput('');
+                  } catch (error) {
+                    console.error('Error querying chatbot:', error);
+                    const userMessage = {
+                      role: 'user',
+                      content: question,
+                      timestamp: new Date().toISOString()
+                    };
+                    const errorMessage = {
+                      role: 'assistant',
+                      content: 'Sorry, I encountered an error while processing your question. Please try again.',
+                      timestamp: new Date().toISOString()
+                    };
+                    setMessages(prev => [...prev, userMessage, errorMessage]);
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
