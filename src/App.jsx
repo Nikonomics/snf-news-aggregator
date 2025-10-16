@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Newspaper, Settings, RefreshCw, Calendar, Bookmark, User, LogIn, UserCircle, ChevronDown } from 'lucide-react'
+import { Newspaper, Settings, RefreshCw, Calendar, Bookmark, User, LogIn, UserCircle, ChevronDown, Target } from 'lucide-react'
 import './App.css'
 import FilterPanel from './components/FilterPanel'
 import ArticleList from './components/ArticleList'
@@ -20,6 +20,8 @@ import MedicaidChatbot from './components/MedicaidChatbot'
 import FacilityResearch from './components/FacilityResearch'
 import IdahoALFChatbot from './components/IdahoALFChatbot'
 import OwnershipResearch from './components/OwnershipResearch'
+import ProjectManagement from './components/ProjectManagement'
+import ProjectTracker from './components/ProjectTracker'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -297,6 +299,19 @@ function App() {
             >
               Priority Feed
             </Link>
+            <Link
+              to="/project-management"
+              className={`nav-tab ${location.pathname === '/project-management' ? 'active' : ''}`}
+            >
+              <Target size={16} style={{ marginRight: '4px' }} />
+              Project Management
+            </Link>
+            <Link
+              to="/project-tracker"
+              className={`nav-tab ${location.pathname === '/project-tracker' ? 'active' : ''}`}
+            >
+              📊 Project Tracker
+            </Link>
 
             {/* Market Insights Dropdown */}
             <div className="nav-dropdown" ref={marketInsightsRef}>
@@ -488,6 +503,12 @@ function App() {
 
         {/* Priority Feed Route */}
         <Route path="/priority" element={<PriorityFeed />} />
+
+        {/* Project Management Route */}
+        <Route path="/project-management" element={<ProjectManagement />} />
+
+        {/* Project Tracker Route */}
+        <Route path="/project-tracker" element={<ProjectTracker />} />
 
         {/* State Comparison Map Route */}
         <Route path="/state-comparison" element={<StateComparisonMap />} />
