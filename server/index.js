@@ -2819,11 +2819,7 @@ app.get('/api/ownership/search', async (req, res) => {
       : ''
 
     const searchFilter = search
-      ? `AND (
-          LOWER(ownership_chain) LIKE LOWER('%${search}%') OR
-          LOWER(legal_business_name) LIKE LOWER('%${search}%') OR
-          LOWER(parent_organization) LIKE LOWER('%${search}%')
-        )`
+      ? `AND LOWER(ownership_chain) LIKE LOWER('%${search}%')`
       : ''
 
     const result = await pool.query(`
