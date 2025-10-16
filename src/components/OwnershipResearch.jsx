@@ -144,7 +144,7 @@ function OwnershipResearch() {
             <Star size={24} className="stat-icon" />
             <div className="stat-content">
               <div className="stat-label">Avg Rating</div>
-              <div className="stat-value">{stats.avgRating?.toFixed(2)}</div>
+              <div className="stat-value">{parseFloat(stats.avgRating || 0).toFixed(2)}</div>
             </div>
           </div>
         </div>
@@ -252,7 +252,7 @@ function OwnershipResearch() {
                         {chain.avg_rating && (
                           <span className="chain-stat">
                             <Star size={14} fill="#fbbf24" stroke="#fbbf24" />
-                            {chain.avg_rating.toFixed(1)}
+                            {parseFloat(chain.avg_rating).toFixed(1)}
                           </span>
                         )}
                       </div>
@@ -300,7 +300,7 @@ function OwnershipResearch() {
                       {owner.avg_rating && (
                         <div className="owner-stat">
                           <Star size={16} />
-                          <span>{owner.avg_rating.toFixed(1)} Avg Rating</span>
+                          <span>{parseFloat(owner.avg_rating || 0).toFixed(1)} Avg Rating</span>
                         </div>
                       )}
                     </div>
@@ -358,21 +358,21 @@ function OwnershipResearch() {
                     <Star size={20} />
                     <div>
                       <div className="detail-label">Avg Rating</div>
-                      <div className="detail-value">{selectedOwner.avgRating?.toFixed(2)}</div>
+                      <div className="detail-value">{parseFloat(selectedOwner.avgRating || 0).toFixed(2)}</div>
                     </div>
                   </div>
                   <div className="detail-card">
                     <TrendingUp size={20} />
                     <div>
                       <div className="detail-label">Avg Occupancy</div>
-                      <div className="detail-value">{selectedOwner.avgOccupancy?.toFixed(1)}%</div>
+                      <div className="detail-value">{parseFloat(selectedOwner.avgOccupancy || 0).toFixed(1)}%</div>
                     </div>
                   </div>
                   <div className="detail-card">
                     <AlertTriangle size={20} />
                     <div>
                       <div className="detail-label">Avg Deficiencies</div>
-                      <div className="detail-value">{selectedOwner.avgDeficiencies?.toFixed(1)}</div>
+                      <div className="detail-value">{parseFloat(selectedOwner.avgDeficiencies || 0).toFixed(1)}</div>
                     </div>
                   </div>
                 </div>
@@ -422,7 +422,7 @@ function OwnershipResearch() {
                                   {facility.overall_rating || 'N/A'}
                                 </span>
                               </td>
-                              <td>{facility.occupancy_rate?.toFixed(1)}%</td>
+                              <td>{parseFloat(facility.occupancy_rate || 0).toFixed(1)}%</td>
                             </tr>
                           ))}
                         </tbody>
