@@ -644,6 +644,65 @@
   }
 }
 
+/* Search section in sidebar */
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+}
+
+.search-section .ownership-search-form {
+  margin: 0;
+}
+
+.search-section .ownership-search-bar {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+.search-section .ownership-search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.search-section .ownership-search-bar input::placeholder {
+  color: #94a3b8;
+}
+
+.search-section .ownership-search-bar button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-section .ownership-search-bar button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.search-section .ownership-search-bar button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
 /* Owner ranking styles */
 .owner-title-row {
   display: flex;

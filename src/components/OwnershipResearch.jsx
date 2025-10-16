@@ -98,61 +98,32 @@ function OwnershipResearch() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="ownership-search-form">
-            <div className="ownership-search-bar">
-              <Search size={20} />
-              <input
-                type="text"
-                placeholder="Search by chain name, parent organization, or legal business name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button type="submit" disabled={loading}>
-                {loading ? 'Searching...' : 'Search'}
-              </button>
-            </div>
-          </form>
         </div>
       </div>
 
-      {/* National Overview Stats */}
-      {stats && (
-        <div className="ownership-stats-grid">
-          <div className="stat-card">
-            <Building2 size={24} className="stat-icon" />
-            <div className="stat-content">
-              <div className="stat-label">Total Chains</div>
-              <div className="stat-value">{stats.totalChains?.toLocaleString()}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <Bed size={24} className="stat-icon" />
-            <div className="stat-content">
-              <div className="stat-label">Total Facilities</div>
-              <div className="stat-value">{stats.totalFacilities?.toLocaleString()}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <Users size={24} className="stat-icon" />
-            <div className="stat-content">
-              <div className="stat-label">Total Beds</div>
-              <div className="stat-value">{stats.totalBeds?.toLocaleString()}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <Star size={24} className="stat-icon" />
-            <div className="stat-content">
-              <div className="stat-label">Avg Rating</div>
-              <div className="stat-value">{parseFloat(stats.avgRating || 0).toFixed(2)}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="ownership-main">
         {/* Filters Sidebar */}
         <aside className="ownership-sidebar">
+          {/* Search Bar */}
+          <div className="search-section">
+            <h3>Search</h3>
+            <form onSubmit={handleSearch} className="ownership-search-form">
+              <div className="ownership-search-bar">
+                <Search size={20} />
+                <input
+                  type="text"
+                  placeholder="Search by chain name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Searching...' : 'Search'}
+                </button>
+              </div>
+            </form>
+          </div>
+
           <div className="filter-section">
             <h3>Filters</h3>
 
