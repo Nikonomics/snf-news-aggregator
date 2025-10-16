@@ -31,6 +31,74 @@ vectorSearch.initialize().catch(err => {
   console.log('RAG features will not be available, but chatbot will continue to work');
 });
 
+// Fallback response generator when AI services are unavailable
+function generateFallbackResponse(question, stateData, deepAnalysis) {
+  const questionLower = question.toLowerCase();
+  const stateName = stateData.stateName;
+  
+  // Find relevant policies based on keywords
+  const relevantPolicies = stateData.policies.filter(policy => {
+    const policyText = (policy.policyName + ' ' + policy.summary + ' ' + policy.sourceLanguage).toLowerCase();
+    return questionLower.split(' ').some(word => 
+      word.length > 3 && policyText.includes(word)
+    );
+  });
+
+  let response = `## Understanding ${question}\n\n`;
+  response += `Based on ${stateName}'s Medicaid policies, here's what I found:\n\n`;
+
+  if (relevantPolicies.length > 0) {
+    response += `## 📋 Relevant Policies\n\n`;
+    
+    relevantPolicies.slice(0, 5).forEach((policy, idx) => {
+      response += `### ${idx + 1}. ${policy.policyName}\n`;
+      response += `**Category:** ${policy.category}\n\n`;
+      
+      if (policy.summary && policy.summary !== 'None found') {
+        response += `**Summary:** ${policy.summary}\n\n`;
+      }
+      
+      if (policy.sourceLanguage && policy.sourceLanguage !== 'None found') {
+        response += `**Details:** ${policy.sourceLanguage.substring(0, 200)}${policy.sourceLanguage.length > 200 ? '...' : ''}\n\n`;
+      }
+      
+      if (policy.sources && policy.sources !== 'None found') {
+        response += `**Sources:** ${policy.sources}\n\n`;
+      }
+      
+      response += `---\n\n`;
+    });
+  } else {
+    response += `## 📋 Available Policy Categories\n\n`;
+    
+    const categories = [...new Set(stateData.policies.map(p => p.category))];
+    categories.forEach(category => {
+      const categoryPolicies = stateData.policies.filter(p => p.category === category);
+      response += `### ${category}\n`;
+      response += `- ${categoryPolicies.length} policies available\n\n`;
+    });
+  }
+
+  response += `## 💡 Key Information\n\n`;
+  response += `- **Total Policies:** ${stateData.policies.length}\n`;
+  response += `- **State:** ${stateName}\n`;
+  response += `- **Analysis Mode:** ${deepAnalysis ? 'Deep Analysis (with additional documents)' : 'Standard Analysis'}\n\n`;
+
+  response += `## ⚠️ Note\n\n`;
+  response += `This response was generated from policy summaries. For the most detailed analysis, please try asking more specific questions about particular policy areas.\n\n`;
+
+  response += `## 🔗 Related Topics You Might Want to Explore\n\n`;
+  response += `- Payment methodology and rates\n`;
+  response += `- Cost reporting requirements\n`;
+  response += `- Quality incentive programs\n`;
+  response += `- Specialized service add-ons\n\n`;
+
+  response += `## 📚 Sources\n\n`;
+  response += `All information is derived from ${stateName}'s official Medicaid policy documents and state plan amendments.`;
+
+  return response;
+}
+
 // GET all states list
 router.get('/states', (req, res) => {
   try {
@@ -294,13 +362,25 @@ Here are the Medicaid policies for ${state}:
 ${policiesContext}`;
 
     // Call AI API with extended context for deep analysis
-    const response = await aiService.analyzeContent(messages[0].content, {
-      maxTokens: deepAnalysis ? 4096 : 2048,
-      temperature: 0.1
-    });
+    let assistantMessage;
+    let aiProvider = 'fallback';
+    
+    try {
+      const response = await aiService.analyzeContent(messages[0].content, {
+        maxTokens: deepAnalysis ? 4096 : 2048,
+        temperature: 0.1
+      });
 
-    const assistantMessage = response.content;
-    console.log(`🤖 Medicaid analysis using ${response.provider}`);
+      assistantMessage = response.content;
+      aiProvider = response.provider;
+      console.log(`🤖 Medicaid analysis using ${response.provider}`);
+    } catch (aiError) {
+      console.warn('AI service unavailable, using fallback response:', aiError.message);
+      
+      // Provide a helpful fallback response based on the question
+      assistantMessage = generateFallbackResponse(question, stateData, deepAnalysis);
+      console.log('📝 Using fallback response for medicaid query');
+    }
 
     // Extract sources/citations from the response
     const citations = [];
