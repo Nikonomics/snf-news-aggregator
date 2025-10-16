@@ -364,8 +364,10 @@ router.get('/revenue-levers/:state', (req, res) => {
       state: state,
       addOns: [],
       incentives: [],
+      supplementalPayments: [],
       keyTimingFactors: {},
-      revenueProtection: {}
+      revenueProtection: {},
+      rateDeterminants: {}
     };
 
     // Process each policy
@@ -401,6 +403,19 @@ router.get('/revenue-levers/:state', (req, res) => {
         });
       }
 
+      // Supplemental payments (new category for additional revenue streams)
+      if (policyName.includes('supplemental') ||
+          policyName.includes('outlier') ||
+          policyName.includes('public facilities adjustment') ||
+          policyName.includes('provider tax')) {
+        revenueLevers.supplementalPayments.push({
+          name: policy.policyName,
+          summary: policy.summary,
+          available: policy.summary && policy.summary !== 'None found',
+          details: policy.sourceLanguage
+        });
+      }
+
       // Rebasing frequency (critical timing)
       if (policyName.includes('rebasing')) {
         revenueLevers.keyTimingFactors.rebasing = {
@@ -425,6 +440,14 @@ router.get('/revenue-levers/:state', (req, res) => {
         };
       }
 
+      // Inflation factor (impacts rate increases)
+      if (policyName.includes('inflation')) {
+        revenueLevers.keyTimingFactors.inflationFactor = {
+          adjustment: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
       // Bed-hold policy (revenue protection)
       if (policyName.includes('bed-hold') || policyName.includes('bed hold')) {
         revenueLevers.revenueProtection.bedHold = {
@@ -433,10 +456,42 @@ router.get('/revenue-levers/:state', (req, res) => {
         };
       }
 
+      // Occupancy rate minimum (impacts rates)
+      if (policyName.includes('occupancy')) {
+        revenueLevers.revenueProtection.occupancyMinimum = {
+          requirement: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
       // Acuity system (impacts rates)
       if (policyName.includes('acuity')) {
-        revenueLevers.keyTimingFactors.acuitySystem = {
+        revenueLevers.rateDeterminants.acuitySystem = {
           system: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Peer grouping (impacts competitive position)
+      if (policyName.includes('peer group')) {
+        revenueLevers.rateDeterminants.peerGrouping = {
+          methodology: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Geographic adjustments (location-based rate differences)
+      if (policyName.includes('geographic')) {
+        revenueLevers.rateDeterminants.geographicAdjustment = {
+          adjustment: policy.summary,
+          details: policy.sourceLanguage
+        };
+      }
+
+      // Underlying basis for rates (fundamental rate structure)
+      if (policyName.includes('underlying basis')) {
+        revenueLevers.rateDeterminants.basisForRates = {
+          basis: policy.summary,
           details: policy.sourceLanguage
         };
       }
@@ -445,6 +500,10 @@ router.get('/revenue-levers/:state', (req, res) => {
     // Calculate summary stats
     const availableAddOns = revenueLevers.addOns.filter(a => a.available).length;
     const availableIncentives = revenueLevers.incentives.filter(i => i.available).length;
+    const availableSupplemental = revenueLevers.supplementalPayments.filter(s => s.available).length;
+
+    // Helper to check if a value is meaningful (not "None found")
+    const hasValue = (obj) => obj && obj.summary !== 'None found' && obj.frequency !== 'None found' && obj.type !== 'None found' && obj.policy !== 'None found' && obj.requirement !== 'None found' && obj.system !== 'None found' && obj.methodology !== 'None found' && obj.adjustment !== 'None found' && obj.basis !== 'None found';
 
     res.json({
       success: true,
@@ -452,8 +511,13 @@ router.get('/revenue-levers/:state', (req, res) => {
       summary: {
         totalAddOns: availableAddOns,
         totalIncentives: availableIncentives,
+        totalSupplementalPayments: availableSupplemental,
         hasRebasingInfo: !!revenueLevers.keyTimingFactors.rebasing,
-        hasBedHoldPolicy: !!revenueLevers.revenueProtection.bedHold
+        hasBedHoldPolicy: hasValue(revenueLevers.revenueProtection.bedHold),
+        hasOccupancyRequirement: hasValue(revenueLevers.revenueProtection.occupancyMinimum),
+        hasAcuitySystem: hasValue(revenueLevers.rateDeterminants.acuitySystem),
+        hasPeerGrouping: hasValue(revenueLevers.rateDeterminants.peerGrouping),
+        hasGeographicAdjustment: hasValue(revenueLevers.rateDeterminants.geographicAdjustment)
       }
     });
   } catch (error) {

@@ -26,6 +26,25 @@ function MedicaidChatbot() {
     scrollToBottom();
   }, [messages]);
 
+  // Load revenue levers when state changes
+  useEffect(() => {
+    if (selectedState) {
+      loadRevenueLevers(selectedState);
+    } else {
+      setStateRevenueLevers(null);
+    }
+  }, [selectedState]);
+
+  const loadRevenueLevers = async (state) => {
+    try {
+      const data = await getRevenueLevers(state);
+      setStateRevenueLevers(data);
+    } catch (err) {
+      console.error('Error loading revenue levers:', err);
+      // Don't show error to user, just log it
+    }
+  };
+
   const loadStates = async () => {
     try {
       const data = await getMedicaidStates();
@@ -178,28 +197,15 @@ function MedicaidChatbot() {
 
   return (
     <div className="medicaid-chatbot">
-      <div className="chatbot-header">
-        <div className="header-content">
-          <MessageSquare size={28} />
-          <div>
-            <h1>Medicaid Policy Assistant</h1>
-            <p>Ask questions about state-specific Medicaid nursing facility payment policies</p>
-          </div>
-        </div>
-      </div>
-
       <div className="chatbot-container">
-        {/* State Selector Sidebar */}
+        {/* Chat Sidebar */}
         <aside className="state-selector-sidebar">
-          <div className="selector-header">
-            <FileText size={20} />
-            <h3>Select State</h3>
-          </div>
-
+          {/* Compact State Selector */}
           <select
             value={selectedState}
             onChange={handleStateChange}
             className="state-select"
+            style={{ marginBottom: '12px', fontSize: '0.9rem', padding: '8px' }}
           >
             <option value="">-- Choose a State --</option>
             {states.map(state => (
@@ -209,65 +215,15 @@ function MedicaidChatbot() {
             ))}
           </select>
 
-          {selectedState && (
-            <>
-              <div className="deep-analysis-toggle">
-                <label className="toggle-container">
-                  <input
-                    type="checkbox"
-                    checked={deepAnalysis}
-                    onChange={(e) => setDeepAnalysis(e.target.checked)}
-                  />
-                  <span className="toggle-slider"></span>
-                  <div className="toggle-label">
-                    <Zap size={16} />
-                    <span>Deep Analysis</span>
-                  </div>
-                </label>
-                <p className="toggle-description">
-                  {deepAnalysis
-                    ? 'Fetching full regulatory documents for detailed answers'
-                    : 'Using policy summaries for quick answers'}
-                </p>
-              </div>
-
-              <div className="example-questions">
-                <h4>Example Questions</h4>
-                <div className="example-list">
-                  {exampleQuestions.map((question, idx) => (
-                    <button
-                      key={idx}
-                      className="example-btn"
-                      onClick={() => handleExampleQuestion(question)}
-                      disabled={isLoading}
-                    >
-                      {question}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="info-box">
-                <AlertCircle size={16} />
-                <p>
-                  All responses are based on the official Medicaid Fee-for-Service
-                  Nursing Facility Payment Policies for {selectedState}.
-                </p>
-              </div>
-            </>
-          )}
-        </aside>
-
-        {/* Chat Area */}
-        <div className="chat-main">
           {!selectedState ? (
             <div className="empty-state">
-              <MessageSquare size={64} />
-              <h2>Welcome to the Medicaid Policy Assistant</h2>
-              <p>Select a state from the sidebar to start asking questions about their Medicaid nursing facility payment policies.</p>
+              <MessageSquare size={48} />
+              <h3 style={{ fontSize: '1.1rem', margin: '12px 0 8px 0' }}>Select a State</h3>
+              <p style={{ fontSize: '0.85rem', margin: 0 }}>Choose a state to view revenue intelligence and ask policy questions.</p>
             </div>
           ) : (
             <>
+              {/* Messages Container */}
               <div className="messages-container">
                 {messages.map((message, idx) => (
                   <div key={idx} className={`message ${message.role}`}>
@@ -356,6 +312,7 @@ function MedicaidChatbot() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Chat Input Form */}
               <form onSubmit={handleSubmit} className="chat-input-form">
                 {error && (
                   <div className="error-banner">
@@ -381,7 +338,279 @@ function MedicaidChatbot() {
                     <Send size={20} />
                   </button>
                 </div>
+
+                {/* Deep Analysis Toggle - Compact */}
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.75rem', color: '#4a5568' }}>
+                    <input
+                      type="checkbox"
+                      checked={deepAnalysis}
+                      onChange={(e) => setDeepAnalysis(e.target.checked)}
+                      style={{ width: '14px', height: '14px' }}
+                    />
+                    <Zap size={12} style={{ color: '#f59e0b' }} />
+                    <span>Deep Analysis</span>
+                  </label>
+                </div>
               </form>
+            </>
+          )}
+        </aside>
+
+        {/* Revenue Dashboard Area */}
+        <div className="chat-main">
+          {!selectedState ? (
+            <div className="empty-state">
+              <DollarSign size={64} />
+              <h2>Revenue Intelligence Dashboard</h2>
+              <p>Select a state to view detailed revenue optimization opportunities.</p>
+            </div>
+          ) : (
+            <>
+              {/* Revenue Levers Dashboard - Scrollable */}
+              {stateRevenueLevers && (
+                <div style={{ overflowY: 'auto', padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+                  <h2 style={{ fontSize: '1.3em', fontWeight: '700', color: '#111827', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <DollarSign size={22} />
+                    Revenue Optimization Intelligence: {selectedState}
+                  </h2>
+
+                  {/* Summary Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                    {/* Add-Ons Card */}
+                    <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <TrendingUp size={16} style={{ color: '#16a34a' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#166534', margin: 0 }}>Service Add-Ons</h3>
+                      </div>
+                      <div style={{ fontSize: '1.8em', fontWeight: '700', color: '#15803d', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.totalAddOns}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#166534', margin: 0 }}>
+                        {stateRevenueLevers.summary.totalAddOns > 0 ? 'specialized services' : 'none found'}
+                      </p>
+                    </div>
+
+                    {/* Quality Incentives Card */}
+                    <div style={{ backgroundColor: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <Award size={16} style={{ color: '#2563eb' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#1e40af', margin: 0 }}>Quality Programs</h3>
+                      </div>
+                      <div style={{ fontSize: '1.8em', fontWeight: '700', color: '#1d4ed8', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.totalIncentives}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#1e40af', margin: 0 }}>
+                        {stateRevenueLevers.summary.totalIncentives > 0 ? 'incentive programs' : 'none found'}
+                      </p>
+                    </div>
+
+                    {/* Supplemental Payments Card */}
+                    <div style={{ backgroundColor: '#fef3f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <DollarSign size={16} style={{ color: '#dc2626' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#991b1b', margin: 0 }}>Supplemental Payments</h3>
+                      </div>
+                      <div style={{ fontSize: '1.8em', fontWeight: '700', color: '#dc2626', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.totalSupplementalPayments || 0}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#991b1b', margin: 0 }}>
+                        {stateRevenueLevers.summary.totalSupplementalPayments > 0 ? 'additional payments' : 'none found'}
+                      </p>
+                    </div>
+
+                    {/* Rebasing Timeline Card */}
+                    <div style={{ backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <Calendar size={16} style={{ color: '#d97706' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#92400e', margin: 0 }}>Rate Rebasing</h3>
+                      </div>
+                      <div style={{ fontSize: '1.4em', fontWeight: '700', color: '#b45309', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.hasRebasingInfo ? '✓' : '—'}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#92400e', margin: 0 }}>
+                        {stateRevenueLevers.summary.hasRebasingInfo ? 'timing available' : 'no info'}
+                      </p>
+                    </div>
+
+                    {/* Acuity System Card */}
+                    <div style={{ backgroundColor: '#faf5ff', border: '1px solid #d8b4fe', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <Activity size={16} style={{ color: '#9333ea' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#6b21a8', margin: 0 }}>Acuity System</h3>
+                      </div>
+                      <div style={{ fontSize: '1.4em', fontWeight: '700', color: '#7e22ce', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.hasAcuitySystem ? '✓' : '—'}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#6b21a8', margin: 0 }}>
+                        {stateRevenueLevers.summary.hasAcuitySystem ? 'case-mix adjusted' : 'no system'}
+                      </p>
+                    </div>
+
+                    {/* Bed Hold Policy Card */}
+                    <div style={{ backgroundColor: '#f3e8ff', border: '1px solid #c084fc', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <Shield size={16} style={{ color: '#a855f7' }} />
+                        <h3 style={{ fontSize: '0.85em', fontWeight: '600', color: '#7c3aed', margin: 0 }}>Bed-Hold Policy</h3>
+                      </div>
+                      <div style={{ fontSize: '1.4em', fontWeight: '700', color: '#9333ea', marginBottom: '2px' }}>
+                        {stateRevenueLevers.summary.hasBedHoldPolicy ? '✓' : '—'}
+                      </div>
+                      <p style={{ fontSize: '0.75em', color: '#7c3aed', margin: 0 }}>
+                        {stateRevenueLevers.summary.hasBedHoldPolicy ? 'protection exists' : 'none available'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Detailed Revenue Levers */}
+                  {stateRevenueLevers.addOns.length > 0 && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Activity size={18} style={{ color: '#16a34a' }} />
+                        Available Add-On Services
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.addOns.filter(addon => addon.available).map((addon, idx) => (
+                          <div key={idx} style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #16a34a', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>{addon.name}</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{addon.summary}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {stateRevenueLevers.incentives.length > 0 && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Award size={18} style={{ color: '#2563eb' }} />
+                        Quality Incentive Programs
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.incentives.filter(inc => inc.available).map((incentive, idx) => (
+                          <div key={idx} style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #2563eb', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>{incentive.name}</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{incentive.summary}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {stateRevenueLevers.supplementalPayments && stateRevenueLevers.supplementalPayments.length > 0 && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <DollarSign size={18} style={{ color: '#dc2626' }} />
+                        Supplemental Payment Opportunities
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.supplementalPayments.filter(sup => sup.available).map((supplement, idx) => (
+                          <div key={idx} style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #dc2626', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>{supplement.name}</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{supplement.summary}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Timing Factors */}
+                  {(stateRevenueLevers.keyTimingFactors.rebasing || stateRevenueLevers.keyTimingFactors.costReport || stateRevenueLevers.keyTimingFactors.paymentApproach || stateRevenueLevers.keyTimingFactors.inflationFactor) && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={18} style={{ color: '#d97706' }} />
+                        Critical Timing & Rate Information
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.keyTimingFactors.rebasing && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #d97706', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Rebasing Frequency</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.keyTimingFactors.rebasing.frequency}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.keyTimingFactors.costReport && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #d97706', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Cost Report Requirements</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.keyTimingFactors.costReport.type}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.keyTimingFactors.paymentApproach && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #d97706', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Payment Methodology</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.keyTimingFactors.paymentApproach.method}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.keyTimingFactors.inflationFactor && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #d97706', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Inflation Adjustment</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.keyTimingFactors.inflationFactor.adjustment}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Revenue Protection Policies */}
+                  {(stateRevenueLevers.revenueProtection.bedHold || stateRevenueLevers.revenueProtection.occupancyMinimum) && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Shield size={18} style={{ color: '#9333ea' }} />
+                        Revenue Protection Policies
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.revenueProtection.bedHold && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #9333ea', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Bed-Hold Policy</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.revenueProtection.bedHold.policy}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.revenueProtection.occupancyMinimum && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #9333ea', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Occupancy Rate Minimum</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.revenueProtection.occupancyMinimum.requirement}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rate Determinants */}
+                  {(stateRevenueLevers.rateDeterminants?.acuitySystem || stateRevenueLevers.rateDeterminants?.peerGrouping || stateRevenueLevers.rateDeterminants?.geographicAdjustment || stateRevenueLevers.rateDeterminants?.basisForRates) && (
+                    <div>
+                      <h3 style={{ fontSize: '1.1em', fontWeight: '700', color: '#111827', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Activity size={18} style={{ color: '#7c3aed' }} />
+                        Rate Determinants & Competitive Factors
+                      </h3>
+                      <div style={{ display: 'grid', gap: '10px' }}>
+                        {stateRevenueLevers.rateDeterminants.acuitySystem && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #7c3aed', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Acuity/Case-Mix System</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.rateDeterminants.acuitySystem.system}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.rateDeterminants.peerGrouping && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #7c3aed', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Peer Grouping Methodology</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.rateDeterminants.peerGrouping.methodology}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.rateDeterminants.geographicAdjustment && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #7c3aed', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Geographic Rate Adjustment</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.rateDeterminants.geographicAdjustment.adjustment}</div>
+                          </div>
+                        )}
+                        {stateRevenueLevers.rateDeterminants.basisForRates && (
+                          <div style={{ backgroundColor: '#f9fafb', borderLeft: '3px solid #7c3aed', padding: '12px', borderRadius: '6px' }}>
+                            <div style={{ fontWeight: '600', color: '#111827', marginBottom: '4px' }}>Underlying Basis for Rates</div>
+                            <div style={{ fontSize: '0.9em', color: '#4b5563' }}>{stateRevenueLevers.rateDeterminants.basisForRates.basis}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

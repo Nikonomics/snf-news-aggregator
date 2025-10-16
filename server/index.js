@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import Anthropic from '@anthropic-ai/sdk'
 import * as db from './database/db.js'
+import pool from './database/db.js'
 import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
 import {
   getBills,
@@ -2738,6 +2739,206 @@ app.get('/api/chain/:chainName/facilities', async (req, res) => {
       success: false,
       error: error.message
     })
+  }
+})
+
+// ============================================================
+// OWNERSHIP RESEARCH API ENDPOINTS
+// ============================================================
+
+// GET /api/ownership/top-chains - Get top SNF chains nationwide
+app.get('/api/ownership/top-chains', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query
+
+    const result = await pool.query(`
+      SELECT
+        ownership_chain,
+        COUNT(*) as facility_count,
+        SUM(total_beds) as total_beds,
+        COUNT(DISTINCT state) as state_count,
+        AVG(overall_rating) as avg_rating,
+        AVG(occupancy_rate) as avg_occupancy,
+        AVG(health_deficiencies) as avg_deficiencies
+      FROM snf_facilities
+      WHERE active = true
+        AND ownership_chain IS NOT NULL
+        AND ownership_chain != ''
+      GROUP BY ownership_chain
+      ORDER BY facility_count DESC
+      LIMIT $1
+    `, [parseInt(limit)])
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Error fetching top chains:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// GET /api/ownership/stats - Get overall ownership statistics
+app.get('/api/ownership/stats', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        COUNT(DISTINCT ownership_chain) as total_chains,
+        COUNT(*) as total_facilities,
+        SUM(total_beds) as total_beds,
+        AVG(overall_rating) as avg_rating
+      FROM snf_facilities
+      WHERE active = true
+        AND ownership_chain IS NOT NULL
+        AND ownership_chain != ''
+    `)
+
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error fetching ownership stats:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// GET /api/ownership/search - Search ownership chains
+app.get('/api/ownership/search', async (req, res) => {
+  try {
+    const {
+      search = '',
+      ownershipType = 'all',
+      minFacilities = 0,
+      minBeds = 0,
+      sortBy = 'facilities'
+    } = req.query
+
+    let orderBy = 'facility_count DESC'
+    switch (sortBy) {
+      case 'beds':
+        orderBy = 'total_beds DESC'
+        break
+      case 'rating':
+        orderBy = 'avg_rating DESC'
+        break
+      case 'name':
+        orderBy = 'ownership_chain ASC'
+        break
+    }
+
+    const ownershipTypeFilter = ownershipType !== 'all'
+      ? `AND ownership_type = '${ownershipType}'`
+      : ''
+
+    const searchFilter = search
+      ? `AND (
+          LOWER(ownership_chain) LIKE LOWER('%${search}%') OR
+          LOWER(legal_business_name) LIKE LOWER('%${search}%') OR
+          LOWER(parent_organization) LIKE LOWER('%${search}%')
+        )`
+      : ''
+
+    const result = await pool.query(`
+      SELECT
+        ownership_chain,
+        ownership_type,
+        COUNT(*) as facility_count,
+        SUM(total_beds) as total_beds,
+        COUNT(DISTINCT state) as state_count,
+        AVG(overall_rating) as avg_rating,
+        AVG(occupancy_rate) as avg_occupancy,
+        AVG(health_deficiencies) as avg_deficiencies
+      FROM snf_facilities
+      WHERE active = true
+        AND ownership_chain IS NOT NULL
+        AND ownership_chain != ''
+        ${ownershipTypeFilter}
+        ${searchFilter}
+      GROUP BY ownership_chain, ownership_type
+      HAVING COUNT(*) >= $1
+        AND SUM(total_beds) >= $2
+      ORDER BY ${orderBy}
+      LIMIT 100
+    `, [parseInt(minFacilities), parseInt(minBeds)])
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Error searching ownership:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// GET /api/ownership/:ownerName/details - Get detailed info for specific owner
+app.get('/api/ownership/:ownerName/details', async (req, res) => {
+  try {
+    const { ownerName } = req.params
+
+    // Get aggregated stats
+    const statsResult = await pool.query(`
+      SELECT
+        ownership_chain as chain_name,
+        ownership_type,
+        COUNT(*) as facility_count,
+        SUM(total_beds) as total_beds,
+        COUNT(DISTINCT state) as state_count,
+        AVG(overall_rating) as avg_rating,
+        AVG(occupancy_rate) as avg_occupancy,
+        AVG(health_deficiencies) as avg_deficiencies,
+        AVG(staffing_rating) as avg_staffing_rating,
+        AVG(health_inspection_rating) as avg_health_rating,
+        AVG(quality_measure_rating) as avg_quality_rating
+      FROM snf_facilities
+      WHERE ownership_chain = $1 AND active = true
+      GROUP BY ownership_chain, ownership_type
+    `, [ownerName])
+
+    if (statsResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Owner not found' })
+    }
+
+    // Get state breakdown
+    const stateBreakdown = await pool.query(`
+      SELECT
+        state,
+        COUNT(*) as facility_count,
+        SUM(total_beds) as total_beds,
+        AVG(overall_rating) as avg_rating
+      FROM snf_facilities
+      WHERE ownership_chain = $1 AND active = true
+      GROUP BY state
+      ORDER BY facility_count DESC
+    `, [ownerName])
+
+    // Get all facilities
+    const facilities = await pool.query(`
+      SELECT
+        facility_name,
+        city,
+        state,
+        total_beds,
+        overall_rating,
+        occupancy_rate,
+        health_deficiencies
+      FROM snf_facilities
+      WHERE ownership_chain = $1 AND active = true
+      ORDER BY state, city, facility_name
+    `, [ownerName])
+
+    res.json({
+      ...statsResult.rows[0],
+      chainName: statsResult.rows[0].chain_name,
+      ownershipType: statsResult.rows[0].ownership_type,
+      facilityCount: parseInt(statsResult.rows[0].facility_count),
+      totalBeds: parseInt(statsResult.rows[0].total_beds),
+      stateCount: parseInt(statsResult.rows[0].state_count),
+      avgRating: parseFloat(statsResult.rows[0].avg_rating),
+      avgOccupancy: parseFloat(statsResult.rows[0].avg_occupancy),
+      avgDeficiencies: parseFloat(statsResult.rows[0].avg_deficiencies),
+      avgStaffingRating: parseFloat(statsResult.rows[0].avg_staffing_rating),
+      avgHealthRating: parseFloat(statsResult.rows[0].avg_health_rating),
+      avgQualityRating: parseFloat(statsResult.rows[0].avg_quality_rating),
+      stateBreakdown: stateBreakdown.rows,
+      facilities: facilities.rows
+    })
+  } catch (error) {
+    console.error('Error fetching owner details:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 

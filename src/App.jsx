@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Newspaper, Settings, RefreshCw, Calendar, Bookmark, User, LogIn, UserCircle } from 'lucide-react'
+import { Newspaper, Settings, RefreshCw, Calendar, Bookmark, User, LogIn, UserCircle, ChevronDown } from 'lucide-react'
 import './App.css'
 import FilterPanel from './components/FilterPanel'
 import ArticleList from './components/ArticleList'
@@ -18,6 +18,8 @@ import PriorityFeed from './components/PriorityFeed'
 import RegulatoryFeed from './components/RegulatoryFeed'
 import MedicaidChatbot from './components/MedicaidChatbot'
 import FacilityResearch from './components/FacilityResearch'
+import IdahoALFChatbot from './components/IdahoALFChatbot'
+import OwnershipResearch from './components/OwnershipResearch'
 import { fetchArticles, fetchArticleStats } from './services/apiService'
 
 function App() {
@@ -29,7 +31,9 @@ function App() {
     return saved ? JSON.parse(saved) : []
   })
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [marketInsightsOpen, setMarketInsightsOpen] = useState(false)
   const userMenuRef = useRef(null)
+  const marketInsightsRef = useRef(null)
   const [filters, setFilters] = useState({
     category: 'All',
     impact: 'all',
@@ -122,16 +126,19 @@ function App() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false)
       }
+      if (marketInsightsRef.current && !marketInsightsRef.current.contains(event.target)) {
+        setMarketInsightsOpen(false)
+      }
     }
 
-    if (userMenuOpen) {
+    if (userMenuOpen || marketInsightsOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [userMenuOpen])
+  }, [userMenuOpen, marketInsightsOpen])
 
   // Client-side filtering for date only (backend handles everything else)
   const filteredArticles = useMemo(() => {
@@ -290,23 +297,63 @@ function App() {
             >
               Priority Feed
             </Link>
-            <Link
-              to="/state-comparison"
-              className={`nav-tab ${location.pathname === '/state-comparison' || location.pathname.startsWith('/state/') ? 'active' : ''}`}
-            >
-              State Analysis
-            </Link>
+
+            {/* Market Insights Dropdown */}
+            <div className="nav-dropdown" ref={marketInsightsRef}>
+              <button
+                className={`nav-tab ${
+                  location.pathname === '/facility-research' ||
+                  location.pathname === '/state-comparison' ||
+                  location.pathname.startsWith('/state/') ||
+                  location.pathname.startsWith('/ma') ||
+                  location.pathname === '/ownership-research'
+                    ? 'active'
+                    : ''
+                }`}
+                onClick={() => setMarketInsightsOpen(!marketInsightsOpen)}
+              >
+                Market Insights
+                <ChevronDown size={16} style={{ marginLeft: '4px' }} />
+              </button>
+              {marketInsightsOpen && (
+                <div className="nav-dropdown-menu">
+                  <Link
+                    to="/facility-research"
+                    className="nav-dropdown-item"
+                    onClick={() => setMarketInsightsOpen(false)}
+                  >
+                    Facility Research
+                  </Link>
+                  <Link
+                    to="/state-comparison"
+                    className="nav-dropdown-item"
+                    onClick={() => setMarketInsightsOpen(false)}
+                  >
+                    State Analysis
+                  </Link>
+                  <Link
+                    to="/ma"
+                    className="nav-dropdown-item"
+                    onClick={() => setMarketInsightsOpen(false)}
+                  >
+                    M&A
+                  </Link>
+                  <Link
+                    to="/ownership-research"
+                    className="nav-dropdown-item"
+                    onClick={() => setMarketInsightsOpen(false)}
+                  >
+                    Ownership Research
+                  </Link>
+                </div>
+              )}
+            </div>
+
             <Link
               to="/regulatory"
               className={`nav-tab ${location.pathname === '/regulatory' ? 'active' : ''}`}
             >
               Regulatory Feed
-            </Link>
-            <Link
-              to="/ma"
-              className={`nav-tab ${location.pathname.startsWith('/ma') ? 'active' : ''}`}
-            >
-              M&A
             </Link>
             <Link
               to="/conferences"
@@ -339,10 +386,10 @@ function App() {
               Advocate
             </Link>
             <Link
-              to="/facility-research"
-              className={`nav-tab ${location.pathname === '/facility-research' ? 'active' : ''}`}
+              to="/idaho-alf"
+              className={`nav-tab ${location.pathname === '/idaho-alf' ? 'active' : ''}`}
             >
-              Facility Research
+              Idaho ALF
             </Link>
           </nav>
 
@@ -493,6 +540,14 @@ function App() {
           <main className="app-main">
             <FacilityResearch />
           </main>
+        } />
+
+        {/* Ownership Research Route */}
+        <Route path="/ownership-research" element={<OwnershipResearch />} />
+
+        {/* Idaho ALF Chatbot Route */}
+        <Route path="/idaho-alf" element={
+          <IdahoALFChatbot />
         } />
 
         {/* Login Route (Placeholder) */}

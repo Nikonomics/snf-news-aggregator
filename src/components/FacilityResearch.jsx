@@ -57,6 +57,15 @@ function FacilityResearch() {
   const [geocodedFacilities, setGeocodedFacilities] = useState([])
   const [geocoding, setGeocoding] = useState(false)
 
+  // Post-search filters
+  const [minRating, setMinRating] = useState(0)
+  const [maxRating, setMaxRating] = useState(5)
+  const [minBeds, setMinBeds] = useState(0)
+  const [maxBeds, setMaxBeds] = useState(1000)
+  const [ownershipType, setOwnershipType] = useState('all')
+  const [deficiencyFilter, setDeficiencyFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('relevance') // relevance, rating, beds, name
+
   const { isLoaded: mapsLoaded } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES
@@ -227,6 +236,13 @@ function FacilityResearch() {
   const clearFilters = () => {
     setSelectedStates([])
     setSelectedChains([])
+    setMinRating(0)
+    setMaxRating(5)
+    setMinBeds(0)
+    setMaxBeds(1000)
+    setOwnershipType('all')
+    setDeficiencyFilter('all')
+    setSortBy('relevance')
   }
 
   const applyFilters = () => {
@@ -242,6 +258,63 @@ function FacilityResearch() {
     // Filter by selected chains
     if (selectedChains.length > 0) {
       filtered = filtered.filter(f => selectedChains.includes(f.ownership_chain))
+    }
+
+    // Filter by star rating
+    filtered = filtered.filter(f => {
+      const rating = f.overall_rating || f.overallRating || 0
+      return rating >= minRating && rating <= maxRating
+    })
+
+    // Filter by bed count
+    filtered = filtered.filter(f => {
+      const beds = f.total_beds || f.numberOfBeds || 0
+      return beds >= minBeds && beds <= maxBeds
+    })
+
+    // Filter by ownership type
+    if (ownershipType !== 'all') {
+      filtered = filtered.filter(f => {
+        const type = (f.ownership_type || '').toLowerCase()
+        if (ownershipType === 'for-profit') return type.includes('profit') && !type.includes('non')
+        if (ownershipType === 'non-profit') return type.includes('non')
+        if (ownershipType === 'government') return type.includes('government')
+        return true
+      })
+    }
+
+    // Filter by deficiencies
+    if (deficiencyFilter !== 'all') {
+      filtered = filtered.filter(f => {
+        const defCount = parseInt(f.total_deficiencies || f.deficiency_count || 0)
+        if (deficiencyFilter === 'none') return defCount === 0
+        if (deficiencyFilter === 'low') return defCount > 0 && defCount <= 5
+        if (deficiencyFilter === 'medium') return defCount > 5 && defCount <= 15
+        if (deficiencyFilter === 'high') return defCount > 15
+        return true
+      })
+    }
+
+    // Apply sorting
+    if (sortBy !== 'relevance') {
+      filtered = [...filtered].sort((a, b) => {
+        if (sortBy === 'rating') {
+          return (b.overall_rating || b.overallRating || 0) - (a.overall_rating || a.overallRating || 0)
+        }
+        if (sortBy === 'rating-asc') {
+          return (a.overall_rating || a.overallRating || 0) - (b.overall_rating || b.overallRating || 0)
+        }
+        if (sortBy === 'beds') {
+          return (b.total_beds || b.numberOfBeds || 0) - (a.total_beds || a.numberOfBeds || 0)
+        }
+        if (sortBy === 'beds-asc') {
+          return (a.total_beds || a.numberOfBeds || 0) - (b.total_beds || b.numberOfBeds || 0)
+        }
+        if (sortBy === 'name') {
+          return (a.facility_name || a.providerName || '').localeCompare(b.facility_name || b.providerName || '')
+        }
+        return 0
+      })
     }
 
     return { ...results, results: filtered, total: filtered.length }
@@ -581,8 +654,77 @@ function FacilityResearch() {
                 </div>
               )}
 
+              {showFilters && (
+                <>
+                  {/* Star Rating Filter */}
+                  <div className="sidebar-filter-section">
+                    <h4>Star Rating</h4>
+                    <select value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
+                      <option value={0}>Any</option>
+                      <option value={1}>1+</option>
+                      <option value={2}>2+</option>
+                      <option value={3}>3+</option>
+                      <option value={4}>4+</option>
+                      <option value={5}>5 Stars</option>
+                    </select>
+                  </div>
+
+                  {/* Bed Count Filter */}
+                  <div className="sidebar-filter-section">
+                    <h4>Bed Count</h4>
+                    <select value={`${minBeds}-${maxBeds}`} onChange={(e) => {
+                      const [min, max] = e.target.value.split('-').map(Number)
+                      setMinBeds(min)
+                      setMaxBeds(max)
+                    }}>
+                      <option value="0-1000">All Sizes</option>
+                      <option value="0-50">Small (1-50)</option>
+                      <option value="51-100">Medium (51-100)</option>
+                      <option value="101-150">Large (101-150)</option>
+                      <option value="151-1000">Very Large (151+)</option>
+                    </select>
+                  </div>
+
+                  {/* Deficiency Filter */}
+                  <div className="sidebar-filter-section">
+                    <h4>Deficiencies</h4>
+                    <select value={deficiencyFilter} onChange={(e) => setDeficiencyFilter(e.target.value)}>
+                      <option value="all">All</option>
+                      <option value="none">No Deficiencies</option>
+                      <option value="low">Low (1-5)</option>
+                      <option value="medium">Medium (6-15)</option>
+                      <option value="high">High (16+)</option>
+                    </select>
+                  </div>
+
+                  {/* Sort By */}
+                  <div className="sidebar-filter-section">
+                    <h4>Sort By</h4>
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                      <option value="relevance">Relevance</option>
+                      <option value="rating">Star Rating (High to Low)</option>
+                      <option value="rating-asc">Star Rating (Low to High)</option>
+                      <option value="beds">Bed Count (High to Low)</option>
+                      <option value="beds-asc">Bed Count (Low to High)</option>
+                      <option value="name">Name (A-Z)</option>
+                    </select>
+                  </div>
+
+                  {/* Ownership Type Filter */}
+                  <div className="sidebar-filter-section">
+                    <h4>Ownership Type</h4>
+                    <select value={ownershipType} onChange={(e) => setOwnershipType(e.target.value)}>
+                      <option value="all">All Types</option>
+                      <option value="for-profit">For Profit</option>
+                      <option value="non-profit">Non-Profit</option>
+                      <option value="government">Government</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               {/* Clear Filters in Sidebar */}
-              {(selectedStates.length > 0 || selectedChains.length > 0) && (
+              {(selectedStates.length > 0 || selectedChains.length > 0 || minRating > 0 || maxRating < 5 || minBeds > 0 || maxBeds < 1000 || ownershipType !== 'all' || deficiencyFilter !== 'all' || sortBy !== 'relevance') && (
                 <button className="clear-filters-btn" onClick={clearFilters}>
                   <X size={16} />
                   Clear All Filters
