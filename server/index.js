@@ -919,6 +919,10 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/medicaid', medicaidRouter)
 
+// API monitoring routes
+import apiMonitoringRouter from './routes/api-monitoring.js'
+app.use('/api', apiMonitoringRouter)
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })

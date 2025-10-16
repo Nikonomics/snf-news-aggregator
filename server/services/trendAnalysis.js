@@ -1,9 +1,15 @@
 import * as db from '../database/db.js'
 import Anthropic from '@anthropic-ai/sdk'
+import apiKeyManager from './apiKeyManager.js'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-})
+// Create Anthropic client with key rotation
+function createAnthropicClient() {
+  const apiKey = apiKeyManager.getNextAvailableKey()
+  if (!apiKey) {
+    throw new Error('No valid Anthropic API keys available')
+  }
+  return new Anthropic({ apiKey })
+}
 
 // Normalize text for clustering
 function normalizeForClustering(text) {
