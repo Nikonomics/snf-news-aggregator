@@ -9,18 +9,18 @@ import OpenAI from 'openai'
 class AIService {
   constructor() {
     this.providers = {
-      anthropic: {
-        client: new Anthropic({
-          apiKey: process.env.ANTHROPIC_API_KEY
-        }),
-        available: !!process.env.ANTHROPIC_API_KEY,
-        priority: 1
-      },
       openai: {
         client: new OpenAI({
           apiKey: process.env.OPENAI_API_KEY
         }),
         available: !!process.env.OPENAI_API_KEY,
+        priority: 1
+      },
+      anthropic: {
+        client: new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY
+        }),
+        available: !!process.env.ANTHROPIC_API_KEY,
         priority: 2
       }
     }
@@ -66,8 +66,8 @@ class AIService {
   markProviderSuccess(provider) {
     this.failedProviders.delete(provider)
     // Reset to primary provider if it's working again
-    if (provider === 'anthropic') {
-      this.currentProvider = 'anthropic'
+    if (provider === 'openai') {
+      this.currentProvider = 'openai'
     }
   }
 
