@@ -10,18 +10,39 @@ class AIService {
   constructor() {
     this.providers = {
       openai: {
-        client: new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY
-        }),
-        available: !!process.env.OPENAI_API_KEY,
+        client: null,
+        available: false,
         priority: 1
       },
       anthropic: {
-        client: new Anthropic({
-          apiKey: process.env.ANTHROPIC_API_KEY
-        }),
-        available: !!process.env.ANTHROPIC_API_KEY,
+        client: null,
+        available: false,
         priority: 2
+      }
+    }
+    
+    // Initialize providers only if API keys are available
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        this.providers.openai.client = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY
+        })
+        this.providers.openai.available = true
+        console.log('✓ OpenAI client initialized')
+      } catch (error) {
+        console.error('Failed to initialize OpenAI client:', error.message)
+      }
+    }
+    
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        this.providers.anthropic.client = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY
+        })
+        this.providers.anthropic.available = true
+        console.log('✓ Anthropic client initialized')
+      } catch (error) {
+        console.error('Failed to initialize Anthropic client:', error.message)
       }
     }
     
@@ -51,10 +72,12 @@ class AIService {
       .sort((a, b) => a[1].priority - b[1].priority)
 
     if (sortedProviders.length === 0) {
-      throw new Error('No AI providers available')
+      console.error('❌ No AI providers available. Please check your API keys.')
+      throw new Error('No AI providers available. Please check your API keys.')
     }
 
     this.currentProvider = sortedProviders[0][0]
+    console.log(`🔄 Using AI provider: ${this.currentProvider}`)
     return this.currentProvider
   }
 
