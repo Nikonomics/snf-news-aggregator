@@ -7,6 +7,7 @@ import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import Anthropic from '@anthropic-ai/sdk'
+import aiService from './services/aiService.js'
 import * as db from './database/db.js'
 import pool from './database/db.js'
 import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
@@ -717,27 +718,13 @@ JSON Structure:
 
 Return ONLY the JSON object. No markdown. No extra text.`;
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY not configured');
-    }
-
-    const anthropic = new Anthropic({
-      apiKey: apiKey
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 2000,
+      temperature: 0.1
     });
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    });
-
-    const analysisText = message.content[0].text;
+    const analysisText = response.content;
+    console.log(`🤖 Article analysis using ${response.provider}`);
 
     // Strip markdown code fences and extract only the JSON object
     let cleanedText = analysisText.trim();
@@ -3010,22 +2997,13 @@ Return ONLY valid JSON with no additional text:`
       throw new Error('ANTHROPIC_API_KEY not configured')
     }
 
-    const anthropic = new Anthropic({
-      apiKey: apiKey
+    const response = await aiService.analyzeContent(parsePrompt, {
+      maxTokens: 1000,
+      temperature: 0
     })
 
-    const parseResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      temperature: 0,
-      messages: [{
-        role: 'user',
-        content: parsePrompt
-      }]
-    })
-
-    const parsedText = parseResponse.content[0].text.trim()
-    console.log('🤖 Claude response:', parsedText)
+    const parsedText = response.content.trim()
+    console.log(`🤖 Query parsing using ${response.provider}:`, parsedText)
 
     // Extract JSON from response
     let filters
@@ -3273,19 +3251,14 @@ Format your response as JSON with this structure:
   "relevanceReasoning": "why this matters explanation"
 }`
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 2000,
+      temperature: 0.1
     })
 
     // Extract the JSON from the response
-    const responseText = message.content[0].text
+    const responseText = response.content
+    console.log(`🤖 Article analysis using ${response.provider}`)
 
     // Try to parse as JSON, or extract JSON from markdown code blocks
     let analysis
