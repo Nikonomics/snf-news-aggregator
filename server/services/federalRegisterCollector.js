@@ -1,9 +1,7 @@
 import fetch from 'node-fetch';
-import Anthropic from '@anthropic-ai/sdk';
+import aiService from './aiService.js';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+// Using unified AI service with automatic fallback
 
 const FEDERAL_REGISTER_API = 'https://www.federalregister.gov/api/v1';
 
@@ -317,17 +315,13 @@ JSON Structure:
   "reasoning": "2-3 sentences explaining the relevance scores and strategic intelligence value"
 }`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 3000,
+      temperature: 0.3
     });
 
-    const responseText = message.content[0].text;
+    const responseText = response.content;
+    console.log(`🤖 Federal Register analysis using ${response.provider}`);
 
     // Extract JSON from response
     const jsonStart = responseText.indexOf('{');

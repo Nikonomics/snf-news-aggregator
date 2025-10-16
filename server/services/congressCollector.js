@@ -1,8 +1,8 @@
 import 'dotenv/config';
-import Anthropic from '@anthropic-ai/sdk';
+import aiService from './aiService.js';
 import * as billsDB from '../database/bills.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Using unified AI service with automatic fallback
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
 const CONGRESS_API_BASE = 'https://api.congress.gov/v3';
 
@@ -307,17 +307,13 @@ IF the bill has Overall Relevance < 50, return:
   "reasoning": "Not SNF-relevant because..."
 }`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 4000,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 4000,
+      temperature: 0.3
     });
 
-    const content = response.content[0].text;
+    const content = response.content;
+    console.log(`🤖 Congress analysis using ${response.provider}`);
     const jsonMatch = content.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {

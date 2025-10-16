@@ -193,17 +193,13 @@ Focus on:
 Respond with ONLY valid JSON.`
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 1000,
+      temperature: 0.3
     })
 
-    const jsonMatch = response.content[0].text.match(/\{[\s\S]*\}/)
+    const jsonMatch = response.content.match(/\{[\s\S]*\}/)
+    console.log(`🤖 Trend analysis using ${response.provider}`)
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0])
     }

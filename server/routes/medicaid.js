@@ -293,15 +293,14 @@ Here are the Medicaid policies for ${state}:
 
 ${policiesContext}`;
 
-    // Call Claude API with extended context for deep analysis
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: deepAnalysis ? 4096 : 2048,
-      system: systemPrompt,
-      messages: messages
+    // Call AI API with extended context for deep analysis
+    const response = await aiService.analyzeContent(messages[0].content, {
+      maxTokens: deepAnalysis ? 4096 : 2048,
+      temperature: 0.1
     });
 
-    const assistantMessage = response.content[0].text;
+    const assistantMessage = response.content;
+    console.log(`🤖 Medicaid analysis using ${response.provider}`);
 
     // Extract sources/citations from the response
     const citations = [];
