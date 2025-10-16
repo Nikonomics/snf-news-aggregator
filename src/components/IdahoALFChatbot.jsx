@@ -18,6 +18,8 @@ const IdahoALFChatbot = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRegulation, setSelectedRegulation] = useState(null);
+  const [isLoadingRegulations, setIsLoadingRegulations] = useState(true);
+  const [regulationsError, setRegulationsError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -35,11 +37,20 @@ const IdahoALFChatbot = () => {
 
   const loadRegulations = async () => {
     try {
+      setIsLoadingRegulations(true);
+      setRegulationsError(null);
       const response = await fetch('http://localhost:8000/chunks');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setRegulations(data);
     } catch (error) {
       console.error('Error loading regulations:', error);
+      setRegulationsError('Failed to load regulations. Please check if the backend server is running.');
+      setRegulations([]);
+    } finally {
+      setIsLoadingRegulations(false);
     }
   };
 
@@ -353,20 +364,43 @@ const IdahoALFChatbot = () => {
               {searchResults.length === 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-900">All Regulations:</h4>
-                  {regulations.slice(0, 20).map((regulation, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedRegulation(regulation)}
-                      className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
-                    >
-                      <div className="font-medium text-sm text-blue-600 mb-1">
-                        {regulation.citation}
+                  {isLoadingRegulations ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600">Loading regulations...</p>
                       </div>
-                      <div className="text-sm text-gray-700 line-clamp-2">
-                        {regulation.section_title}
-                      </div>
-                    </button>
-                  ))}
+                    </div>
+                  ) : regulationsError ? (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600 mb-2">{regulationsError}</p>
+                      <button
+                        onClick={loadRegulations}
+                        className="text-sm text-red-600 hover:text-red-800 underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : regulations.length > 0 ? (
+                    regulations.slice(0, 20).map((regulation, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedRegulation(regulation)}
+                        className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                      >
+                        <div className="font-medium text-sm text-blue-600 mb-1">
+                          {regulation.citation}
+                        </div>
+                        <div className="text-sm text-gray-700 line-clamp-2">
+                          {regulation.section_title}
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                      <p className="text-sm text-gray-600">No regulations available</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
