@@ -19,3 +19,7 @@ sqlalchemy==2.0.23
 # Testing
 pytest==7.4.3
 httpx==0.25.2
+
+# Build tools
+setuptools
+wheel
