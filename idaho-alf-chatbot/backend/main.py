@@ -183,7 +183,10 @@ async def list_chunks():
             "citation": chunk["citation"],
             "section_title": chunk["section_title"],
             "category": chunk["category"],
-            "content_length": len(chunk["content"])
+            "content": chunk["content"],
+            "content_length": len(chunk["content"]),
+            "effective_date": chunk.get("effective_date", "2022-03-15"),
+            "source_pdf_page": chunk.get("source_pdf_page", 1)
         }
         for chunk in rag_engine.chunks
     ]

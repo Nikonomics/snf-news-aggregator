@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Optional
 from embeddings import ChunkEmbeddingManager, create_embedding_generator
-from claude_client import ClaudeClient
+from ai_service import ai_service
 
 
 class RAGEngine:
@@ -52,12 +52,9 @@ class RAGEngine:
             str(self.chunks_with_embeddings_path.parent)
         )
 
-        # Initialize Claude client
-        self.claude_client = ClaudeClient(
-            api_key=claude_api_key,
-            model=claude_model
-        )
-        print(f"✓ Claude client initialized ({claude_model})")
+        # Use unified AI service instead of direct Claude client
+        self.ai_service = ai_service
+        print(f"✓ AI service initialized (unified with fallback)")
 
     def retrieve_relevant_chunks(
         self,
@@ -154,12 +151,31 @@ class RAGEngine:
         if verbose:
             print("Generating answer with Claude...\n")
 
-        response = self.claude_client.generate_response(
-            query=question,
-            retrieved_chunks=retrieved_chunks,
-            conversation_history=conversation_history,
-            temperature=temperature
-        )
+        # Build prompt for AI service
+        prompt = self._build_prompt(question, retrieved_chunks, conversation_history)
+        
+        # Use unified AI service with fallback
+        ai_response = self.ai_service.analyze_content(prompt, {
+            'maxTokens': 2048,
+            'temperature': temperature
+        })
+        
+        # Parse response
+        response = {
+            'response': ai_response['content'],
+            'citations': [
+                {
+                    'citation': chunk['citation'],
+                    'section_title': chunk['section_title'],
+                    'chunk_id': chunk['chunk_id']
+                }
+                for chunk in retrieved_chunks
+            ],
+            'usage': {
+                'provider': ai_response['provider'],
+                'chunks_retrieved': len(retrieved_chunks)
+            }
+        }
 
         if verbose:
             print("✓ Answer generated\n")
@@ -174,6 +190,42 @@ class RAGEngine:
         ]
 
         return response
+
+    def _build_prompt(self, question: str, retrieved_chunks: List[Dict], conversation_history: Optional[List[Dict]] = None) -> str:
+        """Build prompt for AI service."""
+        # System prompt
+        system_prompt = """You are a regulatory compliance expert for Idaho assisted living facilities. Your role:
+- Answer questions about IDAPA 16.03.22 regulations
+- Provide clear explanations in plain English
+- Always cite specific sections (e.g., "According to IDAPA 16.03.22.600...")
+- Be accurate - if unsure, say so
+- Never make up information
+
+Response format:
+1. Direct answer
+2. Specific citation with explanation
+3. Practical implications
+4. Related regulations if relevant
+
+Context from regulations:"""
+
+        # Add retrieved chunks
+        context = "\n\n".join([
+            f"**{chunk['citation']} - {chunk['section_title']}**\n{chunk['content'][:1000]}..."
+            for chunk in retrieved_chunks
+        ])
+
+        # Add conversation history if provided
+        history_text = ""
+        if conversation_history:
+            history_text = "\n\nPrevious conversation:\n"
+            for msg in conversation_history[-3:]:  # Last 3 messages
+                history_text += f"{msg['role']}: {msg['content']}\n"
+
+        # Combine everything
+        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nAnswer:"
+        
+        return prompt
 
     def answer_question_streaming(
         self,

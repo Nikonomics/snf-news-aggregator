@@ -1,0 +1,274 @@
+/* Idaho ALF RegNavigator - Healthcare Professional Design */
+
+/* Import Inter font for better readability */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Healthcare Professional Color Palette */
+:root {
+  --primary-blue: #4A90E2;
+  --primary-blue-dark: #357ABD;
+  --secondary-green: #7FB069;
+  --accent-coral: #FF6B6B;
+  --neutral-light: #F8F9FA;
+  --neutral-medium: #E9ECEF;
+  --neutral-dark: #2C3E50;
+  --text-primary: #2C3E50;
+  --text-secondary: #6C757D;
+  --success-green: #28A745;
+  --warning-orange: #FD7E14;
+  --danger-red: #DC3545;
+}
+
+/* Base typography */
+.idaho-alf-container {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* Healthcare-appropriate button styles */
+.healthcare-button {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 500;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.healthcare-button:hover {
+  background: var(--primary-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.healthcare-button:disabled {
+  background: #94A3B8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Secondary button for less important actions */
+.healthcare-button-secondary {
+  background: var(--neutral-light);
+  color: var(--text-primary);
+  border: 1px solid var(--neutral-medium);
+}
+
+.healthcare-button-secondary:hover {
+  background: var(--neutral-medium);
+  border-color: var(--primary-blue);
+}
+
+/* Success button for positive actions */
+.healthcare-button-success {
+  background: var(--secondary-green);
+  color: white;
+}
+
+.healthcare-button-success:hover {
+  background: #6A9A5A;
+}
+
+/* Input field styling */
+.healthcare-input {
+  border: 2px solid var(--neutral-medium);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.healthcare-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Card styling for regulation items */
+.regulation-card {
+  background: white;
+  border: 1px solid var(--neutral-medium);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.regulation-card:hover {
+  border-color: var(--primary-blue);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.1);
+  transform: translateY(-2px);
+}
+
+.regulation-card.selected {
+  border-color: var(--primary-blue);
+  background: #F0F7FF;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+}
+
+/* Category badges */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.category-badge.administrative {
+  background: #E3F2FD;
+  color: #1976D2;
+}
+
+.category-badge.licensing {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.category-badge.staffing {
+  background: #F3E5F5;
+  color: #7B1FA2;
+}
+
+.category-badge.physical_plant {
+  background: #FFF3E0;
+  color: #F57C00;
+}
+
+.category-badge.fire_safety {
+  background: #FFEBEE;
+  color: #D32F2F;
+}
+
+.category-badge.medications {
+  background: #FCE4EC;
+  color: #C2185B;
+}
+
+.category-badge.resident_care {
+  background: #E1F5FE;
+  color: #0277BD;
+}
+
+/* Message styling */
+.chat-message {
+  max-width: 80%;
+  padding: 16px 20px;
+  border-radius: 18px;
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.chat-message.user {
+  background: var(--primary-blue);
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 6px;
+}
+
+.chat-message.assistant {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--neutral-medium);
+  margin-right: auto;
+  border-bottom-left-radius: 6px;
+}
+
+.chat-message.error {
+  background: #FEF2F2;
+  color: var(--danger-red);
+  border: 1px solid #FECACA;
+}
+
+/* Loading animation */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--primary-blue);
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Modal styling */
+.regulation-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .healthcare-button {
+    border: 2px solid var(--text-primary);
+  }
+  
+  .regulation-card {
+    border: 2px solid var(--text-primary);
+  }
+}
+
+/* Large text support */
+@media (min-width: 1200px) {
+  .healthcare-input {
+    font-size: 18px;
+    padding: 16px 20px;
+  }
+  
+  .chat-message {
+    font-size: 18px;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .healthcare-button {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  .chat-message {
+    max-width: 95%;
+    font-size: 16px;
+  }
+}
