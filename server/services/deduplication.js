@@ -1,15 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk'
 import * as articlesDB from '../database/articles.js'
-import apiKeyManager from './apiKeyManager.js'
-
-// Create Anthropic client with key rotation
-function createAnthropicClient() {
-  const apiKey = apiKeyManager.getNextAvailableKey()
-  if (!apiKey) {
-    throw new Error('No valid Anthropic API keys available')
-  }
-  return new Anthropic({ apiKey })
-}
+import aiService from './aiService.js'
 
 // Configuration
 const CONFIG = {
@@ -116,41 +106,14 @@ Respond ONLY with valid JSON:
 
 If multiple candidates match, return the best match.`
 
-    // Try with current key, fallback to others if needed
-    let response
-    let lastError
-    
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const anthropic = createAnthropicClient()
-        response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 500,
-          temperature: 0.1, // Low temperature for consistent classification
-          messages: [{
-            role: 'user',
-            content: prompt
-          }]
-        })
-        break // Success, exit loop
-      } catch (error) {
-        lastError = error
-        console.warn(`API attempt ${attempt + 1} failed:`, error.message)
-        
-        if (error.message.includes('rate limit') || error.message.includes('quota')) {
-          // Mark current key as failed and try next
-          apiKeyManager.markKeyFailed(apiKeyManager.currentKeyIndex)
-        }
-        
-        if (attempt === 2) {
-          // All attempts failed, throw the last error
-          throw lastError
-        }
-      }
-    }
+    // Use unified AI service with automatic fallback
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 500,
+      temperature: 0.1
+    })
 
-    const responseText = response.content[0].text
-    console.log('AI deduplication response:', responseText.substring(0, 200))
+    const responseText = response.content
+    console.log(`AI deduplication response (${response.provider}):`, responseText.substring(0, 200))
 
     // Parse JSON response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/)

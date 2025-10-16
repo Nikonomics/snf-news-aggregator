@@ -4,10 +4,30 @@
 
 import express from 'express'
 import apiKeyManager from '../services/apiKeyManager.js'
+import aiService from '../services/aiService.js'
 
 const router = express.Router()
 
-// Get API key usage statistics
+// Get AI service statistics
+router.get('/ai/stats', (req, res) => {
+  try {
+    const aiStats = aiService.getStats()
+    const keyStats = apiKeyManager.getStats()
+    res.json({
+      success: true,
+      ai: aiStats,
+      keys: keyStats,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// Get API key usage statistics (legacy endpoint)
 router.get('/api-keys/stats', (req, res) => {
   try {
     const stats = apiKeyManager.getStats()
