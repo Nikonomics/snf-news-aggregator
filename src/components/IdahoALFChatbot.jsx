@@ -215,9 +215,11 @@ const IdahoALFChatbot = () => {
                       </div>
                     )}
                     
-                    <ReactMarkdown className="prose prose-sm max-w-none">
-                      {message.content}
-                    </ReactMarkdown>
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
 
                     {message.citations && message.citations.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
