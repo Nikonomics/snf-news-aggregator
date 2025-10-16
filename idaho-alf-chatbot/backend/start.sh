@@ -1,7 +1,10 @@
 #!/bin/bash
+# Startup script for Idaho ALF RegNavigator
 
-# Idaho ALF RegNavigator - Backend Startup Script
-# API keys should be set as environment variables
+# Load environment variables if .env exists
+if [ -f .env ]; then
+    export $(cat .env | xargs)
+fi
 
-echo "Starting Idaho ALF RegNavigator API..."
-python3 main.py
+# Start the application
+python main.py

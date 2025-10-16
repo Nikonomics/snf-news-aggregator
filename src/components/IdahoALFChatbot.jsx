@@ -75,7 +75,7 @@ const IdahoALFChatbot = () => {
     try {
       setIsLoadingRegulations(true);
       setRegulationsError(null);
-      const response = await fetch('http://localhost:8000/chunks');
+      const response = await fetch('https://alf-chatbot.onrender.com/chunks');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -131,7 +131,7 @@ const IdahoALFChatbot = () => {
 
     try {
       // Call backend API
-      const response = await fetch('http://localhost:8000/query', {
+      const response = await fetch('https://alf-chatbot.onrender.com/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ const IdahoALFChatbot = () => {
       console.error('Error calling chatbot API:', error);
       setMessages(prev => [...prev, {
           role: 'assistant',
-          content: `⚠️ **Error:** Unable to connect to the chatbot backend. Please make sure the API server is running on http://localhost:8000\n\nTo start the server:\n\`\`\`bash\ncd /Users/nikolashulewsky/snf-news-aggregator/idaho-alf-chatbot/backend\npython3 main.py\n\`\`\``,
+          content: `⚠️ **Error:** Unable to connect to the chatbot backend. Please check if the backend service is running on Render.`,
           error: true
       }]);
     } finally {
