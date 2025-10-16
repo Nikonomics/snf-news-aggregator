@@ -1,14 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import aiService from './aiService.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 /**
  * Generate weekly top 5 stories newsletter
@@ -119,18 +115,15 @@ Return a JSON object with this structure:
 Identify the ${limit} most significant THEMES/ISSUES. Group related articles together. Synthesize insights across multiple sources.`
 
   try {
-    console.log('🤖 Asking Claude to curate top stories...')
+    console.log('🤖 Asking AI to curate top stories...')
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 4096,
+      temperature: 0.1
     })
 
-    const responseText = message.content[0].text.trim()
+    const responseText = response.content.trim()
+    console.log(`🤖 Newsletter analysis using ${response.provider}`)
 
     // Parse JSON response
     let newsletter

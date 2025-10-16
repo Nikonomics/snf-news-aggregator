@@ -1,10 +1,10 @@
 import express from 'express';
-import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getRelevantDocuments } from '../services/documentFetcher.js';
 import vectorSearch from '../services/vectorSearch.js';
+import aiService from '../services/aiService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,10 +23,7 @@ try {
   console.error('Error loading Medicaid policies:', error);
 }
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Using unified AI service with automatic fallback
 
 // Initialize vector search (async, happens in background)
 vectorSearch.initialize().catch(err => {
