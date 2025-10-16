@@ -1,8 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+import aiService from './aiService.js'
 
 /**
  * Generate AI summary and sentiment analysis for a specific state
@@ -117,16 +113,13 @@ Return JSON in this exact structure:
 }`
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+    const response = await aiService.analyzeContent(prompt, {
+      maxTokens: 4096,
+      temperature: 0.1
     })
 
-    const responseText = message.content[0].text.trim()
+    const responseText = response.content.trim()
+    console.log(`🤖 AI analysis using ${response.provider} for ${state}`)
 
     let analysis
     try {
