@@ -233,7 +233,7 @@ function OwnershipResearch() {
                       loadOwnerDetails(chain.ownership_chain)
                     }}
                   >
-                    <div className="chain-rank">#{index + 1}</div>
+                    <div className="chain-rank">#{chain.ranking || index + 1}</div>
                     <div className="chain-info">
                       <div className="chain-name">{chain.ownership_chain}</div>
                       <div className="chain-stats">
@@ -276,7 +276,12 @@ function OwnershipResearch() {
                     onClick={() => loadOwnerDetails(owner.ownership_chain)}
                   >
                     <div className="owner-header">
-                      <h3>{owner.ownership_chain}</h3>
+                      <div className="owner-title-row">
+                        <h3>{owner.ownership_chain}</h3>
+                        {owner.ranking && (
+                          <span className="owner-ranking">#{owner.ranking}</span>
+                        )}
+                      </div>
                       <span
                         className="ownership-type-badge"
                         style={{ backgroundColor: getOwnershipTypeColor(owner.ownership_type) }}

@@ -2750,7 +2750,8 @@ app.get('/api/ownership/top-chains', async (req, res) => {
         COUNT(DISTINCT state) as state_count,
         AVG(overall_rating) as avg_rating,
         AVG(occupancy_rate) as avg_occupancy,
-        AVG(health_deficiencies) as avg_deficiencies
+        AVG(health_deficiencies) as avg_deficiencies,
+        ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as ranking
       FROM snf_facilities
       WHERE active = true
         AND ownership_chain IS NOT NULL
@@ -2826,24 +2827,29 @@ app.get('/api/ownership/search', async (req, res) => {
       : ''
 
     const result = await pool.query(`
-      SELECT
-        ownership_chain,
-        ownership_type,
-        COUNT(*) as facility_count,
-        SUM(total_beds) as total_beds,
-        COUNT(DISTINCT state) as state_count,
-        AVG(overall_rating) as avg_rating,
-        AVG(occupancy_rate) as avg_occupancy,
-        AVG(health_deficiencies) as avg_deficiencies
-      FROM snf_facilities
-      WHERE active = true
-        AND ownership_chain IS NOT NULL
-        AND ownership_chain != ''
+      WITH ranked_chains AS (
+        SELECT
+          ownership_chain,
+          ownership_type,
+          COUNT(*) as facility_count,
+          SUM(total_beds) as total_beds,
+          COUNT(DISTINCT state) as state_count,
+          AVG(overall_rating) as avg_rating,
+          AVG(occupancy_rate) as avg_occupancy,
+          AVG(health_deficiencies) as avg_deficiencies,
+          ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as ranking
+        FROM snf_facilities
+        WHERE active = true
+          AND ownership_chain IS NOT NULL
+          AND ownership_chain != ''
+        GROUP BY ownership_chain, ownership_type
+      )
+      SELECT *
+      FROM ranked_chains
+      WHERE facility_count >= $1
+        AND total_beds >= $2
         ${ownershipTypeFilter}
         ${searchFilter}
-      GROUP BY ownership_chain, ownership_type
-      HAVING COUNT(*) >= $1
-        AND SUM(total_beds) >= $2
       ORDER BY ${orderBy}
       LIMIT 100
     `, [parseInt(minFacilities), parseInt(minBeds)])
