@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users, ArrowUpDown, Search, Filter, Download, Plus, Eye, EyeOff } from 'lucide-react';
 import './ClusterDashboard.css';
 
 const ClusterDashboard = ({ onViewChange }) => {
@@ -7,6 +7,10 @@ const ClusterDashboard = ({ onViewChange }) => {
   const [tasks, setTasks] = useState([]);
   const [expandedClusters, setExpandedClusters] = useState({});
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState({ key: 'cluster_order', direction: 'asc' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [showClusterDetails, setShowClusterDetails] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -57,6 +61,40 @@ const ClusterDashboard = ({ onViewChange }) => {
     return { total, completed, inProgress, pending, progress };
   };
 
+  // Sort clusters
+  const handleSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const sortedClusters = [...clusters].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Filter clusters by search query
+  const filteredClusters = sortedClusters.filter(cluster => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      cluster.cluster_name.toLowerCase().includes(query) ||
+      cluster.description?.toLowerCase().includes(query) ||
+      cluster.status?.toLowerCase().includes(query)
+    );
+  });
+
+  // View cluster details
+  const viewClusterDetails = (cluster) => {
+    setSelectedCluster(cluster);
+    setShowClusterDetails(true);
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Complete':
@@ -95,11 +133,12 @@ const ClusterDashboard = ({ onViewChange }) => {
 
   return (
     <div className="cluster-dashboard">
+      {/* Header */}
       <div className="dashboard-header">
         <div className="header-top">
           <div className="header-title">
             <Target size={24} />
-            <h1>Development Roadmap - Cluster View</h1>
+            <h1>Development Roadmap - Cluster Database</h1>
           </div>
           <div className="view-toggle">
             <button 
@@ -120,112 +159,216 @@ const ClusterDashboard = ({ onViewChange }) => {
               className="toggle-btn active"
             >
               <Target size={16} />
-              Cluster View
+              Cluster Database
             </button>
           </div>
         </div>
-        <p className="header-subtitle">
-          Tasks organized by development clusters with dependency relationships
-        </p>
       </div>
 
-      <div className="clusters-container">
-        {clusters.map(cluster => {
-          const stats = getClusterStats(cluster.cluster_id);
-          const clusterTasks = getTasksForCluster(cluster.cluster_id);
-          const isExpanded = expandedClusters[cluster.cluster_id];
+      {/* Toolbar */}
+      <div className="toolbar">
+        <div className="toolbar-left">
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Search clusters..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button className="toolbar-btn">
+            <Filter size={16} />
+            Filter
+          </button>
+        </div>
+        <div className="toolbar-right">
+          <button className="toolbar-btn">
+            <Download size={16} />
+            Export
+          </button>
+          <button className="toolbar-btn primary">
+            <Plus size={16} />
+            Add Cluster
+          </button>
+        </div>
+      </div>
 
-          return (
-            <div key={cluster.cluster_id} className="cluster-card">
-              <div 
-                className="cluster-header"
-                onClick={() => toggleCluster(cluster.cluster_id)}
-              >
-                <div className="cluster-title-section">
-                  {isExpanded ? (
-                    <ChevronDown className="expand-icon" size={20} />
-                  ) : (
-                    <ChevronRight className="expand-icon" size={20} />
-                  )}
-                  <div className="cluster-info">
-                    <h2 className="cluster-name">
-                      {cluster.cluster_name}
-                    </h2>
-                    <span className="cluster-order">Order: {cluster.cluster_order}</span>
-                  </div>
+      {/* Database Table */}
+      <div className="database-table-container">
+        <table className="database-table">
+          <thead>
+            <tr>
+              <th className="col-order" onClick={() => handleSort('cluster_order')}>
+                <div className="th-content">
+                  <span>Order</span>
+                  <ArrowUpDown size={14} />
                 </div>
-
-                <div className="cluster-stats">
-                  <div className="stat-item">
-                    <Target size={16} />
-                    <span>{stats.total} tasks</span>
-                  </div>
-                  <div className="stat-item completed">
-                    <CheckCircle size={16} />
-                    <span>{stats.completed} done</span>
-                  </div>
-                  <div className="stat-item">
-                    <TrendingUp size={16} />
-                    <span>{stats.progress}%</span>
-                  </div>
+              </th>
+              <th className="col-name" onClick={() => handleSort('cluster_name')}>
+                <div className="th-content">
+                  <span>Cluster Name</span>
+                  <ArrowUpDown size={14} />
                 </div>
-
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar" 
-                    style={{ width: `${stats.progress}%` }}
-                  />
+              </th>
+              <th className="col-status" onClick={() => handleSort('status')}>
+                <div className="th-content">
+                  <span>Status</span>
+                  <ArrowUpDown size={14} />
                 </div>
-              </div>
-
-              {isExpanded && (
-                <div className="cluster-content">
-                  <div className="cluster-description">
-                    <p><strong>Description:</strong> {cluster.description}</p>
-                    <p><strong>Completion Criteria:</strong> {cluster.completion_criteria}</p>
-                  </div>
-
-                  <div className="tasks-section">
-                    <h3>Tasks ({clusterTasks.length})</h3>
-                    
-                    {clusterTasks.length === 0 ? (
-                      <div className="no-tasks">No tasks assigned to this cluster</div>
-                    ) : (
-                      <div className="tasks-list">
-                        {clusterTasks.map(task => (
-                          <div key={task.id} className="task-row">
-                            <div className="task-checkbox">
-                              {getStatusIcon(task.status)}
-                            </div>
-                            <div className="task-info">
-                              <div className="task-name">{task.name}</div>
-                              {task.description && (
-                                <div className="task-description">{task.description}</div>
-                              )}
-                            </div>
-                            <div className="task-meta">
-                              {getStatusBadge(task.status)}
-                              {task.priority && (
-                                <span className={`priority-badge ${task.priority?.toLowerCase()}`}>
-                                  {task.priority}
-                                </span>
-                              )}
-                              {task.category_id && (
-                                <span className="category-badge">{task.category_id}</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+              </th>
+              <th className="col-tasks">
+                <div className="th-content">
+                  <span>Tasks</span>
+                </div>
+              </th>
+              <th className="col-completed">
+                <div className="th-content">
+                  <span>Completed</span>
+                </div>
+              </th>
+              <th className="col-progress">
+                <div className="th-content">
+                  <span>Progress</span>
+                </div>
+              </th>
+              <th className="col-actions">
+                <div className="th-content">
+                  <span>Actions</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredClusters.map(cluster => {
+              const stats = getClusterStats(cluster.cluster_id);
+              const isExpanded = expandedClusters[cluster.cluster_id];
+              
+              return (
+                <React.Fragment key={cluster.cluster_id}>
+                  <tr className="cluster-row" onClick={() => toggleCluster(cluster.cluster_id)}>
+                    <td className="col-order">
+                      <div className="cell-content">
+                        <span className="order-badge">#{cluster.cluster_order}</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                    </td>
+                    <td className="col-name">
+                      <div className="cell-content">
+                        <div className="cluster-name-cell">
+                          {isExpanded ? (
+                            <ChevronDown size={16} className="expand-icon" />
+                          ) : (
+                            <ChevronRight size={16} className="expand-icon" />
+                          )}
+                          <span className="cluster-name-text">{cluster.cluster_name}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="col-status">
+                      <div className="cell-content">
+                        {getStatusBadge(cluster.status)}
+                      </div>
+                    </td>
+                    <td className="col-tasks">
+                      <div className="cell-content">
+                        <span className="stat-value">{stats.total}</span>
+                      </div>
+                    </td>
+                    <td className="col-completed">
+                      <div className="cell-content">
+                        <span className="stat-value completed">{stats.completed}</span>
+                      </div>
+                    </td>
+                    <td className="col-progress">
+                      <div className="cell-content">
+                        <div className="progress-cell">
+                          <div className="progress-bar-mini">
+                            <div 
+                              className="progress-bar-fill" 
+                              style={{ width: `${stats.progress}%` }}
+                            />
+                          </div>
+                          <span className="progress-text">{stats.progress}%</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="col-actions">
+                      <div className="cell-content">
+                        <button 
+                          className="icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            viewClusterDetails(cluster);
+                          }}
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  {/* Expanded Tasks */}
+                  {isExpanded && (
+                    <tr className="expanded-row">
+                      <td colSpan="7">
+                        <div className="expanded-content">
+                          <div className="cluster-info-section">
+                            <div className="info-row">
+                              <span className="info-label">Description:</span>
+                              <span className="info-value">{cluster.description}</span>
+                            </div>
+                            {cluster.completion_criteria && (
+                              <div className="info-row">
+                                <span className="info-label">Completion Criteria:</span>
+                                <span className="info-value">{cluster.completion_criteria}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="tasks-table-section">
+                            <h4>Tasks ({stats.total})</h4>
+                            {stats.total === 0 ? (
+                              <div className="no-tasks">No tasks assigned to this cluster</div>
+                            ) : (
+                              <div className="tasks-table">
+                                <table>
+                                  <thead>
+                                    <tr>
+                                      <th>Status</th>
+                                      <th>Task Name</th>
+                                      <th>Description</th>
+                                      <th>Category</th>
+                                      <th>Priority</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {getTasksForCluster(cluster.cluster_id).map(task => (
+                                      <tr key={task.id}>
+                                        <td>{getStatusIcon(task.status)}</td>
+                                        <td className="task-name-cell">{task.name}</td>
+                                        <td className="task-desc-cell">{task.description}</td>
+                                        <td><span className="category-badge-small">{task.category_id}</span></td>
+                                        <td><span className={`priority-badge-small ${task.priority?.toLowerCase()}`}>{task.priority}</span></td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
+      {/* Footer Stats */}
       <div className="dashboard-footer">
         <div className="footer-stats">
           <div className="footer-stat">
@@ -252,6 +395,52 @@ const ClusterDashboard = ({ onViewChange }) => {
           </div>
         </div>
       </div>
+
+      {/* Cluster Details Modal */}
+      {showClusterDetails && selectedCluster && (
+        <div className="modal-overlay" onClick={() => setShowClusterDetails(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedCluster.cluster_name}</h2>
+              <button className="close-btn" onClick={() => setShowClusterDetails(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-section">
+                <h3>Description</h3>
+                <p>{selectedCluster.description}</p>
+              </div>
+              <div className="modal-section">
+                <h3>Completion Criteria</h3>
+                <p>{selectedCluster.completion_criteria}</p>
+              </div>
+              <div className="modal-section">
+                <h3>Statistics</h3>
+                <div className="modal-stats">
+                  {(() => {
+                    const stats = getClusterStats(selectedCluster.cluster_id);
+                    return (
+                      <>
+                        <div className="modal-stat">
+                          <span className="modal-stat-label">Total Tasks:</span>
+                          <span className="modal-stat-value">{stats.total}</span>
+                        </div>
+                        <div className="modal-stat">
+                          <span className="modal-stat-label">Completed:</span>
+                          <span className="modal-stat-value completed">{stats.completed}</span>
+                        </div>
+                        <div className="modal-stat">
+                          <span className="modal-stat-label">Progress:</span>
+                          <span className="modal-stat-value">{stats.progress}%</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
