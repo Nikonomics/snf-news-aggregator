@@ -161,8 +161,21 @@ class RAGEngine:
         })
         
         # Parse response
+        response_text = ai_response['content']
+        
+        # Validate that all citations are used in the response
+        import re
+        used_citations = set(re.findall(r'\[(\d+)\]', response_text))
+        expected_citations = set(str(i+1) for i in range(len(retrieved_chunks)))
+        missing_citations = expected_citations - used_citations
+        
+        if missing_citations and verbose:
+            print(f"⚠️  WARNING: Citations not used in response: {sorted(missing_citations, key=int)}")
+            print(f"   Used citations: {sorted(used_citations, key=int)}")
+            print(f"   Expected citations: {sorted(expected_citations, key=int)}")
+        
         response = {
-            'response': ai_response['content'],
+            'response': response_text,
             'citations': [
                 {
                     'citation': chunk['citation'],
@@ -173,7 +186,10 @@ class RAGEngine:
             ],
             'usage': {
                 'provider': ai_response['provider'],
-                'chunks_retrieved': len(retrieved_chunks)
+                'chunks_retrieved': len(retrieved_chunks),
+                'citations_used': len(used_citations),
+                'citations_expected': len(expected_citations),
+                'missing_citations': sorted(missing_citations, key=int) if missing_citations else []
             }
         }
 
@@ -196,21 +212,25 @@ class RAGEngine:
         # System prompt
         system_prompt = """You are a regulatory compliance expert for Idaho assisted living facilities.
 
-CRITICAL INSTRUCTION: You MUST use inline citations [1], [2], [3], etc. throughout your response.
+CRITICAL INSTRUCTION: You MUST use ALL inline citations [1], [2], [3], etc. throughout your response.
 
-Rules:
-- Every statement about a regulation MUST include an inline citation like [1], [2], [3]
-- Use the citation number that corresponds to the regulation in the context below
-- Example: "According to [1], facilities must maintain minimum staffing ratios..."
-- Example: "The administrator must complete [2] within 30 days of hire."
-- Be accurate - if unsure, say so
-- Never make up information
+MANDATORY RULES:
+1. EVERY regulation you mention MUST have an inline citation [1], [2], [3], etc.
+2. You MUST use ALL the citation numbers provided in the context below
+3. If you cite a regulation in your answer, it MUST appear inline with [number]
+4. Do NOT list citations at the bottom that aren't used inline
+5. Example: "According to [1], facilities must maintain minimum staffing ratios..."
+6. Example: "The administrator must complete [2] within 30 days of hire."
+7. Be accurate - if unsure, say so
+8. Never make up information
 
 Response format:
 1. Direct answer with inline citations [1], [2], etc. throughout the text
-2. Specific citation with explanation
+2. Specific citation with explanation (use inline citations here too)
 3. Practical implications
-4. Related regulations if relevant
+4. Related regulations if relevant (use inline citations here too)
+
+IMPORTANT: Every citation number [1], [2], [3], etc. that appears in the context below MUST be used at least once in your response.
 
 Context from regulations (numbered [1], [2], [3], etc.):"""
 
@@ -227,8 +247,11 @@ Context from regulations (numbered [1], [2], [3], etc.):"""
             for msg in conversation_history[-3:]:  # Last 3 messages
                 history_text += f"{msg['role']}: {msg['content']}\n"
 
-        # Combine everything
-        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nREMINDER: Use inline citations [1], [2], [3], etc. in your answer. Every statement about a regulation must include a citation number.\n\nAnswer:"
+        # Count how many regulations are provided
+        num_regulations = len(retrieved_chunks)
+        
+        # Combine everything with explicit instruction about using all citations
+        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nCRITICAL REMINDER: You have been provided with {num_regulations} regulations numbered [1] through [{num_regulations}]. You MUST use ALL of these citation numbers at least once in your answer. Every statement about a regulation must include a citation number. Do NOT mention regulations without inline citations.\n\nAnswer:"
         
         return prompt
 
