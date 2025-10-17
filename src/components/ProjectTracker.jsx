@@ -2645,9 +2645,7 @@ const ProjectTracker = () => {
 
       <div className="spreadsheet-container">
         <div className="spreadsheet-header">
-          <div className="col-category">Category</div>
-          <div className="col-subcategory">Subcategory</div>
-          <div className="col-task">Task</div>
+          <div className="col-item">Item</div>
           <div className="col-assigned-to">Assigned To</div>
           <div className="col-due-date">Due Date</div>
           <div className="col-status">Status</div>
@@ -2666,7 +2664,7 @@ const ProjectTracker = () => {
                 onClick={() => toggleCategory(category.id)}
                 style={{ borderLeftColor: category.color }}
               >
-                <div className="col-category">
+                <div className="col-item">
                   <div className="category-info">
                     <span className="category-icon">{category.icon}</span>
                     <span className="category-name">{category.name}</span>
@@ -2675,23 +2673,22 @@ const ProjectTracker = () => {
                     ) : (
                       <ChevronRight className="expand-icon" />
                     )}
-              </div>
-              </div>
-                <div className="col-subcategory">
-                  {(() => {
-                    let totalTasks = 0;
-                    let completedTasks = 0;
-                    category.subcategories.forEach(subcategory => {
-                      subcategory.tasks.forEach(task => {
-                        totalTasks++;
-                        const taskId = `${category.id}-${subcategory.id}-${task.id}`;
-                        if (taskCompletion[taskId]) completedTasks++;
+                  </div>
+                  <div className="task-count">
+                    {(() => {
+                      let totalTasks = 0;
+                      let completedTasks = 0;
+                      category.subcategories.forEach(subcategory => {
+                        subcategory.tasks.forEach(task => {
+                          totalTasks++;
+                          const taskId = `${category.id}-${subcategory.id}-${task.id}`;
+                          if (taskCompletion[taskId]) completedTasks++;
+                        });
                       });
-                    });
-                    return `${completedTasks}/${totalTasks} tasks`;
-                  })()}
-              </div>
-                <div className="col-task">-</div>
+                      return `${completedTasks}/${totalTasks} tasks`;
+                    })()}
+                  </div>
+                </div>
                 <div className="col-assigned-to">-</div>
                 <div className="col-due-date">-</div>
                 <div className="col-status">-</div>
@@ -2722,9 +2719,9 @@ const ProjectTracker = () => {
                         className="spreadsheet-row subcategory-row"
                         onClick={() => toggleSubcategory(category.id, subcategory.id)}
                       >
-                        <div className="col-category">↳</div>
-                        <div className="col-subcategory">
+                        <div className="col-item">
                           <div className="subcategory-info">
+                            <span className="indent">↳</span>
                             {expandedSubcategories[`${category.id}-${subcategory.id}`] ? (
                               <ChevronDown className="expand-icon" />
                             ) : (
@@ -2742,9 +2739,8 @@ const ProjectTracker = () => {
                               });
                               return `(${completedTasks}/${totalTasks})`;
                             })()}
-                  </div>
-                </div>
-                    <div className="col-task">-</div>
+                          </div>
+                        </div>
                     <div className="col-assigned-to">-</div>
                     <div className="col-due-date">-</div>
                     <div className="col-status">-</div>
@@ -2779,10 +2775,9 @@ const ProjectTracker = () => {
                               className={`spreadsheet-row task-row ${isCompleted ? 'completed' : ''}`}
                               onClick={() => toggleTaskDetails(category.id, subcategory.id, task.id)}
                             >
-                          <div className="col-category">↳↳</div>
-                          <div className="col-subcategory">-</div>
-                          <div className="col-task">
+                          <div className="col-item">
                             <div className="task-info">
+                              <span className="indent">↳↳</span>
                               <div 
                                 className="checkbox-container"
                                 onClick={(e) => handleCheckboxClick(category.id, subcategory.id, task.id, e)}
@@ -2792,17 +2787,17 @@ const ProjectTracker = () => {
                                 ) : (
                                   <Square className="checkbox-icon" />
                                 )}
-                  </div>
+                              </div>
                               <span className="task-name">{task.name}</span>
                               {isCompleted && completionData && (
                                 <div className="completion-info">
                                   <small className="completion-details">
                                     ✓ Completed by {completionData.completedBy} on {new Date(completionData.completedAt).toLocaleDateString()}
                                   </small>
-                </div>
+                                </div>
                               )}
-                  </div>
-                </div>
+                            </div>
+                          </div>
                           <div className="col-assigned-to">
                             <select
                               value={getAssignedTo(category.id, subcategory.id, task.id)}

@@ -85,7 +85,7 @@
 
 .spreadsheet-header {
   display: grid;
-  grid-template-columns: 200px 180px 1fr 150px 140px 120px 100px 120px 100px 80px;
+  grid-template-columns: 1fr 150px 140px 120px 100px 120px 100px 80px;
   background: #f1f5f9;
   border-bottom: 2px solid #cbd5e1;
   font-weight: 600;
@@ -111,7 +111,7 @@
 
 .spreadsheet-row {
   display: grid;
-  grid-template-columns: 200px 180px 1fr 150px 140px 120px 100px 120px 100px 80px;
+  grid-template-columns: 1fr 150px 140px 120px 100px 120px 100px 80px;
   border-bottom: 1px solid #f1f5f9;
   min-height: 40px;
   transition: all 0.2s ease;
@@ -388,7 +388,7 @@
 @media (max-width: 1200px) {
   .spreadsheet-header,
   .spreadsheet-row {
-    grid-template-columns: 150px 140px 1fr 120px 120px 100px 80px 100px 80px 60px;
+    grid-template-columns: 1fr 120px 120px 100px 80px 100px 80px 60px;
   }
   
   .spreadsheet-header > div,
@@ -453,6 +453,27 @@
   .details-row {
     display: none;
   }
+}
+
+/* Combined Item Column */
+.col-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.indent {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-right: 4px;
+}
+
+.task-count {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 4px;
 }
 
 /* Checkbox Container */
