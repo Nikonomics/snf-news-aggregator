@@ -1,0 +1,343 @@
+/* Team Dashboard Styles */
+.team-dashboard {
+  padding: 20px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.dashboard-header p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Team Grid */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Member Card */
+.member-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.member-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.member-icon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+.member-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.task-count {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* No Tasks State */
+.no-tasks {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+}
+
+.no-tasks p {
+  margin: 0;
+  font-size: 1rem;
+  font-style: italic;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-value.pending {
+  color: #6b7280;
+}
+
+.stat-value.in-progress {
+  color: #3b82f6;
+}
+
+.stat-value.completed {
+  color: #10b981;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* Progress Section */
+.progress-section {
+  margin-bottom: 20px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-header span:first-child {
+  font-weight: 500;
+  color: #374151;
+}
+
+.progress-percentage {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Active Tasks */
+.active-tasks {
+  margin-top: 20px;
+}
+
+.active-tasks h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.task-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.task-name {
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.due-date {
+  color: #64748b;
+}
+
+.urgency-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Urgency Colors */
+.urgency-overdue {
+  border-left: 4px solid #ef4444;
+  background-color: #fef2f2;
+}
+
+.urgency-due-soon {
+  border-left: 4px solid #f59e0b;
+  background-color: #fffbeb;
+}
+
+.urgency-due-later {
+  border-left: 4px solid #10b981;
+  background-color: #f0fdf4;
+}
+
+.urgency-no-date {
+  border-left: 4px solid #6b7280;
+  background-color: #f9fafb;
+}
+
+.urgency-completed {
+  border-left: 4px solid #10b981;
+  background-color: #f0fdf4;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .member-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .team-dashboard {
+    padding: 16px;
+  }
+  
+  .team-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .member-card {
+    padding: 16px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-item {
+    padding: 8px;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-dashboard {
+    padding: 12px;
+  }
+  
+  .member-card {
+    padding: 12px;
+  }
+  
+  .stats-grid {
+    gap: 8px;
+  }
+  
+  .stat-item {
+    padding: 6px;
+  }
+  
+  .task-item {
+    padding: 8px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .team-dashboard {
+    background: white;
+  }
+  
+  .member-card {
+    box-shadow: none;
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+}

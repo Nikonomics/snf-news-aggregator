@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, CheckSquare, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, CheckSquare, Square, Grid3X3, Users } from 'lucide-react';
 import './ProjectTracker.css';
+import { projectData, sourceDetails, dataSources, developmentTasks } from '../data/ProjectData.js';
+import TeamDashboard from './TeamDashboard.jsx';
 
 const ProjectTracker = () => {
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -10,6 +12,7 @@ const ProjectTracker = () => {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [pendingTaskId, setPendingTaskId] = useState(null);
   const [userName, setUserName] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
   const [projectStats, setProjectStats] = useState({
     totalTasks: 0,
     completedTasks: 0,
@@ -71,6 +74,60 @@ const ProjectTracker = () => {
       ...prev,
       [subcategoryKey]: !prev[subcategoryKey]
     }));
+  };
+
+  // Handler functions for assignedTo and dueDate
+  const handleAssignedToChange = (categoryId, subcategoryId, taskId, newAssignedTo) => {
+    const taskKey = `${categoryId}-${subcategoryId}-${taskId}`;
+    const currentCompletion = taskCompletion[taskKey] || {};
+    
+    setTaskCompletion(prev => ({
+      ...prev,
+      [taskKey]: {
+        ...currentCompletion,
+        assignedTo: newAssignedTo,
+        lastUpdated: new Date().toISOString()
+      }
+    }));
+  };
+
+  const getAssignedTo = (categoryId, subcategoryId, taskId) => {
+    const taskKey = `${categoryId}-${subcategoryId}-${taskId}`;
+    return taskCompletion[taskKey]?.assignedTo || 'Unassigned';
+  };
+
+  const handleDueDateChange = (categoryId, subcategoryId, taskId, newDueDate) => {
+    const taskKey = `${categoryId}-${subcategoryId}-${taskId}`;
+    const currentCompletion = taskCompletion[taskKey] || {};
+    
+    setTaskCompletion(prev => ({
+      ...prev,
+      [taskKey]: {
+        ...currentCompletion,
+        dueDate: newDueDate || null,
+        lastUpdated: new Date().toISOString()
+      }
+    }));
+  };
+
+  const getDueDate = (categoryId, subcategoryId, taskId) => {
+    const taskKey = `${categoryId}-${subcategoryId}-${taskId}`;
+    return taskCompletion[taskKey]?.dueDate || null;
+  };
+
+  const getDueDateUrgency = (categoryId, subcategoryId, taskId, taskStatus) => {
+    const dueDate = getDueDate(categoryId, subcategoryId, taskId);
+    if (!dueDate) return 'no-date';
+    
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (taskStatus === 'completed') return 'completed';
+    if (diffDays < 0) return 'overdue';
+    if (diffDays <= 3) return 'due-soon';
+    return 'due-later';
   };
 
   const handleCheckboxClick = (categoryId, subcategoryId, taskId, e) => {
@@ -2550,16 +2607,39 @@ const ProjectTracker = () => {
     }
   };
 
+  // Early return for team dashboard view
+  if (viewMode === 'team') {
+    return <TeamDashboard taskCompletion={taskCompletion} />;
+  }
+
   return (
     <div className="excel-tracker">
       <div className="tracker-header">
         <h1>📊 SNF News Aggregator - Project Tracker</h1>
-        <div className="project-stats">
-          <span>Total: {projectStats.totalTasks}</span>
-          <span>Completed: {projectStats.completedTasks}</span>
-          <span>In Progress: {projectStats.inProgressTasks}</span>
-          <span>Pending: {projectStats.pendingTasks}</span>
-          <span>Complete: {Math.round((projectStats.completedTasks / projectStats.totalTasks) * 100) || 0}%</span>
+        <div className="header-controls">
+          <div className="view-toggle">
+            <button 
+              className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3X3 size={16} />
+              Task Grid View
+            </button>
+            <button 
+              className={`toggle-btn ${viewMode === 'team' ? 'active' : ''}`}
+              onClick={() => setViewMode('team')}
+            >
+              <Users size={16} />
+              Team Dashboard
+            </button>
+          </div>
+          <div className="project-stats">
+            <span>Total: {projectStats.totalTasks}</span>
+            <span>Completed: {projectStats.completedTasks}</span>
+            <span>In Progress: {projectStats.inProgressTasks}</span>
+            <span>Pending: {projectStats.pendingTasks}</span>
+            <span>Complete: {Math.round((projectStats.completedTasks / projectStats.totalTasks) * 100) || 0}%</span>
+          </div>
         </div>
       </div>
 
@@ -2568,6 +2648,8 @@ const ProjectTracker = () => {
           <div className="col-category">Category</div>
           <div className="col-subcategory">Subcategory</div>
           <div className="col-task">Task</div>
+          <div className="col-assigned-to">Assigned To</div>
+          <div className="col-due-date">Due Date</div>
           <div className="col-status">Status</div>
           <div className="col-priority">Priority</div>
           <div className="col-assignee">Assignee</div>
@@ -2610,6 +2692,8 @@ const ProjectTracker = () => {
                   })()}
               </div>
                 <div className="col-task">-</div>
+                <div className="col-assigned-to">-</div>
+                <div className="col-due-date">-</div>
                 <div className="col-status">-</div>
                 <div className="col-priority">-</div>
                 <div className="col-assignee">-</div>
@@ -2661,6 +2745,8 @@ const ProjectTracker = () => {
                   </div>
                 </div>
                     <div className="col-task">-</div>
+                    <div className="col-assigned-to">-</div>
+                    <div className="col-due-date">-</div>
                     <div className="col-status">-</div>
                     <div className="col-priority">-</div>
                     <div className="col-assignee">-</div>
@@ -2717,6 +2803,37 @@ const ProjectTracker = () => {
                               )}
                   </div>
                 </div>
+                          <div className="col-assigned-to">
+                            <select
+                              value={getAssignedTo(category.id, subcategory.id, task.id)}
+                              onChange={(e) => handleAssignedToChange(category.id, subcategory.id, task.id, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="assigned-to-select"
+                            >
+                              <option value="Unassigned">Unassigned</option>
+                              <option value="Nikhil">Nikhil</option>
+                              <option value="Manish">Manish</option>
+                              <option value="Rahul">Rahul</option>
+                              <option value="Manoj">Manoj</option>
+                              <option value="Vijendra">Vijendra</option>
+                              <option value="Mayank">Mayank</option>
+                              <option value="Ashish">Ashish</option>
+                              <option value="Bhupender">Bhupender</option>
+                              <option value="Bhuwan">Bhuwan</option>
+                              <option value="Anuj">Anuj</option>
+                              <option value="Shubham">Shubham</option>
+                              <option value="Chirag">Chirag</option>
+                            </select>
+                          </div>
+                          <div className={`col-due-date due-date-${getDueDateUrgency(category.id, subcategory.id, task.id, currentStatus)}`}>
+                            <input
+                              type="date"
+                              value={getDueDate(category.id, subcategory.id, task.id) || ''}
+                              onChange={(e) => handleDueDateChange(category.id, subcategory.id, task.id, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="due-date-input"
+                            />
+                          </div>
                           <div className="col-status">
                             <div className="status-cell">
                               {getStatusIcon(currentStatus)}
