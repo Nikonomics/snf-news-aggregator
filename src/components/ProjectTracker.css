@@ -292,10 +292,13 @@
 .details-row {
   background: #f8fafc;
   border-left: 4px solid #10b981;
+  display: block !important; /* Break out of grid structure */
+  grid-template-columns: none !important;
+  width: 100%;
 }
 
 .details-content {
-  grid-column: 1 / -1;
+  width: 100%;
   padding: 16px;
   margin-top: 8px;
 }
