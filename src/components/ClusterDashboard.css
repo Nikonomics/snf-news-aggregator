@@ -225,7 +225,7 @@
 }
 
 .col-actions {
-  width: 100px;
+  width: 120px;
 }
 
 /* Table rows */
@@ -237,6 +237,15 @@
 
 .cluster-row:hover {
   background: #f8fafc;
+}
+
+.cluster-row.selected-cluster {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.cluster-row.selected-cluster:hover {
+  background: #dbeafe;
 }
 
 .cluster-row td {
@@ -352,7 +361,7 @@
 
 /* Action buttons */
 .icon-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
@@ -363,6 +372,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: #475569;
+  margin-right: 6px;
+}
+
+.icon-btn:last-child {
+  margin-right: 0;
 }
 
 .icon-btn:hover {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users, ArrowUpDown, Search, Filter, Download, Plus, Eye, EyeOff } from 'lucide-react';
 import './ClusterDashboard.css';
 
-const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange }) => {
+const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange, onClusterSelect, selectedClusterId, selectedTaskId }) => {
   const [clusters, setClusters] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [expandedClusters, setExpandedClusters] = useState({});
@@ -15,6 +15,20 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto-expand and scroll to selected cluster
+  useEffect(() => {
+    if (selectedClusterId) {
+      setExpandedClusters(prev => ({ ...prev, [selectedClusterId]: true }));
+      // Scroll to the selected cluster after a short delay
+      setTimeout(() => {
+        const element = document.querySelector(`[data-cluster-id="${selectedClusterId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [selectedClusterId]);
 
   const loadData = async () => {
     try {
@@ -266,7 +280,11 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
               
               return (
                 <React.Fragment key={cluster.cluster_id}>
-                  <tr className="cluster-row" onClick={() => toggleCluster(cluster.cluster_id)}>
+                  <tr 
+                    className={`cluster-row ${selectedClusterId === cluster.cluster_id ? 'selected-cluster' : ''}`}
+                    onClick={() => toggleCluster(cluster.cluster_id)}
+                    data-cluster-id={cluster.cluster_id}
+                  >
                     <td className="col-order">
                       <div className="cell-content">
                         <span className="order-badge">#{cluster.cluster_order}</span>
@@ -323,6 +341,18 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
                           title="View Details"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button 
+                          className="icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onClusterSelect) {
+                              onClusterSelect(cluster.cluster_id);
+                            }
+                          }}
+                          title="View in Grid"
+                        >
+                          <Grid3X3 size={16} />
                         </button>
                       </div>
                     </td>
