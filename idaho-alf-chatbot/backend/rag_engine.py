@@ -103,9 +103,9 @@ class RAGEngine:
         self,
         question: str,
         conversation_history: Optional[List[Dict]] = None,
-        top_k: int = 5,
-        similarity_threshold: float = 0.3,
-        temperature: float = 0.3,
+        top_k: int = 12,  # Increased from 5 for better context
+        similarity_threshold: float = 0.0,  # Lowered from 0.3 to get more chunks
+        temperature: float = 0.5,  # Increased from 0.3 for more natural responses
         verbose: bool = False
     ) -> Dict:
         """
@@ -156,7 +156,7 @@ class RAGEngine:
         
         # Use unified AI service with fallback
         ai_response = self.ai_service.analyze_content(prompt, {
-            'maxTokens': 2048,
+            'maxTokens': 3000,  # Increased from 2048 for more detailed answers
             'temperature': temperature
         })
         
@@ -209,9 +209,9 @@ Response format:
 
 Context from regulations:"""
 
-        # Add retrieved chunks
+        # Add retrieved chunks (increased from 1000 to 2000 chars per chunk)
         context = "\n\n".join([
-            f"**{chunk['citation']} - {chunk['section_title']}**\n{chunk['content'][:1000]}..."
+            f"**{chunk['citation']} - {chunk['section_title']}**\n{chunk['content'][:2000]}..."
             for chunk in retrieved_chunks
         ])
 

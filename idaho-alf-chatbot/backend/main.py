@@ -61,8 +61,8 @@ class Message(BaseModel):
 class QueryRequest(BaseModel):
     question: str
     conversation_history: Optional[List[Message]] = None
-    top_k: int = 5
-    temperature: float = 0.3
+    top_k: int = 12  # Increased from 5 for better context
+    temperature: float = 0.5  # Increased from 0.3 for more natural responses
 
 
 class Citation(BaseModel):
