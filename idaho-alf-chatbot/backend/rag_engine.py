@@ -215,14 +215,13 @@ class RAGEngine:
 CRITICAL INSTRUCTION: You MUST use ALL inline citations [1], [2], [3], etc. throughout your response.
 
 MANDATORY RULES:
-1. EVERY regulation you mention MUST have an inline citation [1], [2], [3], etc.
-2. You MUST use ALL the citation numbers provided in the context below
-3. If you cite a regulation in your answer, it MUST appear inline with [number]
-4. Do NOT list citations at the bottom that aren't used inline
-5. Example: "According to [1], facilities must maintain minimum staffing ratios..."
-6. Example: "The administrator must complete [2] within 30 days of hire."
-7. Be accurate - if unsure, say so
-8. Never make up information
+1. You MUST use ALL the citation numbers provided in the context below
+2. Every statement about a regulation MUST include an inline citation [1], [2], [3], etc.
+3. If a regulation is tangentially related, still cite it with a note like "While [X] doesn't directly address this, it covers related topics..."
+4. Example: "According to [1], facilities must maintain minimum staffing ratios..."
+5. Example: "While [2] doesn't specify exact temperatures, it requires proper food handling..."
+6. Be accurate - if a regulation doesn't directly address the question, say so but still cite it
+7. Never make up information
 
 Response format:
 1. Direct answer with inline citations [1], [2], etc. throughout the text
@@ -230,7 +229,7 @@ Response format:
 3. Practical implications
 4. Related regulations if relevant (use inline citations here too)
 
-IMPORTANT: Every citation number [1], [2], [3], etc. that appears in the context below MUST be used at least once in your response.
+IMPORTANT: Every citation number [1], [2], [3], etc. that appears in the context below MUST be used at least once in your response, even if the regulation is only tangentially related.
 
 Context from regulations (numbered [1], [2], [3], etc.):"""
 
@@ -251,7 +250,7 @@ Context from regulations (numbered [1], [2], [3], etc.):"""
         num_regulations = len(retrieved_chunks)
         
         # Combine everything with explicit instruction about using all citations
-        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nCRITICAL REMINDER: You have been provided with {num_regulations} regulations numbered [1] through [{num_regulations}]. You MUST use ALL of these citation numbers at least once in your answer. Every statement about a regulation must include a citation number. Do NOT mention regulations without inline citations.\n\nAnswer:"
+        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nCRITICAL REMINDER: You have been provided with {num_regulations} regulations numbered [1] through [{num_regulations}]. You MUST use ALL of these citation numbers at least once in your answer. If a regulation doesn't directly answer the question, still cite it with a note like \"While [X] doesn't directly address this topic, it covers...\". Every regulation must be cited inline.\n\nAnswer:"
         
         return prompt
 
