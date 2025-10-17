@@ -14,6 +14,8 @@ const ProjectTracker = () => {
   const [pendingTaskId, setPendingTaskId] = useState(null);
   const [userName, setUserName] = useState('');
   const [viewMode, setViewMode] = useState('grid');
+  const [selectedClusterId, setSelectedClusterId] = useState(null);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [projectStats, setProjectStats] = useState({
     totalTasks: 0,
     completedTasks: 0,
@@ -147,6 +149,13 @@ const ProjectTracker = () => {
         [taskKey]: false
       }));
     }
+  };
+
+  const handleTaskCompletionChange = (taskKey, isCompleted) => {
+    setTaskCompletion(prev => ({
+      ...prev,
+      [taskKey]: isCompleted
+    }));
   };
 
   const confirmTaskCompletion = () => {
@@ -2613,12 +2622,35 @@ const ProjectTracker = () => {
     return <TeamDashboard taskCompletion={taskCompletion} onViewChange={setViewMode} />;
   }
 
+  // Handle cluster selection from cluster view
+  const handleClusterSelect = (clusterId) => {
+    setSelectedClusterId(clusterId);
+    setViewMode('grid');
+    // Scroll to top after switching views
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
+  // Handle task selection from grid view
+  const handleTaskSelect = (taskId) => {
+    setSelectedTaskId(taskId);
+    setViewMode('cluster');
+    // Scroll to top after switching views
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   // Early return for cluster dashboard view
   if (viewMode === 'cluster') {
     return <ClusterDashboard 
       onViewChange={setViewMode}
       taskCompletion={taskCompletion}
       onTaskCompletionChange={handleTaskCompletionChange}
+      onClusterSelect={handleClusterSelect}
+      selectedClusterId={selectedClusterId}
+      selectedTaskId={selectedTaskId}
     />;
   }
 
