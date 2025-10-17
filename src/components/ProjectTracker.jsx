@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, CheckSquare, Square, Grid3X3, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, CheckSquare, Square, Grid3X3, Users, Target } from 'lucide-react';
 import './ProjectTracker.css';
 import { projectData, sourceDetails, dataSources, developmentTasks } from '../data/ProjectData.js';
 import TeamDashboard from './TeamDashboard.jsx';
+import ClusterDashboard from './ClusterDashboard.jsx';
 
 const ProjectTracker = () => {
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -2612,6 +2613,11 @@ const ProjectTracker = () => {
     return <TeamDashboard taskCompletion={taskCompletion} />;
   }
 
+  // Early return for cluster dashboard view
+  if (viewMode === 'cluster') {
+    return <ClusterDashboard />;
+  }
+
   return (
     <div className="excel-tracker">
       <div className="tracker-header">
@@ -2631,6 +2637,13 @@ const ProjectTracker = () => {
             >
               <Users size={16} />
               Team Dashboard
+            </button>
+            <button 
+              className={`toggle-btn ${viewMode === 'cluster' ? 'active' : ''}`}
+              onClick={() => setViewMode('cluster')}
+            >
+              <Target size={16} />
+              Cluster View
             </button>
           </div>
           <div className="project-stats">
