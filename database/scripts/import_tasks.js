@@ -92,7 +92,7 @@ async function insertTasks(tasks) {
 async function linkTasksToClusters() {
   console.log('🔗 Linking tasks to clusters...\n');
   
-  const sqlPath = path.join(__dirname, '../migrations/link_tasks_to_clusters.sql');
+  const sqlPath = path.join(__dirname, '../migrations/link_tasks_to_clusters_updated.sql');
   const sql = fs.readFileSync(sqlPath, 'utf8');
   
   // Split SQL into individual statements (removing the SELECT queries at the end)
@@ -156,11 +156,23 @@ async function getSummary() {
       WHERE cluster_id IS NULL
     `);
     
+    // Get unmapped category IDs
+    const unmappedCategoriesResult = await client.query(`
+      SELECT 
+        category_id,
+        COUNT(*) as count
+      FROM tasks
+      WHERE cluster_id IS NULL
+      GROUP BY category_id
+      ORDER BY category_id
+    `);
+    
     return {
       total,
       clusters: clusterResult.rows,
       statuses: statusResult.rows,
-      unassigned: unassignedResult.rows[0].count
+      unassigned: unassignedResult.rows[0].count,
+      unmappedCategories: unmappedCategoriesResult.rows
     };
   } finally {
     client.release();
@@ -211,6 +223,12 @@ async function main() {
     
     if (summary.unassigned > 0) {
       console.log(`\n⚠️  Warning: ${summary.unassigned} tasks could not be mapped to a cluster`);
+      console.log('\n📋 Unmapped Category IDs:');
+      console.log('───────────────────────────────────────────────────────────');
+      summary.unmappedCategories.forEach(cat => {
+        console.log(`  ${cat.category_id.padEnd(10)} - ${cat.count} tasks`);
+      });
+      console.log('───────────────────────────────────────────────────────────');
     } else {
       console.log('\n✅ All tasks successfully mapped to clusters!');
     }
