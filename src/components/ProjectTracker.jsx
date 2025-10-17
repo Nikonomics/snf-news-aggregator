@@ -2610,12 +2610,12 @@ const ProjectTracker = () => {
 
   // Early return for team dashboard view
   if (viewMode === 'team') {
-    return <TeamDashboard taskCompletion={taskCompletion} />;
+    return <TeamDashboard taskCompletion={taskCompletion} onViewChange={setViewMode} />;
   }
 
   // Early return for cluster dashboard view
   if (viewMode === 'cluster') {
-    return <ClusterDashboard />;
+    return <ClusterDashboard onViewChange={setViewMode} />;
   }
 
   return (

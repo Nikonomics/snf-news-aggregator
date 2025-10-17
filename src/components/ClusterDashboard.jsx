@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users } from 'lucide-react';
 import './ClusterDashboard.css';
 
-const ClusterDashboard = () => {
+const ClusterDashboard = ({ onViewChange }) => {
   const [clusters, setClusters] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [expandedClusters, setExpandedClusters] = useState({});
@@ -15,12 +15,12 @@ const ClusterDashboard = () => {
   const loadData = async () => {
     try {
       // Load clusters
-      const clustersResponse = await fetch('/api/clusters');
+      const clustersResponse = await fetch('http://localhost:3001/api/clusters');
       const clustersData = await clustersResponse.json();
       setClusters(clustersData);
 
       // Load tasks
-      const tasksResponse = await fetch('/api/tasks');
+      const tasksResponse = await fetch('http://localhost:3001/api/tasks');
       const tasksData = await tasksResponse.json();
       setTasks(tasksData);
 
@@ -96,9 +96,33 @@ const ClusterDashboard = () => {
   return (
     <div className="cluster-dashboard">
       <div className="dashboard-header">
-        <div className="header-title">
-          <Target size={24} />
-          <h1>Development Roadmap - Cluster View</h1>
+        <div className="header-top">
+          <div className="header-title">
+            <Target size={24} />
+            <h1>Development Roadmap - Cluster View</h1>
+          </div>
+          <div className="view-toggle">
+            <button 
+              className="toggle-btn"
+              onClick={() => onViewChange('grid')}
+            >
+              <Grid3X3 size={16} />
+              Task Grid View
+            </button>
+            <button 
+              className="toggle-btn"
+              onClick={() => onViewChange('team')}
+            >
+              <Users size={16} />
+              Team Dashboard
+            </button>
+            <button 
+              className="toggle-btn active"
+            >
+              <Target size={16} />
+              Cluster View
+            </button>
+          </div>
         </div>
         <p className="header-subtitle">
           Tasks organized by development clusters with dependency relationships

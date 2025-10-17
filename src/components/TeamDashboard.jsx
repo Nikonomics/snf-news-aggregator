@@ -1,9 +1,9 @@
 import React from 'react';
-import { User, Clock, CheckCircle, Circle, AlertCircle } from 'lucide-react';
+import { User, Clock, CheckCircle, Circle, AlertCircle, Grid3X3, Target } from 'lucide-react';
 import { projectData } from '../data/ProjectData.js';
 import './TeamDashboard.css';
 
-const TeamDashboard = ({ taskCompletion }) => {
+const TeamDashboard = ({ taskCompletion, onViewChange }) => {
   // Team members list
   const teamMembers = [
     'Nikhil', 'Manish', 'Rahul', 'Manoj', 'Vijendra', 'Mayank', 
@@ -113,8 +113,34 @@ const TeamDashboard = ({ taskCompletion }) => {
   return (
     <div className="team-dashboard">
       <div className="dashboard-header">
-        <h1>👥 Team Dashboard</h1>
-        <p>Track progress and workload across the team</p>
+        <div className="header-top">
+          <div>
+            <h1>👥 Team Dashboard</h1>
+            <p>Track progress and workload across the team</p>
+          </div>
+          <div className="view-toggle">
+            <button 
+              className="toggle-btn"
+              onClick={() => onViewChange('grid')}
+            >
+              <Grid3X3 size={16} />
+              Task Grid View
+            </button>
+            <button 
+              className="toggle-btn active"
+            >
+              <User size={16} />
+              Team Dashboard
+            </button>
+            <button 
+              className="toggle-btn"
+              onClick={() => onViewChange('cluster')}
+            >
+              <Target size={16} />
+              Cluster View
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="team-grid">
