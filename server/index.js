@@ -54,6 +54,7 @@ import {
 import cron from 'node-cron'
 import { startMAAnalysisWorker } from './workflows/ma-analysis-worker.js'
 import medicaidRouter from './routes/medicaid.js'
+import clustersRouter from './routes/clusters.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -905,6 +906,7 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/medicaid', medicaidRouter)
+app.use(clustersRouter)
 
 // API monitoring routes
 import apiMonitoringRouter from './routes/api-monitoring.js'
