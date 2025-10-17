@@ -18,10 +18,56 @@ const IdahoALFChatbot = () => {
   const [regulationsError, setRegulationsError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [expandedRegulations, setExpandedRegulations] = useState(new Set());
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Group regulations by parent regulation
+  const groupRegulationsByParent = (regs) => {
+    const grouped = {};
+    regs.forEach(reg => {
+      // Group all US Food Code entries under one parent
+      if (reg.citation.includes('US Food Code')) {
+        const parent = 'US Food Code';
+        if (!grouped[parent]) {
+          grouped[parent] = [];
+        }
+        grouped[parent].push(reg);
+        return;
+      }
+      
+      // Extract parent regulation by first two digits (e.g., "IDAPA 16.02" from "IDAPA 16.02.01" or "IDAPA 16.02.19")
+      const match = reg.citation.match(/^([A-Z0-9\s]+\d+\.\d+)/);
+      const parent = match ? match[1] : reg.citation;
+      
+      if (!grouped[parent]) {
+        grouped[parent] = [];
+      }
+      grouped[parent].push(reg);
+    });
+    
+    // Sort sections within each parent
+    Object.keys(grouped).forEach(parent => {
+      grouped[parent].sort((a, b) => {
+        // Sort by the full citation numerically
+        const aParts = a.citation.match(/(\d+)/g) || [];
+        const bParts = b.citation.match(/(\d+)/g) || [];
+        
+        for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+          const aNum = parseInt(aParts[i]) || 0;
+          const bNum = parseInt(bParts[i]) || 0;
+          if (aNum !== bNum) {
+            return aNum - bNum;
+          }
+        }
+        return 0;
+      });
+    });
+    
+    return grouped;
   };
 
   // Regulation categories
@@ -90,7 +136,10 @@ const IdahoALFChatbot = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim() || isSearching) return;
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
     setIsSearching(true);
     try {
@@ -98,7 +147,8 @@ const IdahoALFChatbot = () => {
       const filtered = regulations.filter(regulation => 
         regulation.section_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         regulation.citation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        regulation.category.toLowerCase().includes(searchQuery.toLowerCase())
+        regulation.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        regulation.content.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setSearchResults(filtered);
     } catch (error) {
@@ -199,24 +249,24 @@ const IdahoALFChatbot = () => {
       {/* Split Screen Layout */}
       <div className="flex h-screen">
         {/* Left Side - Chat Interface */}
-        <div className="flex-1 flex flex-col bg-white border-r border-gray-200 relative">
+        <div className="w-4/5 flex flex-col bg-white border-r border-gray-200 relative">
 
           {/* Input Area - Right below RegNavigator */}
           <div className="px-6 py-4 bg-white border-b border-gray-200">
-            <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto">
+            <form onSubmit={handleSubmit} className="w-full mx-auto">
               <div className="flex gap-3">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about Idaho regulations..."
-                  className="flex-1 px-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-[20%] px-4 py-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                  className="px-6 py-8 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
                 >
                   {isLoading ? 'Sending...' : 'Send'}
                 </button>
@@ -250,7 +300,51 @@ const IdahoALFChatbot = () => {
                   )}
                   
                   <div className="prose prose-sm max-w-none" style={{fontSize: '16px', lineHeight: '1.5'}}>
-                    <ReactMarkdown>
+                    <ReactMarkdown
+                      components={{
+                        // Custom rendering for inline citations like [1], [2], etc.
+                        text: ({node, ...props}) => {
+                          const text = props.children;
+                          // Check if the text contains citation patterns like [1], [2], etc.
+                          if (typeof text === 'string' && /\[\d+\]/.test(text)) {
+                            const parts = text.split(/(\[\d+\])/g);
+                            return (
+                              <>
+                                {parts.map((part, idx) => {
+                                  const citationMatch = part.match(/\[(\d+)\]/);
+                                  if (citationMatch) {
+                                    const citationIndex = parseInt(citationMatch[1]) - 1;
+                                    const citation = message.citations?.[citationIndex];
+                                    const fullRegulation = regulations.find(
+                                      reg => reg.citation === citation?.citation || reg.chunk_id === citation?.chunk_id
+                                    );
+                                    
+                                    return (
+                                      <button
+                                        key={idx}
+                                        onClick={() => {
+                                          if (fullRegulation) {
+                                            setSelectedRegulation(fullRegulation);
+                                          }
+                                        }}
+                                        className={`inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium transition-colors ${
+                                          fullRegulation ? 'cursor-pointer' : 'cursor-default'
+                                        }`}
+                                        title={fullRegulation ? `Click to view ${citation?.citation}` : 'Regulation not available'}
+                                      >
+                                        {part}
+                                      </button>
+                                    );
+                                  }
+                                  return <span key={idx}>{part}</span>;
+                                })}
+                              </>
+                            );
+                          }
+                          return <span {...props} />;
+                        }
+                      }}
+                    >
                       {message.content}
                     </ReactMarkdown>
                   </div>
@@ -259,14 +353,31 @@ const IdahoALFChatbot = () => {
                     <div className="mt-4 pt-3 border-t border-gray-200">
                       <p className="text-xs font-medium text-gray-500 mb-2">Sources</p>
                       <div className="flex flex-wrap gap-1">
-                        {message.citations.map((citation, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium"
-                          >
-                            {citation.citation}
-                          </span>
-                        ))}
+                        {message.citations.map((citation, idx) => {
+                          // Find the full regulation in the regulations list
+                          const fullRegulation = regulations.find(
+                            reg => reg.citation === citation.citation || reg.chunk_id === citation.chunk_id
+                          );
+                          
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                if (fullRegulation) {
+                                  setSelectedRegulation(fullRegulation);
+                                }
+                              }}
+                              className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                                fullRegulation 
+                                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer' 
+                                  : 'bg-gray-100 text-gray-600 cursor-default'
+                              }`}
+                              title={fullRegulation ? 'Click to view full regulation' : 'Regulation not available'}
+                            >
+                              [{idx + 1}] {citation.citation}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -300,7 +411,7 @@ const IdahoALFChatbot = () => {
         </div>
 
         {/* Right Side - Regulation Library */}
-        <div className="w-2/5 flex flex-col bg-white border-l border-gray-200">
+        <div className="w-1/5 flex flex-col bg-white border-l border-gray-200">
           {/* Library Header - Cleaner */}
           <div className="bg-white border-b border-gray-200 px-6 py-4">
             <div className="flex items-center gap-3">
@@ -370,29 +481,91 @@ const IdahoALFChatbot = () => {
               </div>
             ) : (
               <div className="space-y-1">
-                {(searchResults.length > 0 ? searchResults : regulations)
-                  .filter(reg => selectedCategory === 'all' || reg.category === selectedCategory)
-                  .slice(0, 15)
-                  .map((regulation, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSelectedRegulation(regulation);
-                      }}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                        selectedRegulation?.chunk_id === regulation.chunk_id
-                          ? 'bg-blue-50 border-blue-300'
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="font-medium text-sm text-gray-900 mb-1">
-                        {regulation.citation}
+                {(() => {
+                  const regsToDisplay = searchResults.length > 0 ? searchResults : regulations;
+                  const filteredRegs = regsToDisplay.filter(reg => selectedCategory === 'all' || reg.category === selectedCategory);
+                  const groupedRegs = groupRegulationsByParent(filteredRegs);
+                  const parentKeys = Object.keys(groupedRegs).sort();
+                  
+                  return parentKeys.map((parent, idx) => {
+                    const sections = groupedRegs[parent];
+                    const isExpanded = expandedRegulations.has(parent);
+                    
+                    return (
+                      <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => {
+                            const newExpanded = new Set(expandedRegulations);
+                            if (isExpanded) {
+                              newExpanded.delete(parent);
+                            } else {
+                              newExpanded.add(parent);
+                            }
+                            setExpandedRegulations(newExpanded);
+                          }}
+                          className="w-full text-left p-2 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                        >
+                          <span className="font-medium text-xs text-gray-900">{parent}</span>
+                          <ChevronRight 
+                            className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                          />
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="bg-white">
+                            {(() => {
+                              // Check if we should show all sections or just first 10
+                              const showAllKey = `showAll_${parent}`;
+                              const showAll = expandedRegulations.has(showAllKey);
+                              const displaySections = showAll ? sections : sections.slice(0, 10);
+                              
+                              return (
+                                <>
+                                  {displaySections.map((regulation, sectionIdx) => (
+                                    <button
+                                      key={sectionIdx}
+                                      onClick={() => {
+                                        setSelectedRegulation(regulation);
+                                      }}
+                                      className={`w-full text-left p-2 pl-4 border-t border-gray-100 transition-colors ${
+                                        selectedRegulation?.chunk_id === regulation.chunk_id
+                                          ? 'bg-blue-50 border-blue-300'
+                                          : 'hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className="font-medium text-xs text-gray-700 mb-0.5">
+                                        {regulation.citation.replace(parent + '.', '')}
+                                      </div>
+                                      <div className="text-xs text-gray-500 line-clamp-1">
+                                        {regulation.section_title}
+                                      </div>
+                                    </button>
+                                  ))}
+                                  {sections.length > 10 && (
+                                    <button
+                                      onClick={() => {
+                                        const newExpanded = new Set(expandedRegulations);
+                                        if (showAll) {
+                                          newExpanded.delete(showAllKey);
+                                        } else {
+                                          newExpanded.add(showAllKey);
+                                        }
+                                        setExpandedRegulations(newExpanded);
+                                      }}
+                                      className="w-full text-left text-xs text-blue-600 hover:text-blue-800 p-2 pl-4 border-t border-gray-100 hover:bg-blue-50 transition-colors"
+                                    >
+                                      {showAll ? 'Show less' : `+${sections.length - 10} more sections`}
+                                    </button>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-600 line-clamp-1">
-                        {regulation.section_title}
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>
@@ -402,7 +575,7 @@ const IdahoALFChatbot = () => {
       {/* Regulation Detail Modal */}
       {selectedRegulation && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-8"
           onClick={() => {
             setSelectedRegulation(null);
           }}
@@ -419,36 +592,42 @@ const IdahoALFChatbot = () => {
           }}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+            className="bg-white rounded-lg shadow-lg flex flex-col"
             onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: 'white',
               position: 'relative',
-              zIndex: 10000
+              zIndex: 10000,
+              maxWidth: '50vw',
+              maxHeight: '80vh',
+              minWidth: '600px',
+              minHeight: '500px',
+              width: 'auto',
+              height: 'auto',
+              padding: '32px',
+              boxSizing: 'border-box'
             }}
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">{selectedRegulation.citation}</h3>
-                <p className="text-gray-600">{selectedRegulation.section_title}</p>
+            <div className="flex items-center justify-between pb-6 border-b border-gray-200">
+              <div className="pr-4">
+                <h3 className="text-xl font-bold text-gray-900">{selectedRegulation.citation}</h3>
+                <p className="text-sm text-gray-700 mt-2">{selectedRegulation.section_title}</p>
                 </div>
               <button
                 onClick={() => {
                   setSelectedRegulation(null);
                 }}
-                className="text-gray-400 hover:text-gray-600 p-2"
+                className="text-gray-500 hover:text-gray-700 p-2 flex-shrink-0 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                <ExternalLink size={20} />
+                <ExternalLink size={24} />
               </button>
                 </div>
             
-            <div className="p-6 overflow-y-auto max-h-96">
-              <div className="prose max-w-none">
-                <ReactMarkdown>{selectedRegulation.content}</ReactMarkdown>
-              </div>
+            <div className="overflow-y-auto flex-1 py-6">
+              <ReactMarkdown>{selectedRegulation.content}</ReactMarkdown>
             </div>
             
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
+            <div className="pt-6 border-t border-gray-200 bg-gray-50 -mx-8 -mb-8 px-8 py-6">
             <button
                 onClick={async () => {
                   const question = `What are the requirements for ${selectedRegulation.citation} - ${selectedRegulation.section_title}?`;

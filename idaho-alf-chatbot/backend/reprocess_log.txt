@@ -1,0 +1,568 @@
+================================================================================
+REPROCESSING ALL DOCUMENTS WITH CORRECT CITATIONS
+================================================================================
+
+Processing all regulation files...
+
+Processing IDAPA 24.39.30 rules of building safety.txt...
+  Created 32 chunks from IDAPA 24.39.30 rules of building safety.txt
+Processing IDAPA 24.txt...
+  Created 8 chunks from IDAPA 24.txt
+Processing IDAPA 16.05.06 criminal history background checks.txt...
+  Created 22 chunks from IDAPA 16.05.06 criminal history background checks.txt
+Processing TITLE 39.txt...
+  Created 0 chunks from TITLE 39.txt
+Processing IDAPA 16.02.1 idaho reportable diseases.txt...
+  Created 32 chunks from IDAPA 16.02.1 idaho reportable diseases.txt
+Processing IDAPA 24.34.01 idaho board of nursing.txt...
+  Created 8 chunks from IDAPA 24.34.01 idaho board of nursing.txt
+Processing IDAPA 16.02.19 food code.txt...
+  Created 32 chunks from IDAPA 16.02.19 food code.txt
+Processing IDAPA 16.05.01 use and disclosure of department records.txt...
+  Created 32 chunks from IDAPA 16.05.01 use and disclosure of department records.txt
+Processing additional referenced document links.txt...
+  Created 0 chunks from additional referenced document links.txt
+Processing IDAPA 16.txt...
+  Created 59 chunks from IDAPA 16.txt
+
+Total chunks created: 225
+
+================================================================================
+PREVIEW OF CHUNKS (verifying citations)
+================================================================================
+
+1. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.000
+   Title: LEGAL AUTHORITY
+
+2. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.001
+   Title: APPLICABILITY
+
+3. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.002
+   Title: INCORPORATION BY REFERENCE
+
+4. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.050
+   Title: TRAINING AND INFORMATIONAL MATERIALS
+
+5. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.100
+   Title: PURPOSES AND DEFINITIONS
+
+6. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.110
+   Title: DEFINITIONS AND ABBREVIATIONS -- A THROUGH K
+
+7. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.111
+   Title: DEFINITIONS AND ABBREVIATIONS -- L THROUGH Z
+
+8. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.200
+   Title: MANAGEMENT AND PERSONNEL
+
+9. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.201
+   Title: PERSON IN CHARGE
+
+10. Source: IDAPA 24.39.30 rules of building safety.txt
+   Citation: IDAPA 24.39.30.210
+   Title: DEMONSTRATION OF KNOWLEDGE
+
+Saved 225 chunks to /Users/nikolashulewsky/snf-news-aggregator/idaho-alf-chatbot/data/processed/all_chunks_reprocessed.json
+================================================================================
+GENERATING EMBEDDINGS
+================================================================================
+
+Generating embedding 1/225: IDAPA 24.39.30.000
+Generating embedding 2/225: IDAPA 24.39.30.001
+Generating embedding 3/225: IDAPA 24.39.30.002
+Generating embedding 4/225: IDAPA 24.39.30.050
+Generating embedding 5/225: IDAPA 24.39.30.100
+Generating embedding 6/225: IDAPA 24.39.30.110
+Generating embedding 7/225: IDAPA 24.39.30.111
+Generating embedding 8/225: IDAPA 24.39.30.200
+Generating embedding 9/225: IDAPA 24.39.30.201
+Generating embedding 10/225: IDAPA 24.39.30.210
+Generating embedding 11/225: IDAPA 24.39.30.300
+Generating embedding 12/225: IDAPA 24.39.30.320
+Generating embedding 13/225: IDAPA 24.39.30.325
+Generating embedding 14/225: IDAPA 24.39.30.355
+Generating embedding 15/225: IDAPA 24.39.30.360
+Generating embedding 16/225: IDAPA 24.39.30.370
+Generating embedding 17/225: IDAPA 24.39.30.600
+Generating embedding 18/225: IDAPA 24.39.30.620
+Generating embedding 19/225: IDAPA 24.39.30.700
+Generating embedding 20/225: IDAPA 24.39.30.720
+Generating embedding 21/225: IDAPA 24.39.30.721
+Generating embedding 22/225: IDAPA 24.39.30.800
+Generating embedding 23/225: IDAPA 24.39.30.830
+Generating embedding 24/225: IDAPA 24.39.30.831
+Generating embedding 25/225: IDAPA 24.39.30.840
+Generating embedding 26/225: IDAPA 24.39.30.841
+Generating embedding 27/225: IDAPA 24.39.30.845
+Generating embedding 28/225: IDAPA 24.39.30.850
+Generating embedding 29/225: IDAPA 24.39.30.851
+Generating embedding 30/225: IDAPA 24.39.30.860
+Generating embedding 31/225: IDAPA 24.39.30.861
+Generating embedding 32/225: IDAPA 24.39.30.890
+Generating embedding 33/225: IDAPA 24.000
+Generating embedding 34/225: IDAPA 24.001
+Generating embedding 35/225: IDAPA 24.004
+Generating embedding 36/225: IDAPA 24.100
+Generating embedding 37/225: IDAPA 24.101
+Generating embedding 38/225: IDAPA 24.150
+Generating embedding 39/225: IDAPA 24.300
+Generating embedding 40/225: IDAPA 24.400
+Generating embedding 41/225: IDAPA 16.05.06.000
+Generating embedding 42/225: IDAPA 16.05.06.001
+Generating embedding 43/225: IDAPA 16.05.06.010
+Generating embedding 44/225: IDAPA 16.05.06.050
+Generating embedding 45/225: IDAPA 16.05.06.060
+Generating embedding 46/225: IDAPA 16.05.06.070
+Generating embedding 47/225: IDAPA 16.05.06.100
+Generating embedding 48/225: IDAPA 16.05.06.101
+Generating embedding 49/225: IDAPA 16.05.06.120
+Generating embedding 50/225: IDAPA 16.05.06.125
+Generating embedding 51/225: IDAPA 16.05.06.126
+Generating embedding 52/225: IDAPA 16.05.06.140
+Generating embedding 53/225: IDAPA 16.05.06.150
+Generating embedding 54/225: IDAPA 16.05.06.160
+Generating embedding 55/225: IDAPA 16.05.06.180
+Generating embedding 56/225: IDAPA 16.05.06.181
+Generating embedding 57/225: IDAPA 16.05.06.190
+Generating embedding 58/225: IDAPA 16.05.06.195
+Generating embedding 59/225: IDAPA 16.05.06.200
+Generating embedding 60/225: IDAPA 16.05.06.210
+Generating embedding 61/225: IDAPA 16.05.06.270
+Generating embedding 62/225: IDAPA 16.05.06.300
+Generating embedding 63/225: IDAPA 16.02.01.001
+Generating embedding 64/225: IDAPA 16.02.01.007
+Generating embedding 65/225: IDAPA 16.02.01.010
+Generating embedding 66/225: IDAPA 16.02.01.011
+Generating embedding 67/225: IDAPA 16.02.01.050
+Generating embedding 68/225: IDAPA 16.02.01.051
+Generating embedding 69/225: IDAPA 16.02.01.075
+Generating embedding 70/225: IDAPA 16.02.01.100
+Generating embedding 71/225: IDAPA 16.02.01.101
+Generating embedding 72/225: IDAPA 16.02.01.102
+Generating embedding 73/225: IDAPA 16.02.01.103
+Generating embedding 74/225: IDAPA 16.02.01.104
+Generating embedding 75/225: IDAPA 16.02.01.105
+Generating embedding 76/225: IDAPA 16.02.01.150
+Generating embedding 77/225: IDAPA 16.02.01.175
+Generating embedding 78/225: IDAPA 16.02.01.190
+Generating embedding 79/225: IDAPA 16.02.01.191
+Generating embedding 80/225: IDAPA 16.02.01.200
+Generating embedding 81/225: IDAPA 16.02.01.201
+Generating embedding 82/225: IDAPA 16.02.01.202
+Generating embedding 83/225: IDAPA 16.02.01.210
+Generating embedding 84/225: IDAPA 16.02.01.220
+Generating embedding 85/225: IDAPA 16.02.01.221
+Generating embedding 86/225: IDAPA 16.02.01.222
+Generating embedding 87/225: IDAPA 16.02.01.230
+Generating embedding 88/225: IDAPA 16.02.01.240
+Generating embedding 89/225: IDAPA 16.02.01.242
+Generating embedding 90/225: IDAPA 16.02.01.250
+Generating embedding 91/225: IDAPA 16.02.01.260
+Generating embedding 92/225: IDAPA 16.02.01.270
+Generating embedding 93/225: IDAPA 16.02.01.280
+Generating embedding 94/225: IDAPA 16.02.01.284
+Generating embedding 95/225: IDAPA 24.34.01.000
+Generating embedding 96/225: IDAPA 24.34.01.001
+Generating embedding 97/225: IDAPA 24.34.01.002
+Generating embedding 98/225: IDAPA 24.34.01.100
+Generating embedding 99/225: IDAPA 24.34.01.150
+Generating embedding 100/225: IDAPA 24.34.01.200
+Generating embedding 101/225: IDAPA 24.34.01.300
+Generating embedding 102/225: IDAPA 24.34.01.400
+Generating embedding 103/225: IDAPA 16.02.01.000
+Generating embedding 104/225: IDAPA 16.02.01.001
+Generating embedding 105/225: IDAPA 16.02.01.002
+Generating embedding 106/225: IDAPA 16.02.01.050
+Generating embedding 107/225: IDAPA 16.02.01.100
+Generating embedding 108/225: IDAPA 16.02.01.110
+Generating embedding 109/225: IDAPA 16.02.01.111
+Generating embedding 110/225: IDAPA 16.02.01.200
+Generating embedding 111/225: IDAPA 16.02.01.201
+Generating embedding 112/225: IDAPA 16.02.01.210
+Generating embedding 113/225: IDAPA 16.02.01.300
+Generating embedding 114/225: IDAPA 16.02.01.320
+Generating embedding 115/225: IDAPA 16.02.01.325
+Generating embedding 116/225: IDAPA 16.02.01.355
+Generating embedding 117/225: IDAPA 16.02.01.360
+Generating embedding 118/225: IDAPA 16.02.01.370
+Generating embedding 119/225: IDAPA 16.02.01.600
+Generating embedding 120/225: IDAPA 16.02.01.620
+Generating embedding 121/225: IDAPA 16.02.01.700
+Generating embedding 122/225: IDAPA 16.02.01.720
+Generating embedding 123/225: IDAPA 16.02.01.721
+Generating embedding 124/225: IDAPA 16.02.01.800
+Generating embedding 125/225: IDAPA 16.02.01.830
+Generating embedding 126/225: IDAPA 16.02.01.831
+Generating embedding 127/225: IDAPA 16.02.01.840
+Generating embedding 128/225: IDAPA 16.02.01.841
+Generating embedding 129/225: IDAPA 16.02.01.845
+Generating embedding 130/225: IDAPA 16.02.01.850
+Generating embedding 131/225: IDAPA 16.02.01.851
+Generating embedding 132/225: IDAPA 16.02.01.860
+Generating embedding 133/225: IDAPA 16.02.01.861
+Generating embedding 134/225: IDAPA 16.02.01.890
+Generating embedding 135/225: IDAPA 16.05.01.001
+Generating embedding 136/225: IDAPA 16.05.01.007
+Generating embedding 137/225: IDAPA 16.05.01.010
+Generating embedding 138/225: IDAPA 16.05.01.011
+Generating embedding 139/225: IDAPA 16.05.01.050
+Generating embedding 140/225: IDAPA 16.05.01.051
+Generating embedding 141/225: IDAPA 16.05.01.075
+Generating embedding 142/225: IDAPA 16.05.01.100
+Generating embedding 143/225: IDAPA 16.05.01.101
+Generating embedding 144/225: IDAPA 16.05.01.102
+Generating embedding 145/225: IDAPA 16.05.01.103
+Generating embedding 146/225: IDAPA 16.05.01.104
+Generating embedding 147/225: IDAPA 16.05.01.105
+Generating embedding 148/225: IDAPA 16.05.01.150
+Generating embedding 149/225: IDAPA 16.05.01.175
+Generating embedding 150/225: IDAPA 16.05.01.190
+Generating embedding 151/225: IDAPA 16.05.01.191
+Generating embedding 152/225: IDAPA 16.05.01.200
+Generating embedding 153/225: IDAPA 16.05.01.201
+Generating embedding 154/225: IDAPA 16.05.01.202
+Generating embedding 155/225: IDAPA 16.05.01.210
+Generating embedding 156/225: IDAPA 16.05.01.220
+Generating embedding 157/225: IDAPA 16.05.01.221
+Generating embedding 158/225: IDAPA 16.05.01.222
+Generating embedding 159/225: IDAPA 16.05.01.230
+Generating embedding 160/225: IDAPA 16.05.01.240
+Generating embedding 161/225: IDAPA 16.05.01.242
+Generating embedding 162/225: IDAPA 16.05.01.250
+Generating embedding 163/225: IDAPA 16.05.01.260
+Generating embedding 164/225: IDAPA 16.05.01.270
+Generating embedding 165/225: IDAPA 16.05.01.280
+Generating embedding 166/225: IDAPA 16.05.01.284
+Generating embedding 167/225: IDAPA 16.03.22.000
+Generating embedding 168/225: IDAPA 16.03.22.001
+Generating embedding 169/225: IDAPA 16.03.22.002
+Generating embedding 170/225: IDAPA 16.03.22.003
+Generating embedding 171/225: IDAPA 16.03.22.004
+Generating embedding 172/225: IDAPA 16.03.22.009
+Generating embedding 173/225: IDAPA 16.03.22.010
+Generating embedding 174/225: IDAPA 16.03.22.011
+Generating embedding 175/225: IDAPA 16.03.22.012
+Generating embedding 176/225: IDAPA 16.03.22.050
+Generating embedding 177/225: IDAPA 16.03.22.100
+Generating embedding 178/225: IDAPA 16.03.22.105
+Generating embedding 179/225: IDAPA 16.03.22.110
+Generating embedding 180/225: IDAPA 16.03.22.115
+Generating embedding 181/225: IDAPA 16.03.22.126
+Generating embedding 182/225: IDAPA 16.03.22.150
+Generating embedding 183/225: IDAPA 16.03.22.151
+Generating embedding 184/225: IDAPA 16.03.22.152
+Generating embedding 185/225: IDAPA 16.03.22.153
+Generating embedding 186/225: IDAPA 16.03.22.154
+Generating embedding 187/225: IDAPA 16.03.22.155
+Generating embedding 188/225: IDAPA 16.03.22.156
+Generating embedding 189/225: IDAPA 16.03.22.161
+Generating embedding 190/225: IDAPA 16.03.22.216
+Generating embedding 191/225: IDAPA 16.03.22.217
+Generating embedding 192/225: IDAPA 16.03.22.250
+Generating embedding 193/225: IDAPA 16.03.22.255
+Generating embedding 194/225: IDAPA 16.03.22.260
+Generating embedding 195/225: IDAPA 16.03.22.305
+Generating embedding 196/225: IDAPA 16.03.22.310
+Generating embedding 197/225: IDAPA 16.03.22.319
+Generating embedding 198/225: IDAPA 16.03.22.320
+Generating embedding 199/225: IDAPA 16.03.22.330
+Generating embedding 200/225: IDAPA 16.03.22.335
+Generating embedding 201/225: IDAPA 16.03.22.400
+Generating embedding 202/225: IDAPA 16.03.22.410
+Generating embedding 203/225: IDAPA 16.03.22.430
+Generating embedding 204/225: IDAPA 16.03.22.450
+Generating embedding 205/225: IDAPA 16.03.22.451
+Generating embedding 206/225: IDAPA 16.03.22.455
+Generating embedding 207/225: IDAPA 16.03.22.460
+Generating embedding 208/225: IDAPA 16.03.22.510
+Generating embedding 209/225: IDAPA 16.03.22.515
+Generating embedding 210/225: IDAPA 16.03.22.520
+Generating embedding 211/225: IDAPA 16.03.22.525
+Generating embedding 212/225: IDAPA 16.03.22.600
+Generating embedding 213/225: IDAPA 16.03.22.620
+Generating embedding 214/225: IDAPA 16.03.22.625
+Generating embedding 215/225: IDAPA 16.03.22.640
+Generating embedding 216/225: IDAPA 16.03.22.641
+Generating embedding 217/225: IDAPA 16.03.22.645
+Generating embedding 218/225: IDAPA 16.03.22.900
+Generating embedding 219/225: IDAPA 16.03.22.901
+Generating embedding 220/225: IDAPA 16.03.22.910
+Generating embedding 221/225: IDAPA 16.03.22.920
+Generating embedding 222/225: IDAPA 16.03.22.925
+Generating embedding 223/225: IDAPA 16.03.22.930
+Generating embedding 224/225: IDAPA 16.03.22.935
+Generating embedding 225/225: IDAPA 16.03.22.940
+
+✓ Generated embeddings for 225 chunks
+
+✓ Saved chunks with embeddings to /Users/nikolashulewsky/snf-news-aggregator/idaho-alf-chatbot/data/processed/chunks_with_embeddings.json
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+Total chunks: 225
+
+Citations by document:
+  IDAPA 16.02.01.000: 1 chunks
+  IDAPA 16.02.01.001: 2 chunks
+  IDAPA 16.02.01.002: 1 chunks
+  IDAPA 16.02.01.007: 1 chunks
+  IDAPA 16.02.01.010: 1 chunks
+  IDAPA 16.02.01.011: 1 chunks
+  IDAPA 16.02.01.050: 2 chunks
+  IDAPA 16.02.01.051: 1 chunks
+  IDAPA 16.02.01.075: 1 chunks
+  IDAPA 16.02.01.100: 2 chunks
+  IDAPA 16.02.01.101: 1 chunks
+  IDAPA 16.02.01.102: 1 chunks
+  IDAPA 16.02.01.103: 1 chunks
+  IDAPA 16.02.01.104: 1 chunks
+  IDAPA 16.02.01.105: 1 chunks
+  IDAPA 16.02.01.110: 1 chunks
+  IDAPA 16.02.01.111: 1 chunks
+  IDAPA 16.02.01.150: 1 chunks
+  IDAPA 16.02.01.175: 1 chunks
+  IDAPA 16.02.01.190: 1 chunks
+  IDAPA 16.02.01.191: 1 chunks
+  IDAPA 16.02.01.200: 2 chunks
+  IDAPA 16.02.01.201: 2 chunks
+  IDAPA 16.02.01.202: 1 chunks
+  IDAPA 16.02.01.210: 2 chunks
+  IDAPA 16.02.01.220: 1 chunks
+  IDAPA 16.02.01.221: 1 chunks
+  IDAPA 16.02.01.222: 1 chunks
+  IDAPA 16.02.01.230: 1 chunks
+  IDAPA 16.02.01.240: 1 chunks
+  IDAPA 16.02.01.242: 1 chunks
+  IDAPA 16.02.01.250: 1 chunks
+  IDAPA 16.02.01.260: 1 chunks
+  IDAPA 16.02.01.270: 1 chunks
+  IDAPA 16.02.01.280: 1 chunks
+  IDAPA 16.02.01.284: 1 chunks
+  IDAPA 16.02.01.300: 1 chunks
+  IDAPA 16.02.01.320: 1 chunks
+  IDAPA 16.02.01.325: 1 chunks
+  IDAPA 16.02.01.355: 1 chunks
+  IDAPA 16.02.01.360: 1 chunks
+  IDAPA 16.02.01.370: 1 chunks
+  IDAPA 16.02.01.600: 1 chunks
+  IDAPA 16.02.01.620: 1 chunks
+  IDAPA 16.02.01.700: 1 chunks
+  IDAPA 16.02.01.720: 1 chunks
+  IDAPA 16.02.01.721: 1 chunks
+  IDAPA 16.02.01.800: 1 chunks
+  IDAPA 16.02.01.830: 1 chunks
+  IDAPA 16.02.01.831: 1 chunks
+  IDAPA 16.02.01.840: 1 chunks
+  IDAPA 16.02.01.841: 1 chunks
+  IDAPA 16.02.01.845: 1 chunks
+  IDAPA 16.02.01.850: 1 chunks
+  IDAPA 16.02.01.851: 1 chunks
+  IDAPA 16.02.01.860: 1 chunks
+  IDAPA 16.02.01.861: 1 chunks
+  IDAPA 16.02.01.890: 1 chunks
+  IDAPA 16.03.22.000: 1 chunks
+  IDAPA 16.03.22.001: 1 chunks
+  IDAPA 16.03.22.002: 1 chunks
+  IDAPA 16.03.22.003: 1 chunks
+  IDAPA 16.03.22.004: 1 chunks
+  IDAPA 16.03.22.009: 1 chunks
+  IDAPA 16.03.22.010: 1 chunks
+  IDAPA 16.03.22.011: 1 chunks
+  IDAPA 16.03.22.012: 1 chunks
+  IDAPA 16.03.22.050: 1 chunks
+  IDAPA 16.03.22.100: 1 chunks
+  IDAPA 16.03.22.105: 1 chunks
+  IDAPA 16.03.22.110: 1 chunks
+  IDAPA 16.03.22.115: 1 chunks
+  IDAPA 16.03.22.126: 1 chunks
+  IDAPA 16.03.22.150: 1 chunks
+  IDAPA 16.03.22.151: 1 chunks
+  IDAPA 16.03.22.152: 1 chunks
+  IDAPA 16.03.22.153: 1 chunks
+  IDAPA 16.03.22.154: 1 chunks
+  IDAPA 16.03.22.155: 1 chunks
+  IDAPA 16.03.22.156: 1 chunks
+  IDAPA 16.03.22.161: 1 chunks
+  IDAPA 16.03.22.216: 1 chunks
+  IDAPA 16.03.22.217: 1 chunks
+  IDAPA 16.03.22.250: 1 chunks
+  IDAPA 16.03.22.255: 1 chunks
+  IDAPA 16.03.22.260: 1 chunks
+  IDAPA 16.03.22.305: 1 chunks
+  IDAPA 16.03.22.310: 1 chunks
+  IDAPA 16.03.22.319: 1 chunks
+  IDAPA 16.03.22.320: 1 chunks
+  IDAPA 16.03.22.330: 1 chunks
+  IDAPA 16.03.22.335: 1 chunks
+  IDAPA 16.03.22.400: 1 chunks
+  IDAPA 16.03.22.410: 1 chunks
+  IDAPA 16.03.22.430: 1 chunks
+  IDAPA 16.03.22.450: 1 chunks
+  IDAPA 16.03.22.451: 1 chunks
+  IDAPA 16.03.22.455: 1 chunks
+  IDAPA 16.03.22.460: 1 chunks
+  IDAPA 16.03.22.510: 1 chunks
+  IDAPA 16.03.22.515: 1 chunks
+  IDAPA 16.03.22.520: 1 chunks
+  IDAPA 16.03.22.525: 1 chunks
+  IDAPA 16.03.22.600: 1 chunks
+  IDAPA 16.03.22.620: 1 chunks
+  IDAPA 16.03.22.625: 1 chunks
+  IDAPA 16.03.22.640: 1 chunks
+  IDAPA 16.03.22.641: 1 chunks
+  IDAPA 16.03.22.645: 1 chunks
+  IDAPA 16.03.22.900: 1 chunks
+  IDAPA 16.03.22.901: 1 chunks
+  IDAPA 16.03.22.910: 1 chunks
+  IDAPA 16.03.22.920: 1 chunks
+  IDAPA 16.03.22.925: 1 chunks
+  IDAPA 16.03.22.930: 1 chunks
+  IDAPA 16.03.22.935: 1 chunks
+  IDAPA 16.03.22.940: 1 chunks
+  IDAPA 16.05.01.001: 1 chunks
+  IDAPA 16.05.01.007: 1 chunks
+  IDAPA 16.05.01.010: 1 chunks
+  IDAPA 16.05.01.011: 1 chunks
+  IDAPA 16.05.01.050: 1 chunks
+  IDAPA 16.05.01.051: 1 chunks
+  IDAPA 16.05.01.075: 1 chunks
+  IDAPA 16.05.01.100: 1 chunks
+  IDAPA 16.05.01.101: 1 chunks
+  IDAPA 16.05.01.102: 1 chunks
+  IDAPA 16.05.01.103: 1 chunks
+  IDAPA 16.05.01.104: 1 chunks
+  IDAPA 16.05.01.105: 1 chunks
+  IDAPA 16.05.01.150: 1 chunks
+  IDAPA 16.05.01.175: 1 chunks
+  IDAPA 16.05.01.190: 1 chunks
+  IDAPA 16.05.01.191: 1 chunks
+  IDAPA 16.05.01.200: 1 chunks
+  IDAPA 16.05.01.201: 1 chunks
+  IDAPA 16.05.01.202: 1 chunks
+  IDAPA 16.05.01.210: 1 chunks
+  IDAPA 16.05.01.220: 1 chunks
+  IDAPA 16.05.01.221: 1 chunks
+  IDAPA 16.05.01.222: 1 chunks
+  IDAPA 16.05.01.230: 1 chunks
+  IDAPA 16.05.01.240: 1 chunks
+  IDAPA 16.05.01.242: 1 chunks
+  IDAPA 16.05.01.250: 1 chunks
+  IDAPA 16.05.01.260: 1 chunks
+  IDAPA 16.05.01.270: 1 chunks
+  IDAPA 16.05.01.280: 1 chunks
+  IDAPA 16.05.01.284: 1 chunks
+  IDAPA 16.05.06.000: 1 chunks
+  IDAPA 16.05.06.001: 1 chunks
+  IDAPA 16.05.06.010: 1 chunks
+  IDAPA 16.05.06.050: 1 chunks
+  IDAPA 16.05.06.060: 1 chunks
+  IDAPA 16.05.06.070: 1 chunks
+  IDAPA 16.05.06.100: 1 chunks
+  IDAPA 16.05.06.101: 1 chunks
+  IDAPA 16.05.06.120: 1 chunks
+  IDAPA 16.05.06.125: 1 chunks
+  IDAPA 16.05.06.126: 1 chunks
+  IDAPA 16.05.06.140: 1 chunks
+  IDAPA 16.05.06.150: 1 chunks
+  IDAPA 16.05.06.160: 1 chunks
+  IDAPA 16.05.06.180: 1 chunks
+  IDAPA 16.05.06.181: 1 chunks
+  IDAPA 16.05.06.190: 1 chunks
+  IDAPA 16.05.06.195: 1 chunks
+  IDAPA 16.05.06.200: 1 chunks
+  IDAPA 16.05.06.210: 1 chunks
+  IDAPA 16.05.06.270: 1 chunks
+  IDAPA 16.05.06.300: 1 chunks
+  IDAPA 24.000: 1 chunks
+  IDAPA 24.001: 1 chunks
+  IDAPA 24.004: 1 chunks
+  IDAPA 24.100: 1 chunks
+  IDAPA 24.101: 1 chunks
+  IDAPA 24.150: 1 chunks
+  IDAPA 24.300: 1 chunks
+  IDAPA 24.34.01.000: 1 chunks
+  IDAPA 24.34.01.001: 1 chunks
+  IDAPA 24.34.01.002: 1 chunks
+  IDAPA 24.34.01.100: 1 chunks
+  IDAPA 24.34.01.150: 1 chunks
+  IDAPA 24.34.01.200: 1 chunks
+  IDAPA 24.34.01.300: 1 chunks
+  IDAPA 24.34.01.400: 1 chunks
+  IDAPA 24.39.30.000: 1 chunks
+  IDAPA 24.39.30.001: 1 chunks
+  IDAPA 24.39.30.002: 1 chunks
+  IDAPA 24.39.30.050: 1 chunks
+  IDAPA 24.39.30.100: 1 chunks
+  IDAPA 24.39.30.110: 1 chunks
+  IDAPA 24.39.30.111: 1 chunks
+  IDAPA 24.39.30.200: 1 chunks
+  IDAPA 24.39.30.201: 1 chunks
+  IDAPA 24.39.30.210: 1 chunks
+  IDAPA 24.39.30.300: 1 chunks
+  IDAPA 24.39.30.320: 1 chunks
+  IDAPA 24.39.30.325: 1 chunks
+  IDAPA 24.39.30.355: 1 chunks
+  IDAPA 24.39.30.360: 1 chunks
+  IDAPA 24.39.30.370: 1 chunks
+  IDAPA 24.39.30.600: 1 chunks
+  IDAPA 24.39.30.620: 1 chunks
+  IDAPA 24.39.30.700: 1 chunks
+  IDAPA 24.39.30.720: 1 chunks
+  IDAPA 24.39.30.721: 1 chunks
+  IDAPA 24.39.30.800: 1 chunks
+  IDAPA 24.39.30.830: 1 chunks
+  IDAPA 24.39.30.831: 1 chunks
+  IDAPA 24.39.30.840: 1 chunks
+  IDAPA 24.39.30.841: 1 chunks
+  IDAPA 24.39.30.845: 1 chunks
+  IDAPA 24.39.30.850: 1 chunks
+  IDAPA 24.39.30.851: 1 chunks
+  IDAPA 24.39.30.860: 1 chunks
+  IDAPA 24.39.30.861: 1 chunks
+  IDAPA 24.39.30.890: 1 chunks
+  IDAPA 24.400: 1 chunks
+
+Chunks by category:
+  administrative: 32
+  admission_discharge: 14
+  dietary: 6
+  enforcement: 8
+  infection_control: 22
+  licensing: 32
+  medications: 10
+  nursing_assessment: 2
+  physical_plant: 19
+  policies: 41
+  records: 8
+  resident_care: 4
+  service_agreements: 6
+  staffing: 9
+  variances: 12
+
+Chunks by source file:
+  IDAPA 16.02.1 idaho reportable diseases.txt: 32
+  IDAPA 16.02.19 food code.txt: 32
+  IDAPA 16.05.01 use and disclosure of department records.txt: 32
+  IDAPA 16.05.06 criminal history background checks.txt: 22
+  IDAPA 16.txt: 59
+  IDAPA 24.34.01 idaho board of nursing.txt: 8
+  IDAPA 24.39.30 rules of building safety.txt: 32
+  IDAPA 24.txt: 8
+
+================================================================================
+REPROCESSING COMPLETE!
+================================================================================
+
+Output file: /Users/nikolashulewsky/snf-news-aggregator/idaho-alf-chatbot/data/processed/chunks_with_embeddings.json
+File size: 13.45 MB
+Total chunks: 225

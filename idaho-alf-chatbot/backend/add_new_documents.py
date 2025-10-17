@@ -32,7 +32,10 @@ def main():
         "IDAPA 16.05.01 use and disclosure of department records.txt",
         "IDAPA 16.05.06 criminal history background checks.txt",
         "IDAPA 24.34.01 idaho board of nursing.txt",
-        "IDAPA 24.39.30 rules of building safety.txt"
+        "IDAPA 24.39.30 rules of building safety.txt",
+        "US Public Health Food Code.txt",
+        "ADA Accessibility Guidelines for Buildings and Facilities.txt",
+        "Title 74 Transparent and Ethical Government - Chapter 1 Public Records Act.txt"
     ]
     
     print(f"Processing {len(new_files)} new regulation files...\n")

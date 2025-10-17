@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users, ArrowUpDown, Search, Filter, Download, Plus, Eye, EyeOff } from 'lucide-react';
 import './ClusterDashboard.css';
+import apiConfig from '../config/api.js';
 
 const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange, onClusterSelect, selectedClusterId, selectedTaskId }) => {
   const [clusters, setClusters] = useState([]);
@@ -33,12 +34,12 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
   const loadData = async () => {
     try {
       // Load clusters
-      const clustersResponse = await fetch('http://localhost:3001/api/clusters');
+      const clustersResponse = await fetch(apiConfig.endpoints.clusters);
       const clustersData = await clustersResponse.json();
       setClusters(clustersData);
 
       // Load tasks
-      const tasksResponse = await fetch('http://localhost:3001/api/tasks');
+      const tasksResponse = await fetch(apiConfig.endpoints.tasks);
       const tasksData = await tasksResponse.json();
       setTasks(tasksData);
 
