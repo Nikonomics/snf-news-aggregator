@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import pool from '../database/db.js';
+
 const router = express.Router();
-const pool = require('../database/db');
 
 // Get all clusters with their details
 router.get('/api/clusters', async (req, res) => {
@@ -113,5 +114,5 @@ router.get('/api/clusters/:clusterId/stats', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 
