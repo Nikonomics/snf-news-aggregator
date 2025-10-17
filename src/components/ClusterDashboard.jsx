@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users, ArrowUpDown, Search, Filter, Download, Plus, Eye, EyeOff } from 'lucide-react';
 import './ClusterDashboard.css';
 import apiConfig from '../config/api.js';
+import { projectData } from '../data/ProjectData.js';
 
 const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange, onClusterSelect, selectedClusterId, selectedTaskId }) => {
   const [clusters, setClusters] = useState([]);
@@ -39,10 +40,43 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
       const clustersData = await clustersResponse.json();
       setClusters(clustersData);
 
-      // Load tasks
+      // Load tasks from API
       const tasksResponse = await fetch(apiConfig.endpoints.tasks);
       const tasksData = await tasksResponse.json();
-      setTasks(tasksData);
+      
+      // Merge API tasks with local projectData for detailed information
+      const mergedTasks = tasksData.map(apiTask => {
+        // Find matching task in projectData by looking through all categories and subcategories
+        let matchingTask = null;
+        for (const category of projectData) {
+          for (const subcategory of category.subcategories) {
+            const foundTask = subcategory.tasks.find(pt => 
+              pt.id === apiTask.id || 
+              pt.name === apiTask.name ||
+              (pt.category_id === apiTask.category_id && pt.subcategory_id === apiTask.subcategory_id)
+            );
+            if (foundTask) {
+              matchingTask = foundTask;
+              break;
+            }
+          }
+          if (matchingTask) break;
+        }
+        
+        // Merge API task with projectData task
+        return {
+          ...apiTask,
+          // Add detailed fields from projectData
+          formula: matchingTask?.formula,
+          dataSources: matchingTask?.dataSources || matchingTask?.data_sources,
+          implementation: matchingTask?.implementation,
+          dependencies: matchingTask?.dependencies,
+          deliverables: matchingTask?.deliverables,
+          updateFrequency: matchingTask?.updateFrequency || matchingTask?.update_frequency
+        };
+      });
+      
+      setTasks(mergedTasks);
 
       // Auto-expand first cluster
       if (clustersData.length > 0) {
@@ -458,7 +492,7 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
                                                     <div className="detail-item">
                                                       <strong>📊 Data Sources:</strong>
                                                       <div className="tag-list">
-                                                        {task.data_sources?.map((source, index) => (
+                                                        {task.dataSources?.map((source, index) => (
                                                           <span key={index} className="data-source-tag">{source}</span>
                                                         ))}
                                                       </div>
@@ -491,10 +525,10 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
                                                       </div>
                                                     )}
 
-                                                    {task.update_frequency && (
+                                                    {task.updateFrequency && (
                                                       <div className="detail-item">
                                                         <strong>⏰ Update Frequency:</strong>
-                                                        <span className="frequency-tag">{task.update_frequency}</span>
+                                                        <span className="frequency-tag">{task.updateFrequency}</span>
                                                       </div>
                                                     )}
                                                   </div>
