@@ -294,11 +294,14 @@
   border-left: 4px solid #10b981;
   display: block !important; /* Break out of grid structure */
   grid-template-columns: none !important;
-  width: 100%;
+  width: 100vw !important; /* Force full viewport width */
+  margin-left: calc(-50vw + 50%) !important; /* Center and expand */
+  padding: 0 2rem !important; /* Add some padding */
 }
 
 .details-content {
   width: 100%;
+  max-width: 100%;
   padding: 16px;
   margin-top: 8px;
 }
