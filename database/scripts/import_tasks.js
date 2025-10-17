@@ -49,7 +49,7 @@ function parseProjectTracker() {
         id: taskId++,
         name: taskName,
         description: description,
-        status: status,
+        status: status,  // Already set to 'Complete' or 'Not Started' on line 44
         category_id: currentCategory,
         subcategory_id: currentSubcategory,
         priority: 'Medium',
@@ -68,6 +68,11 @@ async function insertTasks(tasks) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    
+    // Clear existing tasks first
+    console.log('   Clearing existing tasks...');
+    await client.query('DELETE FROM tasks');
+    console.log('   ✅ Cleared existing tasks\n');
     
     for (const task of tasks) {
       await client.query(
@@ -92,15 +97,26 @@ async function insertTasks(tasks) {
 async function linkTasksToClusters() {
   console.log('🔗 Linking tasks to clusters...\n');
   
-  const sqlPath = path.join(__dirname, '../migrations/link_tasks_to_clusters_updated.sql');
+  const sqlPath = path.join(__dirname, '../migrations/link_tasks_to_clusters_complete.sql');
   const sql = fs.readFileSync(sqlPath, 'utf8');
   
-  // Split SQL into individual statements (removing the SELECT queries at the end)
-  const statements = sql
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s && !s.startsWith('--') && !s.startsWith('SELECT') && !s.startsWith('Note:'))
-    .filter(s => s.length > 0);
+  // Remove comments first, then split by semicolon
+  const sqlWithoutComments = sql
+    .split('\n')
+    .filter(line => !line.trim().startsWith('--'))
+    .join('\n');
+  
+  // Split SQL into individual statements
+  const allStatements = sqlWithoutComments.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  console.log(`   Total statements after split: ${allStatements.length}`);
+  
+  // Filter out SELECT statements
+  const statements = allStatements.filter(s => !s.toUpperCase().startsWith('SELECT'));
+  
+  console.log(`   Found ${statements.length} UPDATE statements to execute`);
+  if (statements.length > 0) {
+    console.log(`   First statement: ${statements[0].substring(0, 50)}...`);
+  }
   
   const client = await pool.connect();
   try {
@@ -179,10 +195,72 @@ async function getSummary() {
   }
 }
 
+// Check if clusters table exists
+async function checkClustersTable() {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT COUNT(*) as count FROM clusters
+    `);
+    const count = parseInt(result.rows[0].count);
+    return count > 0;
+  } catch (error) {
+    return false;
+  } finally {
+    client.release();
+  }
+}
+
+// Initialize clusters table
+async function initializeClusters() {
+  console.log('🔧 Checking clusters table...\n');
+  
+  const exists = await checkClustersTable();
+  if (exists) {
+    console.log('✅ Clusters table already exists\n');
+    return;
+  }
+  
+  console.log('🔧 Initializing clusters table...\n');
+  
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Run the clusters table migration
+    const clustersSQL = fs.readFileSync(
+      path.join(__dirname, '../migrations/001_create_clusters_table.sql'),
+      'utf8'
+    );
+    
+    // Split and execute each statement
+    const statements = clustersSQL
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0 && !s.startsWith('--'));
+    
+    for (const statement of statements) {
+      await client.query(statement);
+    }
+    
+    await client.query('COMMIT');
+    console.log('✅ Clusters table initialized\n');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error initializing clusters:', error.message);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 // Main execution
 async function main() {
   try {
     console.log('🚀 Starting task import process...\n');
+    
+    // Step 0: Initialize clusters table
+    await initializeClusters();
     
     // Step 1: Parse PROJECT_TRACKER.md
     console.log('📖 Parsing PROJECT_TRACKER.md...');

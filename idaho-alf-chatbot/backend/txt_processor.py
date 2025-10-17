@@ -228,18 +228,40 @@ class IDAPATextProcessor:
         if "RESERVED" in section_title.upper():
             return None
 
-        # Determine document type from filename
-        if "IDAPA 16" in source_file:
+        # Determine document type from filename (more specific matching - longest first!)
+        if "IDAPA 16.02.19" in source_file:
+            doc_prefix = "idapa_16.02.19"
+            citation_prefix = "IDAPA 16.02.19"
+        elif "IDAPA 16.02.1" in source_file:
+            doc_prefix = "idapa_16.02.01"
+            citation_prefix = "IDAPA 16.02.01"
+        elif "IDAPA 16.05.01" in source_file:
+            doc_prefix = "idapa_16.05.01"
+            citation_prefix = "IDAPA 16.05.01"
+        elif "IDAPA 16.05.06" in source_file:
+            doc_prefix = "idapa_16.05.06"
+            citation_prefix = "IDAPA 16.05.06"
+        elif "IDAPA 16.txt" in source_file or "IDAPA 16 " in source_file:
             doc_prefix = "idapa_16.03.22"
+            citation_prefix = "IDAPA 16.03.22"
+        elif "IDAPA 24.34.01" in source_file:
+            doc_prefix = "idapa_24.34.01"
+            citation_prefix = "IDAPA 24.34.01"
+        elif "IDAPA 24.39.30" in source_file:
+            doc_prefix = "idapa_24.39.30"
+            citation_prefix = "IDAPA 24.39.30"
         elif "IDAPA 24" in source_file:
             doc_prefix = "idapa_24"
+            citation_prefix = "IDAPA 24"
         elif "TITLE 39" in source_file:
             doc_prefix = "title_39"
+            citation_prefix = "TITLE 39"
         else:
             doc_prefix = "idaho_reg"
+            citation_prefix = "IDAPA"
 
         chunk_id = f"{doc_prefix}_{section_num}"
-        citation = f"IDAPA 16.03.22.{section_num:03d}" if "IDAPA 16" in source_file else f"{doc_prefix}.{section_num}"
+        citation = f"{citation_prefix}.{section_num:03d}"
         category = self.determine_category(section_num, section_title)
 
         return RegulationChunk(
