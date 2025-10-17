@@ -197,22 +197,25 @@ class RAGEngine:
         system_prompt = """You are a regulatory compliance expert for Idaho assisted living facilities. Your role:
 - Answer questions about IDAPA 16.03.22 regulations
 - Provide clear explanations in plain English
-- Always cite specific sections (e.g., "According to IDAPA 16.03.22.600...")
+- Always cite specific sections using inline citations like [1], [2], etc.
 - Be accurate - if unsure, say so
 - Never make up information
 
 Response format:
-1. Direct answer
+1. Direct answer with inline citations [1], [2], etc. throughout the text
 2. Specific citation with explanation
 3. Practical implications
 4. Related regulations if relevant
 
+IMPORTANT: Use inline citations [1], [2], [3] etc. in your response to reference the regulations provided.
+The numbers correspond to the order of regulations in the context below.
+
 Context from regulations:"""
 
-        # Add retrieved chunks (increased from 1000 to 2000 chars per chunk)
+        # Add retrieved chunks with numbered citations (increased from 1000 to 2000 chars per chunk)
         context = "\n\n".join([
-            f"**{chunk['citation']} - {chunk['section_title']}**\n{chunk['content'][:2000]}..."
-            for chunk in retrieved_chunks
+            f"[{i+1}] **{chunk['citation']} - {chunk['section_title']}**\n{chunk['content'][:2000]}..."
+            for i, chunk in enumerate(retrieved_chunks)
         ])
 
         # Add conversation history if provided
