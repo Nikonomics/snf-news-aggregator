@@ -7,6 +7,7 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
   const [clusters, setClusters] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [expandedClusters, setExpandedClusters] = useState({});
+  const [expandedTasks, setExpandedTasks] = useState({});
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({ key: 'cluster_order', direction: 'asc' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,6 +129,13 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
     if (onTaskCompletionChange) {
       onTaskCompletionChange(taskKey, newStatus === 'Complete');
     }
+  };
+
+  const toggleTaskExpansion = (taskId) => {
+    setExpandedTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
   };
 
   const getStatusIcon = (status) => {
@@ -394,33 +402,109 @@ const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {getTasksForCluster(cluster.cluster_id).map(task => (
-                                      <tr 
-                                        key={task.id}
-                                        className="task-row-clickable"
-                                        onClick={() => {
-                                          // Switch to grid view and highlight this task
-                                          onViewChange('grid');
-                                          // You could also scroll to the task in grid view
-                                        }}
-                                      >
-                                        <td>
-                                          <div 
-                                            className="task-checkbox"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleTaskToggle(task);
-                                            }}
+                                    {getTasksForCluster(cluster.cluster_id).map(task => {
+                                      const isTaskExpanded = expandedTasks[task.id];
+                                      
+                                      return (
+                                        <React.Fragment key={task.id}>
+                                          <tr 
+                                            className="task-row-clickable"
+                                            onClick={() => toggleTaskExpansion(task.id)}
                                           >
-                                            {getStatusIcon(task.status)}
-                                          </div>
-                                        </td>
-                                        <td className="task-name-cell">{task.name}</td>
-                                        <td className="task-desc-cell">{task.description}</td>
-                                        <td><span className="category-badge-small">{task.category_id}</span></td>
-                                        <td><span className={`priority-badge-small ${task.priority?.toLowerCase()}`}>{task.priority}</span></td>
-                                      </tr>
-                                    ))}
+                                            <td>
+                                              <div 
+                                                className="task-checkbox"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleTaskToggle(task);
+                                                }}
+                                              >
+                                                {getStatusIcon(task.status)}
+                                              </div>
+                                            </td>
+                                            <td className="task-name-cell">
+                                              <div className="task-name-with-expand">
+                                                {isTaskExpanded ? (
+                                                  <ChevronDown size={14} className="task-expand-icon" />
+                                                ) : (
+                                                  <ChevronRight size={14} className="task-expand-icon" />
+                                                )}
+                                                {task.name}
+                                              </div>
+                                            </td>
+                                            <td className="task-desc-cell">{task.description}</td>
+                                            <td><span className="category-badge-small">{task.category_id}</span></td>
+                                            <td><span className={`priority-badge-small ${task.priority?.toLowerCase()}`}>{task.priority}</span></td>
+                                          </tr>
+                                          
+                                          {/* Task Details Row */}
+                                          {isTaskExpanded && (
+                                            <tr className="task-details-row">
+                                              <td colSpan="5">
+                                                <div className="task-details-content">
+                                                  <div className="detail-grid">
+                                                    <div className="detail-item">
+                                                      <strong>📋 Description:</strong>
+                                                      <p>{task.description}</p>
+                                                    </div>
+                                                    
+                                                    {task.formula && (
+                                                      <div className="detail-item">
+                                                        <strong>🧮 Formula:</strong>
+                                                        <code className="formula-code">{task.formula}</code>
+                                                      </div>
+                                                    )}
+
+                                                    <div className="detail-item">
+                                                      <strong>📊 Data Sources:</strong>
+                                                      <div className="tag-list">
+                                                        {task.data_sources?.map((source, index) => (
+                                                          <span key={index} className="data-source-tag">{source}</span>
+                                                        ))}
+                                                      </div>
+                                                    </div>
+
+                                                    <div className="detail-item">
+                                                      <strong>⚙️ Implementation:</strong>
+                                                      <p>{task.implementation}</p>
+                                                    </div>
+
+                                                    {task.dependencies && (
+                                                      <div className="detail-item">
+                                                        <strong>🔗 Dependencies:</strong>
+                                                        <div className="tag-list">
+                                                          {task.dependencies.map((dep, index) => (
+                                                            <span key={index} className="dependency-tag">{dep}</span>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {task.deliverables && (
+                                                      <div className="detail-item">
+                                                        <strong>📦 Deliverables:</strong>
+                                                        <div className="tag-list">
+                                                          {task.deliverables.map((deliverable, index) => (
+                                                            <span key={index} className="deliverable-tag">{deliverable}</span>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {task.update_frequency && (
+                                                      <div className="detail-item">
+                                                        <strong>⏰ Update Frequency:</strong>
+                                                        <span className="frequency-tag">{task.update_frequency}</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          )}
+                                        </React.Fragment>
+                                      );
+                                    })}
                                   </tbody>
                                 </table>
                               </div>

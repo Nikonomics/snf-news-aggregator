@@ -788,3 +788,214 @@
 .task-checkbox:active {
   transform: scale(0.95);
 }
+
+/* Task Name with Expand Icon */
+.task-name-with-expand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-expand-icon {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Task Details Row */
+.task-details-row {
+  background: #f8fafc;
+  border-left: 4px solid #10b981;
+}
+
+.task-details-content {
+  padding: 16px;
+  width: 100%;
+}
+
+.task-details-content .detail-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+
+.task-details-content .detail-item {
+  margin-bottom: 0;
+}
+
+.task-details-content .detail-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.task-details-content .detail-item p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 0.85rem;
+}
+
+.task-details-content .formula-code {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  display: block;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin-top: 4px;
+}
+
+.task-details-content .tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.task-details-content .data-source-tag,
+.task-details-content .dependency-tag,
+.task-details-content .deliverable-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.task-details-content .data-source-tag {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.task-details-content .dependency-tag {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.task-details-content .deliverable-tag {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.task-details-content .frequency-tag {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.task-expand-icon {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Task Details Row */
+.task-details-row {
+  background: #f8fafc;
+}
+
+.task-details-row td {
+  padding: 0 !important;
+  border-bottom: 2px solid #e1e8ed;
+}
+
+.task-details-content {
+  padding: 20px;
+  background: white;
+  margin: 8px;
+  border-radius: 8px;
+  border: 1px solid #e1e8ed;
+}
+
+/* Detail Grid */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-item strong {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-item p {
+  margin: 0;
+  color: #1a1a1a;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* Formula Code */
+.formula-code {
+  display: block;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e1e8ed;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #1e40af;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* Tag Lists */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.data-source-tag,
+.dependency-tag,
+.deliverable-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e40af;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+.dependency-tag {
+  color: #7c2d12;
+  background: #fed7aa;
+  border: 1px solid #fdba74;
+}
+
+.deliverable-tag {
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+}
+
+.frequency-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7c2d12;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+}
