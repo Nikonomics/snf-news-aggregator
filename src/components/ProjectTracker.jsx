@@ -2615,7 +2615,11 @@ const ProjectTracker = () => {
 
   // Early return for cluster dashboard view
   if (viewMode === 'cluster') {
-    return <ClusterDashboard onViewChange={setViewMode} />;
+    return <ClusterDashboard 
+      onViewChange={setViewMode}
+      taskCompletion={taskCompletion}
+      onTaskCompletionChange={handleTaskCompletionChange}
+    />;
   }
 
   return (

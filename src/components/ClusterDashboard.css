@@ -745,3 +745,32 @@
     max-width: 95%;
   }
 }
+
+/* Task Row Clickable Styles */
+.task-row-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-row-clickable:hover {
+  background: #f9fafb !important;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.task-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.task-checkbox:hover {
+  background: #f3f4f6;
+}
+
+.task-checkbox:active {
+  transform: scale(0.95);
+}

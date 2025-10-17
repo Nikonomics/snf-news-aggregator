@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle, Circle, Clock, AlertCircle, Target, TrendingUp, Grid3X3, Users, ArrowUpDown, Search, Filter, Download, Plus, Eye, EyeOff } from 'lucide-react';
 import './ClusterDashboard.css';
 
-const ClusterDashboard = ({ onViewChange }) => {
+const ClusterDashboard = ({ onViewChange, taskCompletion, onTaskCompletionChange }) => {
   const [clusters, setClusters] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [expandedClusters, setExpandedClusters] = useState({});
@@ -93,6 +93,26 @@ const ClusterDashboard = ({ onViewChange }) => {
   const viewClusterDetails = (cluster) => {
     setSelectedCluster(cluster);
     setShowClusterDetails(true);
+  };
+
+  const handleTaskToggle = (task) => {
+    // Create a task key similar to ProjectTracker
+    const taskKey = `${task.category_id}-${task.subcategory_id || 'unknown'}-${task.id}`;
+    
+    // Toggle completion status
+    const newStatus = task.status === 'Complete' ? 'Not Started' : 'Complete';
+    
+    // Update task in local state
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        t.id === task.id ? { ...t, status: newStatus } : t
+      )
+    );
+    
+    // Notify parent component if callback exists
+    if (onTaskCompletionChange) {
+      onTaskCompletionChange(taskKey, newStatus === 'Complete');
+    }
   };
 
   const getStatusIcon = (status) => {
@@ -344,8 +364,26 @@ const ClusterDashboard = ({ onViewChange }) => {
                                   </thead>
                                   <tbody>
                                     {getTasksForCluster(cluster.cluster_id).map(task => (
-                                      <tr key={task.id}>
-                                        <td>{getStatusIcon(task.status)}</td>
+                                      <tr 
+                                        key={task.id}
+                                        className="task-row-clickable"
+                                        onClick={() => {
+                                          // Switch to grid view and highlight this task
+                                          onViewChange('grid');
+                                          // You could also scroll to the task in grid view
+                                        }}
+                                      >
+                                        <td>
+                                          <div 
+                                            className="task-checkbox"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleTaskToggle(task);
+                                            }}
+                                          >
+                                            {getStatusIcon(task.status)}
+                                          </div>
+                                        </td>
                                         <td className="task-name-cell">{task.name}</td>
                                         <td className="task-desc-cell">{task.description}</td>
                                         <td><span className="category-badge-small">{task.category_id}</span></td>
