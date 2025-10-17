@@ -1,14 +1,38 @@
+# Render Static Site Configuration for SNF News Aggregator
+# This configures a static site deployment for the Vite-built frontend
+
 services:
   - type: web
-    name: idaho-alf-chatbot
-    env: python
-    region: oregon
-    plan: free
-    rootDir: idaho-alf-chatbot/backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
+    name: snf-news-aggregator-static
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: geolocation=(), microphone=(), camera=()
+    
+# Note: If you need to deploy the backend server separately, you can add another service:
+#  - type: web
+#    name: snf-news-aggregator-api
+#    env: node
+#    buildCommand: npm install
+#    startCommand: npm run server
+#    envVars:
+#      - key: NODE_ENV
+#        value: production
+#      - key: DATABASE_URL
+#        sync: false

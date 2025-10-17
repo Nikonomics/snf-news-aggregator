@@ -1,0 +1,43 @@
+# Files and directories to ignore during Render deployment
+
+# Development files
+*.md
+!README.md
+.git/
+.github/
+.vscode/
+.idea/
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*_backup.js
+*_backup.jsx
+ProjectTracker_backup.jsx
+ProjectData_final.js
+update_all_tasks.js
+update_tasks.js
+
+# Archive files
+*.tar.gz
+*.zip
+gh.tar.gz
+
+# Documentation
+ARCHITECTURE_CONTEXT.md
+PROJECT_TRACKER.md
+DEVELOPMENT_ROADMAP.md
+PROGRESS.md
+
+# Node modules (should already be in .gitignore)
+node_modules/
+
+# Build artifacts (will be generated during build)
+dist/
+
