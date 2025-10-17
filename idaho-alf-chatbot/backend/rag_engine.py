@@ -194,10 +194,15 @@ class RAGEngine:
     def _build_prompt(self, question: str, retrieved_chunks: List[Dict], conversation_history: Optional[List[Dict]] = None) -> str:
         """Build prompt for AI service."""
         # System prompt
-        system_prompt = """You are a regulatory compliance expert for Idaho assisted living facilities. Your role:
-- Answer questions about IDAPA 16.03.22 regulations
-- Provide clear explanations in plain English
-- Always cite specific sections using inline citations like [1], [2], etc.
+        system_prompt = """You are a regulatory compliance expert for Idaho assisted living facilities.
+
+CRITICAL INSTRUCTION: You MUST use inline citations [1], [2], [3], etc. throughout your response.
+
+Rules:
+- Every statement about a regulation MUST include an inline citation like [1], [2], [3]
+- Use the citation number that corresponds to the regulation in the context below
+- Example: "According to [1], facilities must maintain minimum staffing ratios..."
+- Example: "The administrator must complete [2] within 30 days of hire."
 - Be accurate - if unsure, say so
 - Never make up information
 
@@ -207,10 +212,7 @@ Response format:
 3. Practical implications
 4. Related regulations if relevant
 
-IMPORTANT: Use inline citations [1], [2], [3] etc. in your response to reference the regulations provided.
-The numbers correspond to the order of regulations in the context below.
-
-Context from regulations:"""
+Context from regulations (numbered [1], [2], [3], etc.):"""
 
         # Add retrieved chunks with numbered citations (increased from 1000 to 2000 chars per chunk)
         context = "\n\n".join([
@@ -226,7 +228,7 @@ Context from regulations:"""
                 history_text += f"{msg['role']}: {msg['content']}\n"
 
         # Combine everything
-        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nAnswer:"
+        prompt = f"{system_prompt}\n\n{context}\n\n{history_text}\n\nQuestion: {question}\n\nREMINDER: Use inline citations [1], [2], [3], etc. in your answer. Every statement about a regulation must include a citation number.\n\nAnswer:"
         
         return prompt
 
