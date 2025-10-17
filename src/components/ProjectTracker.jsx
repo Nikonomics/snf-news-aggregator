@@ -2920,9 +2920,7 @@ const ProjectTracker = () => {
                         {/* Task Details Row */}
                         {isExpanded && (
                           <div className="spreadsheet-row details-row">
-                            <div className="col-category">↳↳↳</div>
-                            <div className="col-subcategory">-</div>
-                            <div className="col-task details-content" colSpan="6">
+                            <div className="details-content">
                               <div className="task-details">
                           <div className="detail-grid">
                             <div className="detail-item">
