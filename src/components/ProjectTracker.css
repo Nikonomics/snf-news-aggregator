@@ -295,8 +295,9 @@
 }
 
 .details-content {
-  grid-column: 3 / -1;
+  grid-column: 1 / -1;
   padding: 16px;
+  margin-top: 8px;
 }
 
 .task-details {
