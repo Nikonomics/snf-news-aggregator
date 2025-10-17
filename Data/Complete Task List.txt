@@ -1,0 +1,1957 @@
+# 📋 PostAcutePulse Platform - Complete Task Breakdown
+
+---
+
+## CATEGORY 1: STATE DASHBOARD
+
+### 1.1 Database Infrastructure
+
+**TASK: Create database schema for state metrics system**
+Build all database tables needed for state-level intelligence:
+- `states` table with state codes, names, and regions
+- `facilities` table with provider IDs, names, addresses, bed counts, ownership type, chain affiliations
+- `facility_quality_metrics` table for star ratings over time
+- `facility_deficiencies` table for survey citations and F-tags
+- `facility_penalties` table for civil monetary penalties
+- `state_metrics` table for time-series metrics (wages, demographics, etc.)
+- `metric_definitions` table explaining each metric with display names, descriptions, units, data sources
+- `chain_organizations` table for chain/parent company information
+- `data_refresh_log` table to track ETL job runs
+
+**TASK: Populate metric definitions library**
+Create entries in metric_definitions table for all ~40 metrics including:
+- Display name (user-friendly label)
+- Description explaining what the metric measures
+- Unit of measurement ($, %, per 1000, etc.)
+- Category (workforce, demographics, quality, reimbursement, etc.)
+- Data source and update frequency
+- Whether higher values are better or worse (for color coding)
+- Calculation methodology
+
+### 1.2 Facility Data Collection
+
+**TASK: Build CMS Provider of Services data collector**
+Create ETL pipeline to get all SNF facilities:
+- Download monthly CSV from CMS Provider of Services file
+- Filter for SNF category codes (nursing facilities only)
+- Extract: Provider ID, facility name, address, city, state, ZIP, county, certified beds, ownership type, chain organization
+- Geocode all facilities to get latitude/longitude coordinates for mapping
+- Insert new facilities, update existing ones, mark inactive facilities that disappeared from file
+- Run monthly on 1st of each month
+
+**TASK: Build CMS Star Ratings data collector**
+Create ETL pipeline for facility quality ratings:
+- Download monthly CSV from CMS Care Compare
+- Extract: Overall rating (1-5 stars), quality measures rating, staffing rating, health inspection rating
+- Match to facilities table by Provider ID
+- Store as time-series data (keep history, don't overwrite)
+- Calculate state-level averages for comparison
+- Run monthly on 5th of each month
+
+**TASK: Build CMS Deficiencies data collector**
+Create ETL pipeline for survey citations:
+- Download monthly CSV from CMS Health Deficiencies database
+- Extract: Provider ID, survey date, F-tag number, scope & severity code, deficiency description
+- Link to facilities table
+- Calculate state statistics: average deficiencies per facility, most common F-tags, distribution by severity
+- Store aggregated metrics in state_metrics table
+- Run monthly on 10th of each month
+
+**TASK: Build CMS Penalties data collector**
+Create ETL pipeline for enforcement actions:
+- Download monthly CSV from CMS Penalties database
+- Extract: Provider ID, penalty type, penalty date, fine amount
+- Calculate state statistics: average fine amounts, total penalties per year, % of facilities penalized
+- Store in state_metrics table
+- Run monthly on 10th of each month
+
+### 1.3 Workforce Data Collection
+
+**TASK: Build BLS Wage Data collector**
+Create ETL pipeline for occupation wages:
+- Connect to BLS OEWS API with registered API key
+- Pull wage data for 8 occupations (RN, LPN, CNA, Admin, PT, PTA, OT, SLP) across all 50 states
+- Filter for nursing care facilities industry code (623110)
+- Calculate national averages for each occupation
+- Calculate state deviation from national average (percentage above/below)
+- Store in state_metrics table with metric names like "avg_rn_hourly_wage"
+- Run annually in May when BLS releases new data
+
+**TASK: Build healthcare unemployment rate collector**
+Create ETL pipeline for labor market data:
+- Connect to BLS Local Area Unemployment Statistics API
+- Pull healthcare sector unemployment rates by state
+- Store in state_metrics table as "healthcare_unemployment_rate"
+- Run monthly on 15th
+
+### 1.4 Demographics Data Collection
+
+**TASK: Build Census demographics collector**
+Create ETL pipeline for population data:
+- Connect to Census Bureau API with registered API key
+- Pull current population estimates for age 65+ and 85+ by state
+- Pull poverty rates for seniors (65+) from American Community Survey
+- Pull 5-year and 10-year population projections for seniors
+- Calculate compound annual growth rates
+- Calculate "beds per 1,000 seniors" metric by joining with facilities data
+- Store all metrics in state_metrics table
+- Run annually in July when Census releases new estimates
+
+**TASK: Build IRS migration data collector**
+Create ETL pipeline for senior migration patterns:
+- Download annual IRS Statistics of Income migration data files
+- Filter for age 65+ migration flows
+- Calculate net migration by state (in-migration minus out-migration)
+- Calculate percentage of state's senior population from in-migration
+- Store in state_metrics table
+- Run annually (data has 2-year lag)
+
+### 1.5 Reimbursement Data Collection
+
+**TASK: Build state Medicaid rate scraping system**
+Create web scrapers for all 50 state Medicaid agencies:
+- Build state-specific scrapers (each state has different website structure)
+- Create YAML/JSON configuration file with state-specific URLs, parsing logic, XPath selectors
+- Extract: base per diem rate, rate methodology (case-mix, flat, etc.), effective dates
+- Handle different formats: PDFs (with OCR), Excel files, HTML tables
+- Start with top 10 states by SNF count, then expand
+- Calculate national average after scraping all states
+- Store rates with comparison to national average
+- Run quarterly or when alerted to rate changes
+- Log scraping failures for manual review
+
+**TASK: Build Medicare Advantage penetration calculator**
+Create ETL pipeline for MA enrollment:
+- Download CMS Medicare monthly enrollment data (county-level)
+- Calculate MA enrollment as percentage of total Medicare beneficiaries
+- Aggregate county data to state level
+- Calculate year-over-year change
+- Store in state_metrics table
+- Run monthly on 15th
+
+**TASK: Build CMS Cost Report processor**
+Create ETL pipeline for payer mix and occupancy:
+- Download CMS Healthcare Cost Report Information System (HCRIS) files
+- Navigate complex file structure to Worksheet S-3 Part I
+- Extract patient days by payer: Medicare, Medicaid, Other/Private
+- Extract average daily census and available beds
+- Calculate payer mix percentages by state (weighted by facility size)
+- Calculate average occupancy rates by state
+- Store in state_metrics table
+- Run annually in January (data has 2-year lag)
+
+**TASK: Build PDPM case mix data collector**
+Create system to track patient acuity:
+- Access CMS PDPM payment data or claims data
+- Extract case-mix index values by facility
+- Calculate state averages weighted by patient days
+- Store as "avg_pdpm_case_mix_index" metric
+- Run quarterly
+
+### 1.6 Market Competition Data Collection
+
+**TASK: Build chain ownership analyzer**
+Create system to identify facility ownership patterns:
+- Use chain_org_id field from CMS Provider data to group facilities
+- Maintain manual list of publicly traded SNF companies (NHC, ENSG, etc.) with subsidiaries
+- Count facilities per chain organization
+- Calculate state-level metrics:
+  - % facilities in chains of 10+
+  - % facilities owned by public companies
+  - Number of distinct chains operating
+  - Top chain market share (by beds)
+- Track facility openings/closures by comparing monthly Provider files
+- Store all metrics in state_metrics table
+- Run monthly after Provider file updates
+
+**TASK: Build Certificate of Need (CON) status tracker**
+Create system for regulatory environment data:
+- Manually compile CON status for all 50 states from NCSL/AHPA sources
+- Track Medicaid expansion status from Kaiser Family Foundation
+- Compile state minimum staffing mandates from state administrative codes
+- Store in state_metrics table as text fields
+- Update semi-annually or when changes detected
+
+### 1.7 Operational Cost Data Collection
+
+**TASK: Build EIA utility costs collector**
+Create ETL pipeline for energy prices:
+- Connect to U.S. Energy Information Administration API
+- Pull commercial electricity rates (cents per kWh) by state
+- Pull commercial natural gas rates ($ per MCF) by state
+- Calculate composite utility cost index vs. national average
+- Store in state_metrics table
+- Run annually in March
+
+**TASK: Build property tax data compiler**
+Create system for tax cost data:
+- Source data from Lincoln Institute/Tax Foundation databases
+- Collect effective property tax rates by state/county
+- Calculate weighted averages for SNF locations
+- Manually compile state corporate income tax rates
+- Store in state_metrics table
+- Update annually
+
+### 1.8 Post-Acute Care Market Data
+
+**TASK: Build hospital discharge pattern analyzer**
+Create system to track PAC market share:
+- Access CMS Hospital Compare discharge destination data
+- Calculate percentage of Medicare discharges going to: SNF, home health, IRF, LTCH, home without services
+- Aggregate to state level
+- Store in state_metrics table
+- Run annually
+
+**TASK: Build ACO penetration calculator**
+Create system to track accountable care organizations:
+- Download CMS ACO Public Use Files
+- Count Medicare beneficiaries attributed to ACOs by state
+- Calculate as percentage of total Medicare enrollment
+- Store in state_metrics table
+- Run annually
+
+**TASK: Build competing PAC settings counter**
+Create system to track competitive landscape:
+- Use CMS Provider of Services file to count: home health agencies, hospices, IRFs
+- Access state licensing databases for assisted living facility counts (varies by state)
+- Store counts in state_metrics table
+- Run monthly
+
+### 1.9 Data Automation & Monitoring
+
+**TASK: Set up all ETL cron job schedules**
+Configure automated job scheduling:
+- Monthly jobs (1st): CMS Provider data
+- Monthly jobs (5th): CMS Star Ratings
+- Monthly jobs (10th): CMS Deficiencies, Penalties
+- Monthly jobs (15th): MA penetration, unemployment
+- Quarterly jobs: Medicaid rates, PDPM case mix
+- Annual jobs: BLS wages (May), Census data (July), Cost Reports (January), utility costs (March)
+- Each job logs start time, end time, records processed, status to data_refresh_log table
+
+**TASK: Build data freshness monitoring system**
+Create alerting for stale data:
+- Check last update timestamp for each metric category
+- Compare against expected update frequency
+- Generate alerts when data is X days past expected refresh
+- Email/Slack notifications to operations team
+- Dashboard showing data freshness status for all sources
+
+**TASK: Build data quality validation suite**
+Create automated tests for data integrity:
+- Verify all states have facilities (no empty states)
+- Verify Provider IDs are unique (no duplicates)
+- Verify star ratings are 1-5 or NULL (no invalid values)
+- Verify wage data is reasonable (RN > LPN > CNA, within expected ranges)
+- Verify each state has core metrics populated
+- Verify "vs national" calculations are mathematically correct
+- Run daily and log results
+
+### 1.10 State Dashboard APIs
+
+**TASK: Build state list API endpoint**
+Create GET /states endpoint:
+- Returns array of all 50 states
+- Include: state_code, state_name, total facilities, average star rating
+- Response format: JSON
+- Implement caching (Redis) for fast response
+- Add pagination if needed
+
+**TASK: Build state detail API endpoint**
+Create GET /states/:stateCode endpoint:
+- Returns detailed state information for specified state
+- Include: state info, summary statistics, top metrics
+- Response format: JSON
+- Cache for 24 hours
+
+**TASK: Build complete state dashboard API endpoint**
+Create GET /states/:stateCode/dashboard endpoint:
+- Returns comprehensive data package for state dashboard page
+- Include: state info, all facilities array, all metrics array, recent regulatory items, national averages for comparison
+- This is the main endpoint that powers the state dashboard UI
+- Optimize query performance (should return in <500ms)
+- Implement caching
+
+**TASK: Build state facilities API endpoint**
+Create GET /states/:stateCode/facilities endpoint:
+- Returns all facilities in specified state
+- Support query parameters: sort (by name, rating, beds), filter (by rating, ownership, chain), page, limit
+- Return facility details: name, address, rating, beds, ownership, chain
+- Include pagination metadata: total count, current page, total pages
+
+**TASK: Build state metrics API endpoint**
+Create GET /states/:stateCode/metrics endpoint:
+- Returns all metrics for specified state
+- Support query parameters: category (workforce, demographics, quality, etc.), time period
+- Include national averages for comparison
+- Return metric definitions alongside values
+
+**TASK: Build facility detail API endpoint**
+Create GET /facilities/:providerId endpoint:
+- Returns comprehensive data for single facility
+- Include: basic info, current quality metrics, deficiency history, penalty history, ownership info
+- Join data from multiple tables
+- Format for easy display on facility profile page
+
+**TASK: Build facility history API endpoint**
+Create GET /facilities/:providerId/history endpoint:
+- Returns time-series data for facility
+- Support query parameters: start_date, end_date, metric (star_rating, deficiencies, etc.)
+- Return data formatted for charting (date/value pairs)
+- Used to show trend charts on facility pages
+
+**TASK: Build metrics definitions API endpoint**
+Create GET /metrics/definitions endpoint:
+- Returns metadata about all available metrics
+- Include: display name, description, unit, category, data source, update frequency
+- Used to populate help tooltips and documentation
+
+**TASK: Build facility search API endpoint**
+Create GET /search/facilities endpoint:
+- Global search across all facilities nationwide
+- Support query parameters: q (search query), state, rating range, bed count range
+- Full-text search on facility name, city, chain organization
+- Return paginated results with match relevance scoring
+
+**TASK: Build data issue reporting endpoint**
+Create POST /data/report-issue endpoint:
+- Allow users to report outdated or incorrect data
+- Accept: data_type, identifier (provider_id or state_code), issue_description, user_email
+- Store in data_issues table for review
+- Send notification to operations team
+- Return issue_id and status
+
+**TASK: Create API documentation**
+Build comprehensive API docs:
+- Use Swagger/OpenAPI specification
+- Document all endpoints with parameters, request/response formats, examples
+- Include authentication requirements for paid endpoints
+- Host at /api/docs
+- Auto-generate from code annotations where possible
+
+**TASK: Implement API rate limiting**
+Protect API from abuse:
+- Limit to 100 requests per minute per IP address
+- Return 429 status code when limit exceeded
+- Include rate limit headers in responses (X-RateLimit-Limit, X-RateLimit-Remaining)
+- Allow higher limits for authenticated/paid users
+
+**TASK: Configure CORS**
+Set up Cross-Origin Resource Sharing:
+- Allow requests from frontend domains (localhost for dev, production domain)
+- Configure allowed methods (GET, POST, etc.)
+- Configure allowed headers
+- Handle preflight OPTIONS requests
+
+**TASK: Implement Redis caching layer**
+Add caching for performance:
+- Cache frequently accessed endpoints (states list, state summaries, national averages)
+- Set appropriate TTL (time to live) for each cache key
+- Invalidate cache when underlying data updates
+- Monitor cache hit rates
+
+---
+
+## CATEGORY 2: REGULATORY INTELLIGENCE PLATFORM
+
+### 2.1 Federal Legislative Tracking
+
+**TASK: Build Congress.gov API integration**
+Create system to track federal bills:
+- Connect to Congress.gov API
+- Monitor key committees: House Ways & Means, Senate Finance, House Energy & Commerce
+- Track bills with keywords: "skilled nursing facility", "nursing home", "Medicare Part A", "Medicaid nursing facility", "long-term care"
+- Extract: bill number, title, sponsors, status, introduction date, last action date, summary text
+- Store in bills table with source links
+- Run daily to catch new bills and status updates
+
+**TASK: Build Federal Register API integration**
+Create system to track CMS rulemaking:
+- Connect to Federal Register API
+- Monitor for documents matching: "Medicare Program; Prospective Payment System and Consolidated Billing for Skilled Nursing Facilities"
+- Track both proposed rules (comment period) and final rules
+- Extract: docket number, title, publication date, comment deadline, effective date, full text
+- Store in federal_regulations table
+- Alert on new proposed rules (comment opportunities)
+- Run daily
+
+**TASK: Build Regulations.gov scraper**
+Create system to track public comments:
+- Scrape Regulations.gov for CMS dockets
+- Track comment submission counts
+- Monitor comment deadlines
+- Extract agency responses to comments
+- Store in regulatory_comments table
+- Link to parent regulations
+- Run daily
+
+**TASK: Build QSO memo monitoring system**
+Create PDF scraper for surveyor guidance:
+- Monitor CMS.gov QSO memos page: cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos
+- Download new PDF memos as they're published
+- Parse PDF content to extract: memo number (QSO-XX-XX-NH), effective date, subject, key changes
+- Store in qso_memos table
+- Alert on immediate jeopardy guidance or significant policy changes
+- Run weekly
+
+**TASK: Build State Operations Manual tracker**
+Create system to monitor surveyor guidance updates:
+- Monitor CMS Appendix PP page for updates
+- Download updated PDF when version changes
+- Track revision history
+- Parse to identify changed sections
+- Store in som_updates table with change descriptions
+- Alert on significant interpretive guideline changes
+- Run monthly
+
+**TASK: Build MAC bulletin scraping system**
+Create scrapers for Medicare Administrative Contractor updates:
+- Build separate scrapers for each MAC jurisdiction (Noridian, CGS, NGS, Palmetto, WPS, etc.)
+- Monitor provider bulletins and newsletters for each MAC
+- Extract: bulletin number, date, title, SNF-specific guidance, billing updates, audit focus areas
+- Store in mac_bulletins table with jurisdiction identifier
+- Run monthly for each MAC
+
+### 2.2 State Legislative Tracking
+
+**TASK: Build LegiScan API integration**
+Create system for multi-state bill tracking:
+- Connect to LegiScan API for broad state legislative monitoring
+- Track bills in all 50 states with keywords: "nursing facility", "long-term care facility", "Medicaid reimbursement", "nursing home staffing"
+- Extract: bill number, state, title, sponsors, status, last action
+- Store in state_bills table
+- Prioritize top 10 states by SNF count: TX, CA, OH, IL, PA, FL, NY, NC, IN, MI
+- Run daily
+
+**TASK: Build state legislature direct scrapers**
+Create custom scrapers for high-priority states:
+- Build state-specific scrapers for states without good API coverage
+- Monitor health & welfare committees, appropriations committees
+- Track bill text, amendments, committee actions
+- Extract hearing schedules and testimony
+- Store alongside LegiScan data for comprehensive coverage
+- Run daily during legislative sessions
+
+**TASK: Build state Medicaid agency bulletin monitor**
+Create scrapers for state provider updates:
+- Build scrapers for all 50 state Medicaid agency websites
+- Monitor "Provider Updates", "News", "Bulletins" sections
+- Extract: bulletin date, title, content, rate change notices, policy updates
+- Store in state_medicaid_bulletins table
+- Alert on emergency rate changes
+- Run weekly
+
+**TASK: Build state health department survey result monitor**
+Create scrapers for state enforcement actions:
+- Scrape state health department long-term care licensing/survey divisions
+- Extract: facility survey results, deficiency lists, enforcement actions, sanctions
+- Store in state_survey_results table
+- Link to facilities table where possible
+- Run monthly
+
+**TASK: Build state budget document tracker**
+Create system to monitor appropriations:
+- Monitor state legislature finance/appropriations committee sites
+- Track budget bills specifically mentioning Medicaid or nursing facility rates
+- Download enacted budgets and fiscal impact reports
+- Parse PDFs to extract SNF rate changes
+- Store in state_budget_documents table
+- Run during budget season (typically quarterly)
+
+### 2.3 Enforcement & Audit Tracking
+
+**TASK: Build RAC audit focus tracker**
+Create system to monitor Recovery Audit Contractors:
+- Scrape CMS RAC program page for focus area announcements
+- Extract: audit issue descriptions, denial reasons, appeal statistics
+- Track SNF-specific focus areas (RUG placement, therapy necessity, 3-day hospital stay, MDS accuracy, consolidated billing)
+- Store in rac_audits table
+- Alert on new SNF audit focuses
+- Run quarterly
+
+**TASK: Build OIG report monitor**
+Create system to track Inspector General audits:
+- Monitor oig.hhs.gov for new reports
+- Download OIG Work Plan annually for upcoming audit priorities
+- Extract SNF-specific audit reports, fraud alerts, special investigations
+- Parse PDFs to extract key findings and recommendations
+- Store in oig_reports table
+- Run monthly
+
+### 2.4 AI-Powered Analysis
+
+**TASK: Build AI relevance scoring system**
+Create GPT-4 analysis for all regulatory items:
+- For each bill, regulation, memo, bulletin: send to Claude API with structured prompt
+- Prompt asks: "Rate relevance to SNF operators on 0-100 scale. Explain why."
+- Extract relevance score and reasoning
+- Store in regulatory_items table
+- Create priority queue: items >80 relevance get immediate alerts
+- Batch process to manage API costs
+- Run nightly for new items
+
+**TASK: Build financial impact calculator**
+Create AI system to estimate dollar impact:
+- For high-relevance items (score >70), send to Claude with facility census mix prompt
+- Prompt provides: proposed policy change, asks for impact calculation methodology
+- Example: "If staffing mandate requires +0.5 HPRD, calculate cost per bed per year"
+- Extract: per-beneficiary-per-year (PBPY) impact estimate, calculation assumptions
+- Store impact_pbpy field in regulatory_items table
+- Allow users to input their facility's census mix to personalize estimate
+- Run on-demand when user views high-priority item
+
+**TASK: Build risk scoring algorithm**
+Create multi-dimensional risk assessment:
+- Calculate risk score across 4 dimensions: Reimbursement (40%), Staffing (30%), Compliance (20%), Quality (10%)
+- For each regulatory item, use AI to categorize which dimensions are affected
+- Assign risk level within each dimension (High, Medium, Low)
+- Calculate weighted total risk score (0-100)
+- Store in regulatory_items table
+- Use for filtering and prioritization
+- Run alongside relevance scoring
+
+**TASK: Build automated summary generation**
+Create AI-powered regulatory summaries:
+- For each regulatory item, generate structured summary with sections:
+  - "What changed" (2-3 sentences)
+  - "When it takes effect" (specific dates)
+  - "Impact on you" (who this affects and how)
+  - "Required actions" (immediate, short-term, long-term)
+- Use consistent prompt template across all items
+- Store in summary_text field in regulatory_items table
+- Regenerate summaries when items are updated
+- Run nightly for new/updated items
+
+### 2.5 Alert & Notification System
+
+**TASK: Build regulatory alert email system**
+Create automated alerts for critical items:
+- Identify items meeting alert criteria: high relevance (>80), approaching deadline (<30 days), high risk score
+- Generate personalized email with item summary, impact assessment, action items
+- Include direct links to source documents and comment portals
+- Allow users to set alert preferences (immediately, daily digest, weekly digest)
+- Track which alerts were sent to which users
+- Include unsubscribe/preference management links
+
+**TASK: Build comment deadline tracking**
+Create calendar system for regulatory deadlines:
+- Extract comment deadlines from Federal Register, Regulations.gov
+- Calculate days remaining until deadline
+- Send alerts at 30 days, 14 days, 7 days, 2 days before deadline
+- Display "Urgent" badge on items with <7 days
+- Create calendar export (iCal format) so users can add to Outlook/Google Calendar
+
+**TASK: Build implementation timeline tracker**
+Create system to track when rules take effect:
+- Extract effective dates from final rules
+- Calculate "time to prepare" (days between publication and effective date)
+- Send alerts at 90 days, 60 days, 30 days before effective date
+- Flag rules with short implementation windows (<60 days) as urgent
+- Show countdown timer on regulatory dashboard
+
+### 2.6 Regulatory Intelligence Database
+
+**TASK: Create comprehensive regulatory database schema**
+Design database structure for all regulatory sources:
+- Create regulatory_items master table with: item_id, jurisdiction (federal/state), item_type (bill/rule/memo/bulletin), title, description, source, source_id, source_url
+- Add tracking fields: introduced_date, status, comment_deadline, effective_date
+- Add AI analysis fields: relevance_score, impact_pbpy, risk_score, summary_text, action_items
+- Add categorization: impact_category (Reimbursement/Staffing/Quality/Compliance), tags array
+- Add state_id foreign key for state-specific items
+- Create indexes on: state_id, item_type, relevance_score, comment_deadline, effective_date
+
+**TASK: Build regulatory item management interface**
+Create admin tools for regulatory content:
+- Interface to manually add regulatory items that automated scrapers miss
+- Edit/update existing items (correct dates, add context)
+- Override AI relevance scores when needed
+- Add staff notes visible only to admin team
+- Merge duplicate items found by different scrapers
+- Archive outdated items
+
+---
+
+## CATEGORY 3: ADVOCACY PLATFORM
+
+### 3.1 Representative Lookup System
+
+**TASK: Build address-based representative lookup API**
+Create system to identify elected officials:
+- Integrate with Google Civic Information API or similar service
+- Accept user's facility address as input
+- Return: federal representatives (2 Senators, 1 House member), state representatives (state senator, state house member), local officials if applicable
+- Include: official name, title, party, office address, phone, email, website, photo
+- Cache results by address for performance
+- Handle edge cases (territories, districts in flux)
+
+**TASK: Build representative database**
+Create storage for elected officials:
+- Create representatives table with: rep_id, name, title, level (federal/state/local), chamber (Senate/House), party, state, district
+- Store contact information: office addresses, phone numbers, email addresses, websites, social media
+- Track committee memberships (especially health/appropriations committees)
+- Update quarterly after elections
+- Allow manual updates for staff turnover
+
+### 3.2 Campaign Management System
+
+**TASK: Build campaign creation interface**
+Create admin tools to launch advocacy campaigns:
+- Form to create new campaign with: title, description, issue background, target representatives (federal/state/both)
+- Define campaign goal (pass bill, oppose rule, comment on proposal)
+- Set campaign active dates (start/end)
+- Upload relevant documents (bill text, analysis, talking points)
+- Link to related regulatory item from Regulatory Intelligence platform
+- Preview how campaign will appear to users
+
+**TASK: Build message templating engine**
+Create system for personalized messages:
+- Start with template message with placeholders: [REP_NAME], [USER_NAME], [FACILITY_NAME], [FACILITY_ADDRESS]
+- Allow users to customize message before sending
+- Include required elements: user's name, address (to prove constituency), subject line
+- Provide suggested talking points users can include
+- Show character count and formatting preview
+- Save draft messages
+
+**TASK: Build multi-level targeting system**
+Create flexible recipient selection:
+- Allow campaigns to target: federal only, state only, both federal and state
+- Option to target specific committees (e.g., only Senate Finance Committee members)
+- Option to target state-specific campaigns (e.g., only California representatives)
+- Show users which of their representatives will receive the message
+- Implement CC to sender (user gets copy of what was sent for transparency)
+
+### 3.3 Message Delivery System
+
+**TASK: Build email delivery integration**
+Create system to send messages to representatives:
+- Integrate with SendGrid, Mailgun, or similar service for high-volume email
+- Send messages from users' email addresses (not PostAcutePulse domain) for authenticity
+- Fall back to webform submission if representative doesn't accept email
+- Track delivery status: sent, delivered, bounced, failed
+- Implement retry logic for failed sends
+- Rate limit to avoid spam filters
+
+**TASK: Build message tracking system**
+Create logging for all advocacy messages:
+- Store every message sent with: user_id, campaign_id, recipient_rep_id, sent_date, delivery_status
+- Track opens/clicks if representative's email system supports it
+- Log any responses received from representatives' offices
+- Allow users to see history of messages they've sent
+- Aggregate participation statistics per campaign
+
+### 3.4 Campaign Analytics
+
+**TASK: Build campaign performance dashboard**
+Create analytics for advocacy campaigns:
+- Show metrics per campaign: total participants, messages sent, participation rate, representative response rate
+- Show demographic breakdown: states represented, facility types, organization sizes
+- Show timeline of participation (daily message volume)
+- Identify top participating facilities/users
+- Export campaign report as PDF
+
+**TASK: Build user participation history**
+Create interface for users to track their advocacy:
+- "My Campaigns" page showing all campaigns user participated in
+- Message history with dates and recipients
+- Any responses received from representatives
+- Badges/achievements for active advocates (gamification)
+- Option to set up recurring reminders for high-priority campaigns
+
+### 3.5 Integration with Regulatory Intelligence
+
+**TASK: Build "Launch Campaign" buttons on regulatory alerts**
+Create seamless flow from alert to action:
+- On high-priority regulatory items, show "Launch Advocacy Campaign" button
+- Button triggers campaign creation pre-filled with regulatory item details
+- Auto-populate talking points based on AI analysis of the regulation
+- Suggest target representatives based on item jurisdiction
+- Track which regulatory items led to advocacy campaigns
+
+**TASK: Build regulatory-to-advocacy linking**
+Create data connections:
+- Link advocacy campaigns to their source regulatory_items
+- Show on regulatory item page: "X facilities have sent Y messages to representatives about this"
+- Show on campaign page: "This campaign is in response to [Regulatory Item Title]"
+- Track whether advocacy campaigns successfully influenced outcomes
+
+---
+
+## CATEGORY 4: M&A INTELLIGENCE (SNFalyze)
+
+### 4.1 Deal Data Collection
+
+**TASK: Build deal entry interface**
+Create system for users to input transaction data:
+- Form to enter deal details: facility name, location, beds, purchase price, date closed, buyer name, seller name
+- Calculate implied metrics: price per bed, EBITDA multiple (if EBITDA provided)
+- Option to mark deal as confidential (not included in public benchmarks)
+- Validation to ensure required fields are complete
+- Attach due diligence documents to deal record
+
+**TASK: Build anonymous deal aggregation system**
+Create privacy-preserving benchmarking:
+- Strip identifying information from deals before aggregating
+- Never show individual deal details without permission
+- Aggregate only when minimum threshold met (e.g., at least 5 deals in category)
+- Allow users to opt in/out of anonymized data sharing
+- Clearly communicate what data is shared vs. kept private
+
+### 4.2 Market Benchmarking
+
+**TASK: Build valuation multiples calculator**
+Create system to calculate market pricing:
+- Segment deals by: region (Northeast, Midwest, South, West), facility size (<75 beds, 75-120, 120+), star rating, state
+- Calculate median and average multiples for each segment
+- Calculate price per bed ranges
+- Show sample size (number of deals in calculation)
+- Update calculations monthly as new deals are added
+- Store historical multiples to show trending
+
+**TASK: Build market sentiment index**
+Create leading indicator for M&A market:
+- Track metrics: number of active deals per month, average time from listing to close, percentage of deals with financing contingencies
+- Calculate "seller's market" vs. "buyer's market" score
+- Identify trend direction (market heating up vs. cooling down)
+- Compare current quarter to historical baseline
+- Display as visual gauge (hot/warm/neutral/cool/cold)
+
+**TASK: Build historical trending system**
+Create time-series analysis:
+- Track how valuation multiples have changed over past 3 years
+- Show quarterly trends by segment
+- Identify seasonal patterns (e.g., Q4 typically sees more closings)
+- Flag significant market events (rate changes, regulatory shifts) that coincide with valuation changes
+- Create exportable trend charts
+
+### 4.3 Custom Benchmarking
+
+**TASK: Build custom benchmark request system**
+Create on-demand analysis:
+- Form for users to request specific benchmark (e.g., "90-bed 4-star SNFs in Ohio")
+- Queue requests for analysis
+- Generate custom report with: applicable deals, valuation range, market commentary
+- Deliver via email as PDF
+- Track request history per user
+- Offer as premium feature with usage limits
+
+**TASK: Build comparable deals finder**
+Create system to find similar transactions:
+- User inputs target facility characteristics (beds, star rating, state, payer mix)
+- System finds most similar closed deals based on weighted similarity scoring
+- Display comparable deals with anonymized details
+- Show valuation range based on comparables
+- Allow users to adjust weighting factors
+
+### 4.4 Deal Pipeline Management
+
+**TASK: Build deal pipeline dashboard**
+Create workflow for active deals:
+- Pipeline stages: Prospecting, LOI, Due Diligence, Financing, Closing, Closed
+- Drag-and-drop to move deals between stages
+- Track key dates: LOI deadline, inspection date, closing date
+- Assign team members to deals
+- Set reminders for upcoming milestones
+- Filter/sort by stage, date, value
+
+**TASK: Build due diligence document management**
+Create organized data room:
+- Upload documents by category: financial statements, CMS surveys, quality metrics, contracts, licenses
+- Version control for document updates
+- Commenting/annotation on documents
+- Checklist of required due diligence items
+- Share data room with advisors (accountants, attorneys)
+- Audit log of who viewed/downloaded what
+
+**TASK: Build deal team collaboration tools**
+Create communication hub:
+- Internal notes on deals (not visible to other party)
+- Task assignments (e.g., "Review financials by Friday")
+- File sharing and comments
+- Integration with email for updates
+- Activity feed showing recent changes
+
+### 4.5 Market Intelligence Reporting
+
+**TASK: Build quarterly market report generator**
+Create automated State of SNF M&A report:
+- Aggregate deal data from past quarter
+- Calculate: total deal volume, average multiples, largest deals, most active states
+- Generate market commentary using AI based on data trends
+- Compare to previous quarters
+- Highlight notable transactions
+- Export as professional PDF with charts
+- Email to all SNFalyze subscribers
+
+**TASK: Build state-specific market reports**
+Create geographic market analysis:
+- Generate state-level M&A reports on demand
+- Include: deal count, average multiples, buyer composition (PE vs. operators), active chains
+- Compare state to national trends
+- Identify emerging markets (states seeing increased activity)
+- Show correlation with regulatory environment from State Dashboard
+
+### 4.6 Integration with PostAcutePulse
+
+**TASK: Build regulatory impact modeling for valuations**
+Connect regulatory intelligence to transaction values:
+- When major regulation passes, model impact on valuations
+- Example: "New staffing mandate could decrease multiples by 0.5x based on historical analysis"
+- Show on State Dashboard: "Regulatory Risk Score for M&A" per state
+- Alert SNFalyze users when regulatory changes may affect pending deals
+- Create "Regulatory Risk Adjustment" factor in valuation calculator
+
+**TASK: Build market opportunity scorer**
+Combine regulatory and market data:
+- Score each state for M&A attractiveness based on: current multiples, regulatory environment, demographic trends, reimbursement rates
+- Create "Best States for SNF Investment" ranking
+- Update quarterly
+- Show on both SNFalyze and State Dashboard
+
+---
+
+## CATEGORY 5: NEWS HUB
+
+### 5.1 Article Aggregation
+
+**TASK: Build RSS feed monitoring system**
+Create automated news collection:
+- Monitor 9 existing RSS feeds every 4 hours
+- Parse feed XML to extract: title, description, URL, published date, source
+- Check if article already exists (by URL) to avoid duplicates
+- If new, insert into articles table
+- Queue new articles for AI analysis
+- Log all feed checks with success/failure status
+
+**TASK: Build article deduplication system**
+Eliminate duplicate stories:
+- Compare new articles against recent articles using title similarity, URL matching
+- Use text fingerprinting (hash of first 500 characters) to catch exact duplicates
+- If duplicate detected, keep article from most authoritative source, mark others as duplicate
+- Create deduplication_log to track what was merged
+- Allow manual review of questionable duplicates
+
+**TASK: Add new RSS feed sources**
+Expand news coverage:
+- Research additional industry sources: Modern Healthcare, Healthcare Dive, Becker's Hospital Review, AHCA/NCAL, LeadingAge
+- Test RSS feed URLs to ensure they parse correctly
+- Add to feeds table with source metadata (name, URL, credibility rating)
+- Configure deduplication rules
+- Verify articles are SNF-relevant (may need keyword filtering)
+
+### 5.2 AI-Powered Analysis
+
+**TASK: Complete AI analysis of existing articles**
+Process remaining unanalyzed articles:
+- Run remaining 3 articles through Claude API
+- Apply geographic scope detection: National, State, Regional, Local
+- Extract state codes for state-specific articles
+- Store analysis results (key insights, compliance timelines, financial impact, stakeholders, action items)
+
+**TASK: Build automated AI analysis pipeline**
+Create system for ongoing article analysis:
+- When new article is added, automatically queue for AI analysis
+- Send article title, description, and full text (if scraped) to Claude API
+- Use structured prompt asking for: relevance score (0-100), geographic scope, affected states, key insights (4 bullet points), compliance timeline, who needs to know, action items (immediate/short-term/long-term), risk assessment
+- Parse AI response and store in structured fields
+- Handle API errors and retry failed analyses
+- Rate limit to stay within Anthropic usage limits
+
+**TASK: Refine AI analysis prompts**
+Improve analysis quality:
+- Test different prompt variations to improve accuracy
+- Add examples of good vs. bad analysis to prompt
+- Fine-tune geographic scope detection (reduce false positives)
+- Improve extraction of actionable insights
+- Version prompts so changes can be tracked
+- A/B test prompts to measure improvement
+
+### 5.3 Article Features
+
+**TASK: Build article search functionality**
+Create powerful search:
+- Full-text search across article titles, descriptions, and AI analysis text
+- Support filters: date range, source, category, geographic scope, states, impact level, relevance score
+- Boolean operators: AND, OR, NOT
+- Sort options: relevance, date (newest/oldest), relevance score
+- Save searches so users can re-run them
+- Display results with matched terms highlighted
+
+**TASK: Build article bookmarking system**
+Allow users to save articles:
+- "Bookmark" button on each article card
+- Create saved_articles table (user_id, article_id, saved_date, user_notes)
+- "My Saved Articles" page showing bookmarked articles
+- Allow users to add personal notes to bookmarks
+- Organize bookmarks with folders or tags
+- Export bookmarks as list or feed
+
+**TASK: Build trending topics feature**
+Identify what's hot:
+- Analyze article tags and AI-extracted topics over 7-day and 30-day rolling windows
+- Calculate trending score based on frequency increase vs. baseline
+- Display top 10 trending topics on dashboard
+- Show sparkline chart for each topic showing trend trajectory
+- Click topic to see all related articles
+- Compare trending topics to historical patterns
+
+**TASK: Build article archiving system**
+Manage old content:
+- Identify articles older than 90 days
+- Move to articles_archive table (same schema, separate for performance)
+- Keep archive fully searchable
+- Add "Include Archive" checkbox in search
+- Run archiving job monthly
+- Retain all AI analysis and metadata
+
+### 5.4 Newsletter & Distribution
+
+**TASK: Build weekly email digest system**
+Create automated newsletter:
+- Select top 10 articles from past week based on relevance scores
+- Organize by category: Reimbursement, Staffing, Quality, Compliance, Market News
+- Generate email template with article summaries and click-through links
+- Personalize based on user's state and facility type (if available)
+- Send every Monday morning
+- Track open rates and click-through rates
+
+**TASK: Build newsletter subscriber management**
+Handle subscriptions:
+- Signup form for newsletter (separate from platform account)
+- Email verification for new subscribers
+- Unsubscribe link in every email
+- Preference center: choose topics, frequency (weekly vs. daily)
+- Segment subscribers by state or facility type for targeted content
+- Export subscriber list for marketing
+
+### 5.5 News Hub UI
+
+**TASK: Build news hub homepage**
+Create main news interface:
+- Grid or list view of recent articles with thumbnail images
+- Featured article at top (manually selected or highest relevance score)
+- Sidebar with: trending topics, most-read articles, upcoming regulatory deadlines
+- Filter panel: date, source, category, scope
+- Search bar with autocomplete
+- Load more articles with infinite scroll or pagination
+
+**TASK: Build article detail page**
+Create full article view:
+- Display article title, source, date, full description
+- Show AI analysis in expandable sections: key insights, compliance timeline, stakeholders, action items, risk assessment
+- Related articles section (based on tags or AI analysis)
+- Social sharing buttons (LinkedIn, Twitter, email)
+- "Bookmark" and "Report Issue" buttons
+- Link to original source article
+
+**TASK: Build "Top 10 Voices" feature**
+Highlight thought leaders:
+- Curate list of top 10 LinkedIn influencers in SNF/post-acute care space
+- Display their recent posts or articles
+- Show follower counts and engagement metrics
+- Link to their LinkedIn profiles
+- Update weekly with fresh content
+- Allow users to suggest additions to the list
+
+---
+
+## CATEGORY 6: EDUCATION PLATFORM
+
+### 6.1 AI Chatbot Systems
+
+**TASK: Build Medicaid policy chatbot**
+Create AI assistant for Medicaid questions:
+- Fine-tune Claude on dataset of Medicaid regulations, state plans, bulletins
+- Create conversational interface where users can ask questions like "What's the Medicaid rate in Idaho?"
+- Chatbot searches knowledge base and provides sourced answers with citations
+- Handle follow-up questions in conversation thread
+- Save chat history for user reference
+- Track common questions to identify content gaps
+
+**TASK: Build Idaho ALF regulatory chatbot**
+Create assistant for Idaho assisted living regulations:
+- Ingest all Idaho IDAPA documents related to assisted living
+- Train chatbot on state-specific regulations
+- Answer questions about licensing, staffing, physical plant, resident rights
+- Provide section references from IDAPA code
+- Update when regulations change
+- Expand to additional states over time
+
+**TASK: Build general SNF compliance chatbot**
+Create assistant for federal regulations:
+- Train on 42 CFR Part 483 (Requirements of Participation)
+- Train on CMS State Operations Manual Appendix PP
+- Train on recent QSO memos
+- Answer questions about F-tags, survey process, compliance requirements
+- Provide interpretive guidance
+- Link to relevant QSO memos and SOM sections
+
+### 6.2 Tools & Templates Library
+
+**TASK: Build assessment tools library**
+Create self-assessment resources:
+- Readiness assessments: "Are you ready for new staffing mandate?"
+- Compliance checklists: "F-tag 880 (Infection Control) self-audit"
+- Financial impact calculators: Input your costs, calculate impact of proposed regulation
+- SWOT analysis templates for strategic planning
+- Gap analysis tools to identify deficiencies before survey
+- Make tools interactive (web-based) not just PDFs
+
+**TASK: Build financial model templates**
+Create Excel-based planning tools:
+- Pro forma templates for new facility development
+- Cash flow projection models
+- Budget templates by department
+- Payer mix scenario planning tools
+- Staffing cost calculators with benefit loading
+- ROI calculators for capital investments
+- Make downloadable with instructions
+
+**TASK: Build policy & procedure templates**
+Create compliance documentation:
+- Required policies: infection control, abuse prevention, quality assurance
+- Procedure templates: admission process, discharge planning, emergency response
+- Forms library: assessments, care plans, incident reports
+- Customizable Word/PDF templates
+- Compliance checklist showing which policies are required by regulation
+- Version control and update notifications
+
+**TASK: Build sample marketing materials**
+Create operational resources:
+- Facility brochure templates
+- Social media post templates for engagement
+- Email newsletter templates for families
+- Event flyers for community outreach
+- Press release templates
+- Brand guidelines and style guides
+
+### 6.3 Training Programs
+
+**TASK: Build quarterly training program system**
+Create structured education:
+- Develop curriculum for each quarter: Q1 (Quality), Q2 (Compliance), Q3 (Finance), Q4 (Operations)
+- Create training modules: videos, slide decks, handouts, quizzes
+- Schedule live webinars with Q&A sessions
+- Offer CEU credits where applicable
+- Track attendance and completion
+- Issue certificates of completion
+
+**TASK: Build on-demand training library**
+Create evergreen education content:
+- Video courses: "MDS 3.0 Basics", "PDPM Overview", "Survey Readiness"
+- Organize by topic and role (clinical, administrative, dietary, environmental services)
+- Include downloadable resources with each course
+- Add quizzes to check comprehension
+- Track user progress through courses
+- Recommend courses based on user's role
+
+**TASK: Build certification prep courses**
+Create exam preparation resources:
+- NHA prep: Nursing Home Administrator licensure exam study materials
+- DON prep: Director of Nursing certification materials
+- AANAC prep: Assisted living administrator certification
+- Practice tests with explanations
+- Study guides and flashcards
+- Track practice test scores and progress
+
+### 6.4 Education Platform Features
+
+**TASK: Build learning management system (LMS)**
+Create platform infrastructure:
+- User enrollment in courses
+- Progress tracking per user per course
+- Course completion certificates (auto-generated PDF)
+- Course prerequisites (must complete A before B)
+- User dashboard showing enrolled courses, progress, certificates earned
+- Admin dashboard showing course completion rates, popular courses
+
+**TASK: Build resource search**
+Create findable content:
+- Search across all tools, templates, training materials
+- Filter by: type (tool, template, video), topic, role
+- Tag-based organization
+- Related resources suggestions
+- Bookmarking for frequently used resources
+- Usage analytics to identify most valuable resources
+
+---
+
+## CATEGORY 7: USER MANAGEMENT & AUTHENTICATION
+
+### 7.1 Account Management
+
+**TASK: Build user registration system**
+Create signup flow:
+- Registration form: name, email, password, facility name, role, state
+- Email verification required before access
+- Optional: facility details (Provider ID, bed count, ownership type) for personalized experience
+- Terms of service and privacy policy acceptance
+- Welcome email with getting started guide
+
+**TASK: Build login system**
+Create authentication:
+- Email/password login
+- "Remember me" option
+- JWT token-based authentication
+- Token refresh mechanism
+- Secure password hashing (bcrypt)
+- Login rate limiting to prevent brute force
+
+**TASK: Build password management**
+Create recovery and security:
+- "Forgot password" flow with email reset link
+- Password reset form with strength requirements
+- Change password from account settings
+- Force password reset after X days (optional security policy)
+- Password history (prevent reusing recent passwords)
+
+**TASK: Build user profile management**
+Allow users to update info:
+- Edit profile: name, email, phone, facility details
+- Upload profile picture
+- Set communication preferences: email frequency, topics of interest
+- Connect facility to CMS Provider ID for personalized metrics
+- Delete account option (with confirmation)
+
+### 7.2 Subscription & Payment
+
+**TASK: Build subscription tier system**
+Create tiered access:
+- Define access levels: Free (News Hub), Basic (+ Regulatory Intelligence), Professional (+ State Dashboard), Enterprise (+ Advocacy + Education + SNFalyze)
+- Feature gating based on subscription level
+- Display upgrade prompts for locked features
+- Trial period option (14 or 30 days) before payment required
+
+**TASK: Build Stripe payment integration**
+Handle subscriptions and billing:
+- Integrate Stripe for payment processing
+- Monthly and annual billing options (with annual discount)
+- Collect payment method during signup
+- Handle subscription status changes (active, past_due, canceled)
+- Automated retry for failed payments
+- Prorated charges for upgrades/downgrades
+- Refund processing
+
+**TASK: Build billing management interface**
+Customer-facing billing:
+- View current subscription plan and status
+- View billing history and download invoices
+- Update payment method
+- Upgrade/downgrade subscription
+- Cancel subscription (with feedback form)
+- Reactivate canceled subscription
+
+**TASK: Build multi-user accounts for organizations**
+Enterprise account management:
+- Primary account owner can invite team members
+- Seat-based pricing (per user)
+- Role-based permissions within organization
+- Billing administrator role separate from regular users
+- Bulk user management (CSV upload for large orgs)
+- Usage reports showing activity per user
+
+### 7.3 Permissions & Access Control
+
+**TASK: Build role-based access control (RBAC)**
+Implement permissions system:
+- Define roles: Admin (all access), Editor (can create campaigns, manage content), Viewer (read-only)
+- Assign permissions to roles at granular level
+- Check permissions before showing UI elements or allowing API calls
+- Audit log of permission changes
+
+**TASK: Build organization hierarchy**
+Support multi-facility operators:
+- Organizations can have multiple facilities
+- Users can belong to organization or specific facilities
+- Regional administrators can see all facilities in their region
+- Corporate administrators can see entire organization
+- Facility-level users see only their facility's data
+
+---
+
+## CATEGORY 8: API & INFRASTRUCTURE
+
+### 8.1 Core API Development
+
+**TASK: Design RESTful API architecture**
+Create API structure:
+- Design all endpoints following REST principles
+- Use standard HTTP methods: GET (read), POST (create), PUT/PATCH (update), DELETE (remove)
+- Consistent URL structure: /api/v1/{resource}
+- JSON request/response format
+- HTTP status codes: 200 (success), 201 (created), 400 (bad request), 401 (unauthorized), 404 (not found), 500 (server error)
+- Document all endpoints in OpenAPI/Swagger spec
+
+**TASK: Build API authentication & authorization**
+Secure API access:
+- JWT (JSON Web Token) based authentication
+- Token issued on login, included in Authorization header for subsequent requests
+- Token expiration and refresh token mechanism
+- API keys for server-to-server integrations
+- Rate limiting per user/API key
+- Audit logging of API access
+
+**TASK: Implement API rate limiting**
+Prevent abuse:
+- Redis-based rate limiting
+- Tiered limits: 100 req/min (free), 500 req/min (paid), 2000 req/min (enterprise)
+- Return 429 status when limit exceeded
+- Include rate limit headers in all responses: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+- Allow bursting for paid users
+
+**TASK: Build API error handling**
+Standardize error responses:
+- Consistent error response format: {error: {code, message, details}}
+- Meaningful error messages for developers
+- Don't expose internal implementation details in errors
+- Log all errors server-side for debugging
+- Validation errors include field-level details
+
+**TASK: Implement API caching layer**
+Improve performance:
+- Redis cache for frequently accessed endpoints
+- Cache strategies: time-based (TTL), tag-based (invalidate related items)
+- Cache headers in HTTP responses
+- Monitor cache hit rates
+- Invalidate cache when underlying data changes
+
+**TASK: Build API documentation**
+Create developer-friendly docs:
+- Interactive Swagger/OpenAPI documentation
+- Code examples in multiple languages (JavaScript, Python, curl)
+- Authentication guide
+- Rate limiting explanation
+- Error code reference
+- Changelog of API versions
+- Sandbox environment for testing
+
+### 8.2 Database Architecture
+
+**TASK: Optimize database for performance**
+Scale data layer:
+- Identify slow queries and add indexes
+- Partition large tables (articles, deficiencies) by date
+- Implement database connection pooling
+- Set up read replicas for heavy read workloads
+- Configure query caching
+- Monitor slow query log
+
+**TASK: Build database backup system**
+Protect data:
+- Automated daily backups
+- Backup retention policy: daily for 7 days, weekly for 4 weeks, monthly for 12 months
+- Backup stored in separate geographic region
+- Test restore procedures quarterly
+- Backup encryption at rest
+- Document disaster recovery procedures
+
+**TASK: Implement database migrations**
+Manage schema changes:
+- Use migration tool (e.g., Alembic for Python, Flyway for Java)
+- Version control all schema changes
+- Migration scripts for both upgrade and downgrade
+- Test migrations on staging before production
+- Automated migration on deployment
+- Rollback procedures for failed migrations
+
+### 8.3 Infrastructure Setup
+
+**TASK: Set up production environment**
+Build hosting infrastructure:
+- Provision servers on AWS/GCP/Azure
+- Configure load balancer for high availability
+- Set up PostgreSQL database with replication
+- Configure Redis for caching
+- Set up file storage (S3 or equivalent) for documents/images
+- Configure CDN for static assets
+- SSL certificates for HTTPS
+- Domain name and DNS configuration
+
+**TASK: Set up staging environment**
+Create testing environment:
+- Mirror production architecture on smaller scale
+- Separate database (don't use production data)
+- Use staging subdomain (staging.pacadvocate.com)
+- Deploy all code to staging before production
+- Reset staging data periodically
+- Use for QA testing and demos
+
+**TASK: Build CI/CD pipeline**
+Automate deployments:
+- Set up GitHub Actions, GitLab CI, or Jenkins
+- Automated tests run on every commit
+- Automated deployment to staging on merge to develop branch
+- Manual approval gate before production deployment
+- Automated deployment to production on merge to main branch
+- Rollback mechanism for failed deployments
+- Deployment notifications to Slack/Discord
+
+**TASK: Set up monitoring & alerting**
+Track system health:
+- Application performance monitoring (APM): New Relic, Datadog, or Sentry
+- Server monitoring: CPU, memory, disk, network
+- Database monitoring: query performance, connection counts
+- Error tracking: capture and alert on application errors
+- Uptime monitoring: external checks every 1 minute
+- Alert channels: email, Slack, PagerDuty for critical issues
+
+**TASK: Set up logging infrastructure**
+Centralize logs:
+- Aggregate logs from all servers
+- ELK stack (Elasticsearch, Logstash, Kibana) or similar
+- Structure logs with consistent format (JSON)
+- Log retention policy
+- Search and filter capabilities
+- Alert on specific error patterns
+
+**TASK: Implement security measures**
+Protect infrastructure:
+- Web Application Firewall (WAF) to block attacks
+- DDoS protection
+- Regular security patches and updates
+- Vulnerability scanning
+- Penetration testing before launch
+- SSL/TLS configuration
+- Database encryption at rest
+- Secrets management (not in code)
+
+### 8.4 DevOps Workflows
+
+**TASK: Create developer onboarding documentation**
+Help new devs get started:
+- Local development environment setup guide
+- How to run project locally
+- How to run tests
+- Code style guide and linting rules
+- Git workflow (branching, PRs, reviews)
+- How to deploy to staging
+- Where to find credentials/secrets
+
+**TASK: Build deployment runbook**
+Document operational procedures:
+- Step-by-step deployment process
+- Pre-deployment checklist
+- Post-deployment verification steps
+- Rollback procedures
+- Database migration process
+- Cache clearing procedures
+- Common troubleshooting issues
+
+---
+
+## CATEGORY 9: FRONTEND APPLICATION
+
+### 9.1 Core UI Components
+
+**TASK: Build main navigation system**
+Create app-wide navigation:
+- Top navigation bar with logo, main menu items (News, States, Regulatory, Advocacy, Education, SNFalyze)
+- User menu in top right: profile, settings, subscription, logout
+- Mobile hamburger menu for small screens
+- Active state highlighting for current section
+- Breadcrumbs for hierarchical navigation
+- Search bar in header (global search)
+
+**TASK: Build responsive layout system**
+Ensure mobile compatibility:
+- Mobile-first CSS design
+- Breakpoints: mobile (<768px), tablet (768-1024px), desktop (>1024px)
+- Flexible grid system
+- Touch-friendly tap targets (min 44x44px)
+- Test on iOS and Android devices
+- Ensure all features work on mobile (not just desktop-only)
+
+**TASK: Build dashboard homepage**
+Create landing page after login:
+- Personalized welcome message
+- Quick stats: new regulatory items, upcoming deadlines, active campaigns
+- Recent activity feed: articles, alerts, saved items
+- Quick links to most-used features
+- Featured content: top article of the week, trending topic
+- Notification center showing unread items
+
+**TASK: Build user settings page**
+Allow customization:
+- Profile information editing
+- Email notification preferences (types of alerts, frequency)
+- Default filters (state, facility type)
+- Theme selection (light/dark mode)
+- Language selection (if multi-language)
+- Connected facility information
+- Privacy settings
+
+### 9.2 State Dashboard UI
+
+**TASK: Build state selection interface**
+Create state chooser:
+- U.S. map with clickable states
+- Dropdown list of all 50 states
+- Search bar to find state quickly
+- Show state flags/icons
+- Display state summary stats on hover
+- Recently viewed states for quick access
+
+**TASK: Build state dashboard layout**
+Create main state page:
+- State header with name, flag, region, facility count
+- Summary cards showing key metrics: avg star rating, total beds, avg wages, population 65+
+- Tabs or sections: Overview, Facilities, Metrics, Regulatory, Market Intelligence
+- Filters to refine view
+- Export button to generate PDF report
+- Share link to specific state dashboard
+
+**TASK: Build interactive facility map**
+Create geographic visualization:
+- Mapbox or Google Maps integration
+- Facility pins color-coded by star rating (5-star green, 1-star red)
+- Cluster pins when zoomed out for readability
+- Click pin to show facility popup with: name, rating, beds, address
+- Filter facilities on map by rating, beds, ownership, chain
+- Zoom controls and geolocation
+- Mobile touch gestures (pinch to zoom)
+
+**TASK: Build facility list table**
+Create searchable facility directory:
+- Table columns: Facility Name, City, Star Rating, Beds, Ownership, Chain
+- Sortable by all columns (click header to sort)
+- Search bar to filter by name
+- Advanced filters: rating range, bed count range, ownership type, chain vs independent
+- Pagination (25 facilities per page)
+- Click row to view facility detail page
+- Export filtered list to CSV
+
+**TASK: Build facility detail page**
+Create comprehensive facility profile:
+- Facility header: name, address, phone, website, Provider ID
+- Star rating breakdown: overall, quality, staffing, inspection
+- Deficiency history with timeline chart
+- Penalty history table
+- Ownership information and chain affiliation
+- Location map
+- Nearby facilities (within 25 miles)
+- Compare to state averages
+- Export facility report button
+
+**TASK: Build metrics display section**
+Create state metrics visualization:
+- Organize metrics into categories: Workforce, Demographics, Quality, Reimbursement, Market, Regulatory, Costs
+- Metric cards showing: value, national average, comparison (above/below), trend arrow
+- Color coding: green (favorable), red (unfavorable), gray (neutral)
+- Info tooltips explaining each metric
+- Data source citation
+- Last updated timestamp
+- "Report Issue" button if data seems wrong
+- Charts for time-series metrics (e.g., wage trends over 5 years)
+
+**TASK: Build state comparison tool**
+Allow multi-state analysis:
+- Select 2-3 states to compare side-by-side
+- Table view with states as columns, metrics as rows
+- Highlight best/worst values in each row
+- Charts comparing key metrics across states
+- Export comparison as PDF or Excel
+- Save comparison for later reference
+
+### 9.3 Regulatory Intelligence UI
+
+**TASK: Build regulatory dashboard**
+Create main regulatory view:
+- List of all regulatory items sorted by relevance or date
+- Filters: jurisdiction (federal/state), item type (bill/rule/memo), category (reimbursement/staffing/quality/compliance), status, date range, states
+- Relevance score prominently displayed (color-coded: >80 red, 60-80 yellow, <60 green)
+- Upcoming deadlines section showing items with comment/effective dates in next 30 days
+- Search across all regulatory content
+- Toggle between list view and calendar view
+
+**TASK: Build regulatory item detail page**
+Create in-depth item view:
+- Item title and source
+- AI-generated summary with sections: What Changed, When It Takes Effect, Impact on You, Required Actions
+- Relevance score and risk score with explanations
+- Financial impact calculator (if applicable): input census mix to see personalized PBPY impact
+- Tags for categorization
+- Related regulatory items
+- Source document links
+- Comment period info with countdown timer
+- "Launch Advocacy Campaign" button
+- Save item for later
+
+**TASK: Build regulatory alerts interface**
+Show user notifications:
+- List of new high-priority items since last login
+- Unread count badge on navigation
+- Mark individual alerts as read/unread
+- Filter alerts by category or date
+- Click alert to go directly to item detail
+- Clear all read alerts button
+
+**TASK: Build financial impact calculator**
+Create interactive tool:
+- User inputs: facility bed count, average census, payer mix (% Medicare, Medicaid, Private)
+- Calculator shows: estimated annual impact in dollars, impact per bed per day, impact on margin
+- Scenario comparison: current policy vs proposed change
+- Assumptions clearly stated
+- Save calculation for reference
+- Export as PDF for board meetings
+
+**TASK: Build comment tracking system**
+Help users participate in rulemaking:
+- Show all open comment periods with deadlines
+- Link directly to Regulations.gov comment submission form
+- Template comment letters (user can customize)
+- Track which comments user has submitted
+- Deadline reminders via email
+- Show how many PostAcutePulse users have commented
+
+### 9.4 Advocacy Platform UI
+
+**TASK: Build advocacy campaign list**
+Show active campaigns:
+- Card view of all active campaigns
+- Campaign title, description, goal, participants count, days remaining
+- Filter by: active/past, federal/state, topic
+- "My Campaigns" filter showing only campaigns user participated in
+- Sort by: most recent, most participants, ending soon
+- Featured campaign banner at top
+
+**TASK: Build campaign detail page**
+Create campaign participation flow:
+- Campaign title and description
+- Issue background and why it matters
+- Target representatives (who will receive messages)
+- Message template with customization options
+- Preview message before sending
+- User inputs: name, facility name, facility address (to prove constituency)
+- Send button
+- Confirmation: "Your message has been sent to [Rep Name]"
+- Share campaign on social media
+
+**TASK: Build campaign creation interface (admin only)**
+Allow staff to launch campaigns:
+- Campaign creation form: title, description, issue background, goals
+- Select target representatives: federal/state, specific committees, specific states
+- Write message template with placeholders
+- Upload supporting documents
+- Set campaign dates (start/end)
+- Link to related regulatory item
+- Preview campaign as user would see it
+- Publish campaign
+
+**TASK: Build advocacy analytics dashboard (admin only)**
+Track campaign performance:
+- Campaign list with metrics: participants, messages sent, open rate (if trackable), response rate
+- State breakdown showing participation by state
+- Timeline chart of participation over campaign duration
+- Export campaign report
+- User leaderboard showing most active advocates
+- Compare campaign performance
+
+**TASK: Build user advocacy history**
+Show user's participation:
+- "My Messages" page listing all messages sent
+- Message details: date, recipient, campaign, message text
+- Any responses received from representatives
+- Badges/achievements: "10 messages sent", "Active in 5 campaigns"
+- Impact summary: "You've contacted X representatives about Y issues"
+
+### 9.5 News Hub UI
+
+**TASK: Build news homepage**
+Create article discovery:
+- Grid of article cards with: thumbnail, title, source, date, relevance score
+- Featured article at top (largest card)
+- Filter sidebar: date range, source, category, geographic scope, states
+- Trending topics box showing top 5 topics
+- Most-read articles widget
+- Search bar
+- Infinite scroll or "Load More" button
+
+**TASK: Build article detail page**
+Create reading experience:
+- Article title and metadata (source, date, author if available)
+- Full article description or excerpt
+- AI analysis sections (expandable): Key Insights, Compliance Timeline, Who Needs to Know, Action Items, Risk Assessment
+- Geographic scope and affected states displayed prominently
+- Tags for categorization
+- Related articles section
+- Social sharing: LinkedIn, Twitter, email
+- Bookmark button
+- Link to original source
+
+**TASK: Build trending topics feature**
+Show what's hot:
+- List of trending topics with trend scores
+- Sparkline chart for each topic showing 30-day trend
+- Click topic to see all related articles
+- Compare to historical trending topics
+- Subscribe to topic alerts
+
+**TASK: Build "Top 10 Voices" section**
+Highlight thought leaders:
+- Curated list of influential LinkedIn users in SNF space
+- Display recent posts or articles from each
+- Follower counts and engagement metrics
+- Link to LinkedIn profiles
+- Weekly updates with fresh content
+- Suggest new voices button for community input
+
+**TASK: Build newsletter subscription widget**
+Capture email subscribers:
+- Simple form: email address, name (optional)
+- Checkbox options: weekly digest, daily updates, specific topics
+- Confirmation message after signup
+- Email verification link
+- Unsubscribe link in footer
+
+### 9.6 Education Platform UI
+
+**TASK: Build chatbot interfaces**
+Create AI assistant UIs:
+- Chat window with message history
+- Input field for user questions
+- Typing indicator when AI is responding
+- Clickable suggested questions to get started
+- Export chat transcript button
+- Rate response (thumbs up/down)
+- New conversation button to start fresh
+- Different chatbots in tabs: Medicaid, Idaho ALF, Federal Compliance
+
+**TASK: Build tools & templates library**
+Create resource directory:
+- Grid view of all tools and templates
+- Categories: Assessments, Financial Models, Policies, Marketing
+- Filter by: type, topic, role (clinical, admin, etc.)
+- Search functionality
+- Tool/template detail page with: description, instructions, preview
+- Download button (PDF, Excel, Word)
+- Related resources suggestions
+
+**TASK: Build training program interface**
+Create course catalog:
+- List of available courses organized by quarter or topic
+- Course cards with: title, description, duration, instructor, CEU credits
+- Enroll button
+- "My Courses" tab showing enrolled courses with progress bars
+- Upcoming webinars section with register button
+- Certificates page showing completed courses and download links
+
+**TASK: Build course player**
+Create learning experience:
+- Video player with play/pause, seek, volume, fullscreen
+- Tabbed content: Video, Resources (downloadable PDFs), Quiz, Discussion
+- Progress tracking: "X% complete"
+- Previous/Next lesson buttons
+- Bookmark specific timestamp for later reference
+- Notes field for personal annotations
+- Course completion survey
+
+**TASK: Build quiz system**
+Test knowledge:
+- Multiple choice, true/false, fill-in-blank question types
+- Timed quizzes (optional)
+- Show correct answers after submission
+- Score display with passing threshold
+- Retake quiz option
+- Quiz results history
+- Certificate generation for passing quiz
+
+### 9.7 SNFalyze UI
+
+**TASK: Build deal pipeline interface**
+Create deal management:
+- Kanban board view with columns: Prospecting, LOI, Due
+
+## CATEGORY 9: FRONTEND APPLICATION (Continued)
+
+### 9.7 SNFalyze UI (Continued)
+
+**TASK: Build comparable deals finder**
+Create search tool where users describe their target facility (location, size, quality, payer mix) and system finds most similar closed deals from database. Display results sorted by similarity score. Show anonymized deal details: approximate location, size range, valuation multiples, key deal terms. Allow filtering by date range to see recent vs. historical comps.
+
+**TASK: Build market reports section**
+Display quarterly "State of SNF M&A" reports with executive summary, key trends, notable transactions, regional analysis, and forward outlook. Allow users to download full PDF reports. Show historical archive of past quarterly reports. Include state-specific market reports for major states with deal activity breakdown and valuation trends.
+
+**TASK: Build deal data entry form**
+Create interface for users to add new deals to their pipeline or contribute anonymized deal data to benchmarking database. Form includes: facility details, purchase price, EBITDA (optional), buyer/seller names, financing terms, key dates, deal structure. Opt-in checkbox to share anonymized data for benchmarks. Validation to ensure required fields complete.
+
+**TASK: Build document management system**
+Create organized data room for each deal with folder structure: Financial Statements, CMS Surveys, Quality Metrics, Contracts, Licenses, Environmental, Legal. Support drag-and-drop upload, version control, file preview, commenting on documents, download bulk or individual files. Track who viewed/downloaded what for audit trail.
+
+---
+
+## CATEGORY 10: TESTING & QUALITY ASSURANCE
+
+### 10.1 Backend Testing
+
+**TASK: Build unit tests for all ETL pipelines**
+Write automated tests for each data collector to verify: successful API connections, correct data parsing, proper error handling, accurate calculations, database insertions work correctly. Mock external APIs to avoid hitting rate limits. Achieve minimum 80% code coverage. Run tests automatically on every commit.
+
+**TASK: Build integration tests for API endpoints**
+Test all REST API endpoints to verify: correct HTTP status codes returned, proper authentication/authorization checks, accurate data returned, pagination works correctly, filters apply properly, error responses formatted correctly. Test with real database (separate test database, not production). Run before every deployment.
+
+**TASK: Build data quality validation tests**
+Create automated checks that run daily to verify data integrity: all states have facilities, no duplicate Provider IDs, star ratings within valid range (1-5 or null), wage data within reasonable ranges, RN wages > LPN wages > CNA wages, all core metrics populated per state, comparison calculations mathematically correct. Generate daily report of any issues found.
+
+**TASK: Build load testing for APIs**
+Use tools like Apache JMeter or k6 to simulate high traffic: test with 100, 500, 1000 concurrent users hitting various endpoints. Measure response times under load (target: <500ms for 95th percentile). Identify bottlenecks and optimize queries/caching before they become production issues. Run load tests before major releases.
+
+**TASK: Build ETL job monitoring tests**
+Create tests that verify scheduled jobs are running on time: check data_refresh_log table for recent successful runs, alert if any job hasn't run when expected, verify record counts match expectations (no massive drops or spikes), check for stuck jobs, monitor job duration (alert if taking much longer than normal).
+
+### 10.2 Frontend Testing
+
+**TASK: Build component unit tests**
+Write tests for all React components using Jest and React Testing Library: verify components render without errors, props are handled correctly, user interactions trigger expected behavior, conditional rendering works, error states display appropriately. Aim for 70%+ component coverage.
+
+**TASK: Build end-to-end tests with Playwright**
+Create E2E tests for critical user flows: user signup and login, viewing state dashboard, searching for facilities, viewing regulatory items, participating in advocacy campaign, bookmarking articles. Tests should run in real browser (Chrome, Firefox, Safari) and verify complete workflows work from user perspective.
+
+**TASK: Build visual regression tests**
+Use tools like Percy or Chromatic to catch unintended UI changes: take screenshots of key pages, compare against baseline screenshots, flag any visual differences for review. Particularly important for ensuring design consistency and catching CSS bugs that might break layouts.
+
+**TASK: Build mobile responsiveness tests**
+Test all pages on actual mobile devices (iOS and Android) plus Chrome DevTools device emulation: verify layouts work at various screen sizes (320px, 375px, 414px, 768px, 1024px, 1440px), touch targets are appropriately sized (minimum 44x44px), forms are usable on mobile, navigation works, no horizontal scrolling occurs.
+
+**TASK: Build accessibility testing**
+Use tools like axe-core and manual testing to ensure WCAG 2.1 AA compliance: proper heading hierarchy, sufficient color contrast, keyboard navigation works for all interactive elements, screen reader compatibility, alt text for images, proper ARIA labels, form labels associated correctly. Run automated accessibility scans in CI/CD pipeline.
+
+**TASK: Build cross-browser testing**
+Test application in all major browsers: Chrome, Firefox, Safari, Edge (latest 2 versions of each). Verify: layouts render correctly, JavaScript functionality works, API calls succeed, no console errors. Consider using BrowserStack or Sauce Labs for automated cross-browser testing.
+
+### 10.3 Security Testing
+
+**TASK: Conduct penetration testing**
+Hire security firm or use internal team to attempt to breach application: SQL injection attempts, XSS (cross-site scripting) attacks, CSRF (cross-site request forgery) tests, authentication bypass attempts, authorization escalation tests, API abuse attempts. Document all findings and remediate before launch.
+
+**TASK: Build automated security scanning**
+Integrate security tools into CI/CD pipeline: OWASP ZAP or Burp Suite for vulnerability scanning, npm audit or Snyk for dependency vulnerability checks, static code analysis (SonarQube) for security issues in code. Fail builds if critical vulnerabilities detected.
+
+**TASK: Conduct code security review**
+Manual review of authentication/authorization code, payment processing code, data handling code: verify passwords properly hashed (bcrypt with sufficient rounds), JWT tokens properly validated, sensitive data encrypted in database, API keys not hardcoded, SQL queries use parameterized statements (no string concatenation), file uploads validated and sanitized.
+
+**TASK: Test data privacy controls**
+Verify GDPR/CCPA compliance: users can export their data, users can delete their accounts and data is actually removed, data retention policies are enforced, cookies properly disclosed, opt-in consent properly implemented, third-party data sharing properly documented and controlled.
+
+### 10.4 Performance Testing
+
+**TASK: Run database query optimization**
+Use database profiling tools to identify slow queries: review all queries taking >100ms, add indexes where appropriate, optimize JOIN operations, use query explain plans to understand execution. Test with production-size datasets to ensure queries scale. Target: all API endpoints respond in <500ms.
+
+**TASK: Implement frontend performance testing**
+Use Lighthouse and WebPageTest to measure: First Contentful Paint (<1.8s), Largest Contentful Paint (<2.5s), Time to Interactive (<3.8s), Cumulative Layout Shift (<0.1), Total page size (<2MB). Optimize images, minimize JavaScript, implement lazy loading, use code splitting.
+
+**TASK: Test caching effectiveness**
+Verify caching layer working properly: check Redis cache hit rates (target: >80% for frequently accessed data), verify cache invalidation working when data updates, test cache warm-up after deployments, monitor cache memory usage. Measure API response time improvement with caching enabled vs. disabled.
+
+**TASK: Conduct scalability testing**
+Test application can handle growth: simulate increased user base (10x current users), test with larger datasets (1M+ articles, 50K+ facilities), verify database can handle increased write load from more ETL jobs running, test frontend can handle rendering large lists efficiently. Identify scaling limits and plan infrastructure upgrades.
+
+---
+
+## CATEGORY 11: LAUNCH PREPARATION
+
+### 11.1 Content Preparation
+
+**TASK: Populate initial regulatory content**
+Manually add critical recent regulations to database before launch: past 6 months of SNF PPS rules, recent QSO memos, major state Medicaid rate changes, pending federal legislation. Run AI analysis on all items. Verify accuracy and completeness. This gives users immediate value on day one.
+
+**TASK: Create user onboarding content**
+Develop getting started guides, tutorial videos, and tooltips: "How to use State Dashboard" walkthrough with screenshots, "Understanding Regulatory Scores" explainer, "How to Launch an Advocacy Campaign" step-by-step guide, FAQ page, video demos for each major feature. Make onboarding content accessible from user dashboard.
+
+**TASK: Build help documentation**
+Create comprehensive help center with searchable articles: organize by product pillar (News, States, Regulatory, Advocacy, Education, SNFalyze), write articles for common questions and tasks, include screenshots and examples, add troubleshooting guides, create glossary of terms. Use tool like Intercom, Zendesk, or custom-built knowledge base.
+
+**TASK: Create marketing website**
+Build public-facing website separate from application: homepage explaining value proposition, features pages for each pillar, pricing page with subscription tiers, about us page, contact page, blog for content marketing, testimonials from beta users, case studies showing ROI. Optimize for SEO to drive organic traffic.
+
+**TASK: Develop sales collateral**
+Create materials for sales team: one-page product overview PDF, detailed feature comparison matrix, ROI calculator showing time/money saved, demo video, presentation deck, case studies, objection handling guide, pricing justification document. Make materials accessible in sales portal.
+
+### 11.2 User Acquisition
+
+**TASK: Build email marketing system**
+Set up email infrastructure for marketing campaigns: integrate with Mailchimp, SendGrid, or HubSpot, create email templates (welcome series, product announcements, educational content), build segmentation (by state, facility type, subscription tier), set up automated drip campaigns, track open rates and conversions.
+
+**TASK: Create beta testing program**
+Recruit initial users for feedback: identify 20-30 facilities across multiple states for beta testing, offer free access in exchange for feedback, create feedback collection mechanism (surveys, user interviews, in-app feedback widget), prioritize feedback into development roadmap, use beta testers as case studies at launch.
+
+**TASK: Build referral program**
+Incentivize users to invite others: create referral tracking system (unique referral links per user), offer rewards (1 month free for referrer and referee, or tiered rewards for multiple referrals), build referral dashboard showing earned rewards, automate reward fulfillment, create referral program marketing materials.
+
+**TASK: Establish partnership program**
+Create relationships with state associations and industry organizations: offer white-label solutions for state SNF associations, create affiliate program for consultants and vendors, develop co-marketing opportunities, offer group discounts for association members, create partner portal with marketing materials and support resources.
+
+**TASK: Launch content marketing strategy**
+Create regular valuable content to attract users: start LinkedIn company page with regular posts, publish weekly blog articles on regulatory topics, create downloadable resources (ebooks, checklists, templates), guest post on industry publications, start podcast or webinar series, engage in LinkedIn groups and forums where operators congregate.
+
+### 11.3 Operational Readiness
+
+**TASK: Build customer support system**
+Set up support infrastructure: implement helpdesk software (Zendesk, Intercom, Freshdesk), create support email (support@pacadvocate.com), set up support ticket routing and assignment, define SLA (response time targets), create canned responses for common questions, establish escalation procedures for critical issues.
+
+**TASK: Create internal admin tools**
+Build staff-facing tools for operations: admin dashboard showing key metrics (users, revenue, usage), user management interface (view users, reset passwords, manage subscriptions manually), content moderation tools (approve/reject user submissions), ETL job management (manually trigger jobs, view logs), customer support tools (impersonate user to troubleshoot issues).
+
+**TASK: Develop crisis communication plan**
+Prepare for potential issues: create incident response runbook (steps to take for outage, data breach, critical bug), draft template communications for various scenarios (service disruption email, security incident notification), establish communication channels (status page, email, social media), define roles and responsibilities during incidents, practice incident response drills.
+
+**TASK: Set up analytics and tracking**
+Implement comprehensive product analytics: integrate Google Analytics or Mixpanel for usage tracking, define key events to track (signups, feature usage, conversions), set up conversion funnels, create custom dashboards for different stakeholders, implement cohort analysis, set up automated reports (daily/weekly/monthly metrics emails to leadership).
+
+**TASK: Create internal knowledge base**
+Document operational procedures for team: ETL job troubleshooting guide, common customer support issues and resolutions, code deployment procedures, database backup/restore procedures, how to add new data sources, how to create advocacy campaigns, how to analyze user feedback, emergency contacts and escalation procedures.
+
+### 11.4 Legal & Compliance
+
+**TASK: Draft Terms of Service**
+Create legal agreement for platform use: define acceptable use policy, limit liability appropriately, specify arbitration clauses, define termination conditions, specify refund policy, clarify intellectual property ownership, specify user content rights, get attorney review before publishing.
+
+**TASK: Draft Privacy Policy**
+Document data practices: specify what data is collected (personal info, usage data, cookies), explain how data is used (platform functionality, analytics, marketing), clarify how data is shared (never sold, only shared with service providers), explain user rights (access, deletion, export), define data retention periods, ensure GDPR and CCPA compliance.
+
+**TASK: Implement cookie consent**
+Add cookie banner for compliance: detect user location (EU vs. non-EU), show appropriate consent banners, provide granular consent options (essential, analytics, marketing), respect user choices (don't load non-essential scripts if declined), provide easy way to change preferences later, document consent in database.
+
+**TASK: Set up business entities and contracts**
+Formalize business operations: establish LLC or Corporation, get EIN from IRS, open business bank account, set up merchant account for payment processing, get business insurance (E&O, cyber liability), create vendor contracts (hosting, APIs, tools), create employment/contractor agreements for team members.
+
+### 11.5 Financial Operations
+
+**TASK: Build financial reporting dashboard**
+Track business metrics: Monthly Recurring Revenue (MRR), Annual Recurring Revenue (ARR), customer acquisition cost (CAC), lifetime value (LTV), churn rate, net revenue retention, revenue by subscription tier, revenue by customer segment. Create automated monthly financial reports for leadership.
+
+**TASK: Set up accounting system**
+Implement financial tracking: use QuickBooks or Xero for bookkeeping, categorize all expenses appropriately (hosting, tools, marketing, salaries), track revenue by subscription tier, implement accrual accounting for subscriptions, reconcile bank accounts monthly, prepare for tax filing (1099s for contractors), set up financial controls and approval workflows.
+
+**TASK: Implement revenue recognition**
+Handle subscription accounting properly: recognize revenue monthly as service is delivered (not all upfront for annual subscriptions), handle prorations for upgrades/downgrades, process refunds correctly, track deferred revenue, implement dunning for failed payments (retry failed charges, email customer, eventually cancel subscription).
+
+**TASK: Build pricing optimization system**
+Test and refine pricing: track conversion rates by pricing tier, test different price points with new signups, analyze which features drive upgrades, calculate price elasticity, monitor competitive pricing, implement annual vs. monthly pricing experiments, track discount code usage and effectiveness.
+
+---
+
+## CATEGORY 12: POST-LAUNCH ITERATION
+
+### 12.1 User Feedback Collection
+
+**TASK: Implement in-app feedback widget**
+Allow users to submit feedback easily: add feedback button visible on all pages, feedback form asks: what were you trying to do, what went wrong/what would improve this, optional screenshot/screen recording, optional email for follow-up. Route feedback to product team Slack channel and helpdesk.
+
+**TASK: Conduct user interviews**
+Schedule regular conversations with users: recruit 5-10 users per month for 30-minute calls, ask about their workflows and pain points, observe them using the platform (screen share), understand what features they use most and what's missing, ask about willingness to pay and what would increase value, synthesize insights into product roadmap.
+
+**TASK: Build feature request voting system**
+Let users suggest and prioritize features: create public feature request board (like Canny or UserVoice), users can submit requests and vote on others' requests, product team adds status updates (Under Review, Planned, In Progress, Shipped), use voting data to inform roadmap prioritization, close the loop by notifying voters when features ship.
+
+**TASK: Implement NPS surveys**
+Measure customer satisfaction: send quarterly Net Promoter Score survey to all users (How likely to recommend on 0-10 scale?), follow up with "Why did you give that score?" for qualitative feedback, segment NPS by user type and subscription tier, track NPS over time, reach out personally to detractors to understand issues.
+
+**TASK: Analyze user behavior data**
+Use analytics to understand usage: identify most/least used features, find where users get stuck or drop off (friction points), analyze feature adoption curves after launches, identify "power users" vs. occasional users and what differentiates them, find correlation between feature usage and retention.
+
+### 12.2 Feature Iteration
+
+**TASK: Build A/B testing framework**
+Test product changes scientifically: implement feature flagging system (LaunchDarkly or custom-built), randomly assign users to control vs. treatment groups, track conversion metrics for each group, calculate statistical significance, document learnings, roll out winning variants to all users.
+
+**TASK: Create rapid prototyping process**
+Test ideas quickly before full build: use Figma or similar for high-fidelity mockups, test with 5-10 users before development, iterate based on feedback, build MVPs with minimal features to validate concepts, use feature flags to release to subset of users first, measure success before full rollout.
+
+**TASK: Implement continuous deployment**
+Ship improvements frequently: aim for weekly deployment cadence (or more often), automate testing so deployments are low-risk, use feature flags to separate deployment from release, monitor error rates after deploys and rollback if needed, communicate changes via release notes and in-app notifications.
+
+**TASK: Build feature success metrics**
+Define success criteria for new features: before building, define hypothesis (we believe X will improve Y metric), set success threshold (e.g., 10% increase in engagement), measure baseline before launch, track metrics after launch for 2-4 weeks, declare success/failure and learn from results, sunset features that don't deliver value.
+
+### 12.3 Customer Success
+
+**TASK: Build onboarding email sequence**
+Help new users get value quickly: Day 0: Welcome email with getting started guide, Day 1: "How to use State Dashboard" tutorial, Day 3: "Set up your regulatory alerts" guide, Day 7: "Join your first advocacy campaign" prompt, Day 14: Check-in email asking about experience, Day 30: Share success stories from other users.
+
+**TASK: Implement usage monitoring for churn prevention**
+Identify at-risk customers: track login frequency (alert if user hasn't logged in for 14 days), measure feature engagement (flag users using <2 features), monitor support tickets (frequent complaints signal dissatisfaction), track payment failures (dunning process), create customer health score combining multiple signals.
+
+**TASK: Build customer success playbook**
+Document best practices for helping customers: ideal onboarding checklist for new customers, how to conduct quarterly business reviews with enterprise customers, troubleshooting guide for common issues, escalation procedures for at-risk accounts, renewal conversation scripts, upsell opportunity identification, case studies and testimonials collection process.
+
+**TASK: Create user community**
+Foster peer-to-peer support and engagement: launch LinkedIn group for users, monthly user webinars showcasing new features and best practices, user conference/summit (virtual or in-person), highlight "User of the Month" showcasing power users, facilitate introductions between users in similar markets, create Slack community for real-time discussions.
+
+### 12.4 Market Expansion
+
+**TASK: Launch Assisted Living (ALF) vertical**
+Expand beyond SNFs to ALFs: adapt State Dashboard for ALF-specific metrics (state licensing requirements vary more than SNFs), modify Regulatory Intelligence for ALF-specific regulations (often state-level, not federal), create ALF-specific content and chatbot, recruit ALF beta users, consider separate branding (ALFadvocate.com) or keep under PostAcutePulse umbrella.
+
+**TASK: Launch Home Health vertical**
+Expand to home health agencies: adapt data collectors for HHA-specific data sources (different CMS datasets), focus on HHA-relevant regulations (HHCAHPS, HH PPS changes), create HHA-specific benchmarking (episodes of care, not bed counts), develop HHA advocacy campaigns, recruit HHA industry partners.
+
+**TASK: Launch Hospice vertical**
+Expand to hospice providers: adapt for hospice-specific metrics (average daily census, median length of stay), focus on hospice regulations and reimbursement, create hospice M&A intelligence (different valuation models), develop hospice-specific education content, recruit hospice early adopters.
+
+**TASK: Build API for third-party integrations**
+Allow other software to integrate: create RESTful API for accessing PostAcutePulse data (regulatory items, state metrics, facility data), offer API to EMR vendors, accounting software, consultant tools, rate limit by customer tier, charge premium for API access, create developer documentation and sandbox environment.
+
+### 12.5 Revenue Optimization
+
+**TASK: Implement usage-based pricing experiments**
+Test alternative pricing models: consider per-facility pricing for multi-facility operators, test per-user pricing for team subscriptions, offer usage-based pricing for API access, create custom enterprise pricing for large organizations, A/B test different pricing pages with new visitors, analyze conversion rates by pricing model.
+
+**TASK: Build upgrade prompts for free users**
+Convert free users to paid: show "Upgrade to access this feature" modals when free users click locked features, highlight value of paid features throughout experience, offer limited-time discounts for upgrades, create urgency with countdown timers on promotions, track which prompts convert best.
+
+**TASK: Create enterprise sales process**
+Target large multi-facility operators: identify enterprise prospects (50+ facility operators), develop custom demo for enterprise buyers, create enterprise pricing tiers with volume discounts, offer white-label options for large organizations, implement customer success team for enterprise accounts, create ROI calculators for enterprise buyers.
+
+**TASK: Develop partnership revenue streams**
+Monetize platform in additional ways: sponsored content from industry vendors (clearly labeled), sponsored webinars with relevant vendors, job board for SNF recruitment, marketplace for recommended vendors (compliance consultants, insurance brokers), affiliate commissions for software recommendations, conference sponsorship opportunities.
+
+---
+
+## CATEGORY 13: TEAM & OPERATIONS
+
+### 13.1 Team Building
+
+**TASK: Define roles and responsibilities**
+Clarify who does what: create org chart showing reporting structure, write job descriptions for each role, define decision-making authority (who approves what), clarify ownership areas (who owns State Dashboard vs. Regulatory vs. Advocacy), document escalation paths, create RACI matrix for key processes (Responsible, Accountable, Consulted, Informed).
+
+**TASK: Hire additional developers**
+Scale technical team: define skill requirements (frontend: React, backend: Python/Node.js, database: PostgreSQL), write job descriptions emphasizing mission/impact, post on relevant job boards and communities, conduct technical interviews and coding challenges, check references, create competitive offers, onboard new hires with buddy system and ramp-up plan.
+
+**TASK: Hire customer success manager**
+Build customer support function: define customer success role (onboarding, training, retention), hire someone with healthcare software experience, create customer success playbook and training materials, set up helpdesk and communication tools, establish success metrics (CSAT, retention rate, NPS), empower CS to advocate for customer needs in product decisions.
+
+**TASK: Hire regulatory content specialist**
+Add domain expertise: hire someone with SNF regulatory background (former compliance officer, consultant, or state surveyor), responsible for curating and verifying regulatory content, writing analysis and commentary, conducting webinars and training, serving as subject matter expert for AI training, building relationships with industry associations.
+
+**TASK: Build remote work processes**
+Enable distributed team: document all processes and decisions (don't rely on hallway conversations), use async communication tools (Slack, Notion, Loom), schedule regular video standups and team meetings, create written culture handbook, establish core collaboration hours, plan quarterly in-person team meetups, use project management tools to track work.
+
+### 13.2 Process Documentation
+
+**TASK: Create product development process**
+Standardize how features are built: define stages (Discovery → Design → Build → Test → Launch), specify deliverables for each stage (PRDs, mockups, test plans), establish review/approval gates, define done criteria, document how priorities are set, create templates for common documents, establish sprint cadence and rituals.
+
+**TASK: Document data governance policies**
+Establish rules for data handling: define what data can be collected and why, specify data retention periods by data type, document data security requirements, create data access policies (who can see what), establish data quality standards, define procedures for data corrections and deletions, create data breach response plan.
+
+**TASK: Create standard operating procedures**
+Document routine operations: how to deploy code to production, how to add a new data source, how to respond to support tickets, how to handle billing issues, how to create an advocacy campaign, how to generate monthly reports, how to onboard new team members, emergency procedures for outages or incidents.
+
+**TASK: Establish decision-making framework**
+Clarify how decisions get made: define different decision types (one-way doors vs. reversible decisions), specify who has authority for different decision types, document when consensus is needed vs. when one person decides, create escalation path for disagreements, encourage written decision documents with reasoning, maintain decision log to track important choices.
+
+### 13.3 Communication & Collaboration
+
+**TASK: Set up internal communication tools**
+Enable team collaboration: use Slack for real-time chat with channels by topic, use Notion or Confluence for documentation and wikis, use Figma for design collaboration, use GitHub for code collaboration and review, use Linear or Jira for task tracking, use Loom for async video updates, establish communication norms (response time expectations, meeting guidelines).
+
+**TASK: Establish meeting rhythms**
+Create regular communication cadence: daily standups (15 min, what did you do yesterday, what are you doing today, any blockers), weekly team meeting (1 hour, demos, announcements, discussions), monthly all-hands (company updates, metrics, wins, challenges), quarterly planning (set OKRs, review strategy), ad-hoc spike meetings for specific problems.
+
+**TASK: Build transparent metric sharing**
+Keep team aligned on progress: create dashboards showing key metrics (users, revenue, engagement, system health), share weekly metrics email highlighting wins and areas needing attention, celebrate milestones when hit, be honest about challenges and setbacks, involve team in problem-solving when metrics decline, connect individual work to company metrics.
+
+**TASK: Create feedback culture**
+Encourage constructive criticism: implement regular 1-on-1s between managers and reports, conduct quarterly 360 feedback reviews, create anonymous feedback mechanism for company-wide issues, hold blameless postmortems after incidents or failed initiatives, encourage direct feedback in PRs and design reviews, model receiving feedback well at leadership level.
+
+---
