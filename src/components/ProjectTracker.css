@@ -316,12 +316,12 @@
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(6, 1fr); /* 6 columns for all detail items */
   gap: 16px;
 }
 
 .detail-item {
-  margin-bottom: 12px;
+  margin-bottom: 0; /* Remove vertical margin */
 }
 
 .detail-item strong {
