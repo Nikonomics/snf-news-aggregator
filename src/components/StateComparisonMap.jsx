@@ -4,7 +4,7 @@ import { TrendingUp, MapPin, DollarSign, Users, Building2, Star, Calendar } from
 import StateComparisonHeatMap from './StateComparisonHeatMap'
 import './StateComparisonMap.css'
 
-const API_BASE_URL = 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 function StateComparisonMap() {
   const navigate = useNavigate()

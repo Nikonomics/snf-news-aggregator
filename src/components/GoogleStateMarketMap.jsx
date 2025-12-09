@@ -4,7 +4,7 @@ import { Star, MapPin, TrendingUp, AlertCircle, Building2, Map } from 'lucide-re
 import StateMarketMap from './StateMarketMap'
 import './StateMarketMap.css'
 
-const API_BASE_URL = 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const mapContainerStyle = {
   width: '100%',
@@ -72,6 +72,7 @@ const GoogleStateMarketMap = ({ stateCode }) => {
   const [error, setError] = useState(null)
   const [selectedFacility, setSelectedFacility] = useState(null)
   const [map, setMap] = useState(null)
+  const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 })
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -121,6 +122,96 @@ const GoogleStateMarketMap = ({ stateCode }) => {
       setLoading(false)
     }
   }
+
+  // Geocode an address using Google's Geocoding API
+  const geocodeAddress = async (facility) => {
+    try {
+      const address = `${facility.address}, ${facility.city}, ${facility.state} ${facility.zip_code}`
+      const geocoder = new window.google.maps.Geocoder()
+
+      return new Promise((resolve, reject) => {
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location
+            resolve({
+              lat: location.lat(),
+              lng: location.lng()
+            })
+          } else {
+            reject(new Error(`Geocoding failed: ${status}`))
+          }
+        })
+      })
+    } catch (error) {
+      console.error(`Failed to geocode ${facility.facility_name}:`, error)
+      return null
+    }
+  }
+
+  // Save coordinates to database
+  const saveCoordinates = async (providerNumber, latitude, longitude) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/facility/${providerNumber}/coordinates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ latitude, longitude })
+      })
+      const data = await response.json()
+      return data.success
+    } catch (error) {
+      console.error('Failed to save coordinates:', error)
+      return false
+    }
+  }
+
+  // Geocode facilities without coordinates
+  useEffect(() => {
+    if (!isLoaded || facilities.length === 0) return
+
+    const geocodeFacilities = async () => {
+      const facilitiesWithoutCoords = facilities.filter(f => !f.latitude || !f.longitude)
+
+      if (facilitiesWithoutCoords.length === 0) return
+
+      setGeocodingProgress({ current: 0, total: facilitiesWithoutCoords.length })
+
+      // Geocode in batches to respect API rate limits
+      for (let i = 0; i < facilitiesWithoutCoords.length; i++) {
+        const facility = facilitiesWithoutCoords[i]
+
+        try {
+          const coords = await geocodeAddress(facility)
+
+          if (coords) {
+            // Update facility in state
+            setFacilities(prev => prev.map(f =>
+              f.federal_provider_number === facility.federal_provider_number
+                ? { ...f, latitude: coords.lat, longitude: coords.lng }
+                : f
+            ))
+
+            // Save to database
+            await saveCoordinates(facility.federal_provider_number, coords.lat, coords.lng)
+          }
+
+          setGeocodingProgress({ current: i + 1, total: facilitiesWithoutCoords.length })
+
+          // Rate limit: 50 requests per second for Maps API
+          if (i < facilitiesWithoutCoords.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+        } catch (error) {
+          console.error(`Error geocoding facility ${facility.facility_name}:`, error)
+        }
+      }
+
+      setGeocodingProgress({ current: 0, total: 0 })
+    }
+
+    geocodeFacilities()
+  }, [facilities.length, isLoaded])
 
   const getMarkerColor = (rating) => {
     if (!rating || rating === 0) return '#94a3b8' // gray
@@ -399,6 +490,24 @@ const GoogleStateMarketMap = ({ stateCode }) => {
         <div className="map-error-banner">
           <AlertCircle size={16} />
           {error}
+        </div>
+      )}
+
+      {geocodingProgress.total > 0 && (
+        <div className="map-info-banner" style={{
+          position: 'absolute',
+          top: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#3b82f6',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          zIndex: 1000
+        }}>
+          <MapPin size={16} style={{ display: 'inline', marginRight: '8px' }} />
+          Geocoding facilities: {geocodingProgress.current} / {geocodingProgress.total}
         </div>
       )}
 

@@ -2490,6 +2490,47 @@ app.get('/api/state/:stateCode/facilities', async (req, res) => {
   }
 })
 
+// POST /api/facility/:providerNumber/coordinates - Update facility coordinates
+app.post('/api/facility/:providerNumber/coordinates', async (req, res) => {
+  try {
+    const { providerNumber } = req.params
+    const { latitude, longitude } = req.body
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        success: false,
+        error: 'Latitude and longitude are required'
+      })
+    }
+
+    // Update the facility coordinates in the database
+    const result = await pool.query(
+      `UPDATE snf_facilities
+       SET latitude = $1, longitude = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE federal_provider_number = $3`,
+      [parseFloat(latitude), parseFloat(longitude), providerNumber]
+    )
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Facility not found'
+      })
+    }
+
+    res.json({
+      success: true,
+      message: 'Coordinates updated successfully'
+    })
+  } catch (error) {
+    console.error('Error updating facility coordinates:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 // GET /api/counties/demographics - Get all county demographics
 app.get('/api/counties/demographics', async (req, res) => {
   try {
