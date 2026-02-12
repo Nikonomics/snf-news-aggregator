@@ -1,5 +1,5 @@
-# Comprehensive Data Source Catalog for PACadvocate.com
-## Post-Acute Care Regulatory Intelligence System
+# Comprehensive Data Source Catalog for SNF News Aggregator
+## Regulatory & Legislative Intelligence System
 
 ### 1. LEGISLATIVE SOURCES
 

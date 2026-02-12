@@ -82,7 +82,8 @@ const GoogleStateMarketMap = ({ stateCode }) => {
     hasDeficiencies: 'all',
     minBeds: 0,
     maxBeds: 1000,
-    ownershipCompany: 'all'
+    ownershipCompany: 'all',
+    facilityType: 'both' // 'snf', 'alf', or 'both'
   })
 
   // Get unique ownership companies for filter
@@ -104,18 +105,39 @@ const GoogleStateMarketMap = ({ stateCode }) => {
   const fetchFacilities = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities`)
-      const data = await response.json()
 
-      if (data.success) {
-        // Filter facilities with valid addresses
-        const validFacilities = data.facilities.filter(f =>
-          f.address && f.city && f.state
-        )
-        setFacilities(validFacilities)
-      } else {
+      // Fetch both SNF and ALF facilities in parallel
+      const [snfResponse, alfResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities`),
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/alf-facilities?limit=1000`)
+      ])
+
+      const snfData = await snfResponse.json()
+      const alfData = await alfResponse.json()
+
+      const allFacilities = []
+
+      // Add SNF facilities with type tag
+      if (snfData.success) {
+        const validSNFs = snfData.facilities
+          .filter(f => f.address && f.city && f.state)
+          .map(f => ({ ...f, facilityType: 'snf' }))
+        allFacilities.push(...validSNFs)
+      }
+
+      // Add ALF facilities with type tag
+      if (alfData.success) {
+        const validALFs = alfData.facilities
+          .filter(f => f.address && f.city && f.state)
+          .map(f => ({ ...f, facilityType: 'alf' }))
+        allFacilities.push(...validALFs)
+      }
+
+      if (allFacilities.length === 0 && (!snfData.success || !alfData.success)) {
         setError('Failed to load facilities')
       }
+
+      setFacilities(allFacilities)
     } catch (err) {
       setError('Error loading facilities: ' + err.message)
     } finally {
@@ -231,17 +253,24 @@ const GoogleStateMarketMap = ({ stateCode }) => {
 
   // Filter facilities based on current filters
   const filteredFacilities = facilities.filter(facility => {
-    const rating = facility.overall_rating || 0
-    const beds = facility.total_beds || facility.numberOfBeds || 0
+    // Facility type filter
+    if (filters.facilityType !== 'both') {
+      if (facility.facilityType !== filters.facilityType) return false
+    }
 
-    // Rating filter
-    if (rating < filters.minRating || rating > filters.maxRating) return false
+    const rating = facility.overall_rating || 0
+    const beds = facility.total_beds || facility.numberOfBeds || facility.capacity || 0
+
+    // Rating filter (only for SNF facilities)
+    if (facility.facilityType === 'snf' && (rating < filters.minRating || rating > filters.maxRating)) {
+      return false
+    }
 
     // Bed range filter
     if (beds < filters.minBeds || beds > filters.maxBeds) return false
 
-    // Ownership type filter
-    if (filters.ownershipType !== 'all') {
+    // Ownership type filter (only for SNF facilities)
+    if (facility.facilityType === 'snf' && filters.ownershipType !== 'all') {
       const ownershipType = (facility.ownership_type || '').toLowerCase()
       if (filters.ownershipType === 'for-profit' && !ownershipType.includes('profit')) return false
       if (filters.ownershipType === 'non-profit' && !ownershipType.includes('non')) return false
@@ -254,9 +283,11 @@ const GoogleStateMarketMap = ({ stateCode }) => {
       if (company !== filters.ownershipCompany) return false
     }
 
-    // Deficiencies filter
-    if (filters.hasDeficiencies === 'yes' && (!facility.total_deficiencies || facility.total_deficiencies === '0')) return false
-    if (filters.hasDeficiencies === 'no' && facility.total_deficiencies && facility.total_deficiencies !== '0') return false
+    // Deficiencies filter (only for SNF facilities)
+    if (facility.facilityType === 'snf') {
+      if (filters.hasDeficiencies === 'yes' && (!facility.total_deficiencies || facility.total_deficiencies === '0')) return false
+      if (filters.hasDeficiencies === 'no' && facility.total_deficiencies && facility.total_deficiencies !== '0') return false
+    }
 
     return true
   })
@@ -318,10 +349,23 @@ const GoogleStateMarketMap = ({ stateCode }) => {
       {/* Filter Controls */}
       <div className="map-filters">
         <div className="filter-group">
+          <label>Facility Type:</label>
+          <select
+            value={filters.facilityType}
+            onChange={(e) => setFilters({...filters, facilityType: e.target.value})}
+          >
+            <option value="both">Both SNF & ALF</option>
+            <option value="snf">SNF Only</option>
+            <option value="alf">ALF Only</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
           <label>Star Rating:</label>
           <select
             value={filters.minRating}
             onChange={(e) => setFilters({...filters, minRating: Number(e.target.value)})}
+            disabled={filters.facilityType === 'alf'}
           >
             <option value={0}>Any</option>
             <option value={1}>1+</option>
@@ -417,9 +461,19 @@ const GoogleStateMarketMap = ({ stateCode }) => {
             filteredFacilities
               .filter(f => f.latitude && f.longitude) // Only show facilities with coordinates
               .map((facility) => {
+                // Use appropriate key for SNF vs ALF
+                const facilityKey = facility.facilityType === 'alf'
+                  ? `alf-${facility.id}`
+                  : facility.federal_provider_number
+
+                // Get marker color based on facility type
+                const markerColor = facility.facilityType === 'alf'
+                  ? '#3b82f6' // Blue for ALF facilities
+                  : getMarkerColor(facility.overall_rating || facility.overallRating)
+
                 return (
                   <Marker
-                    key={facility.federal_provider_number}
+                    key={facilityKey}
                     clusterer={clusterer}
                     position={{
                       lat: parseFloat(facility.latitude),
@@ -430,7 +484,7 @@ const GoogleStateMarketMap = ({ stateCode }) => {
                     icon={{
                       path: window.google.maps.SymbolPath.CIRCLE,
                       scale: 8,
-                      fillColor: getMarkerColor(facility.overall_rating || facility.overallRating),
+                      fillColor: markerColor,
                       fillOpacity: 0.9,
                       strokeColor: '#ffffff',
                       strokeWeight: 2
@@ -450,37 +504,57 @@ const GoogleStateMarketMap = ({ stateCode }) => {
             onCloseClick={() => setSelectedFacility(null)}
           >
             <div className="facility-info-window">
-              <h3>{selectedFacility.facility_name || selectedFacility.providerName}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0 }}>{selectedFacility.facility_name || selectedFacility.providerName}</h3>
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: selectedFacility.facilityType === 'alf' ? '#3b82f6' : '#10b981',
+                  color: 'white'
+                }}>
+                  {selectedFacility.facilityType === 'alf' ? 'ALF' : 'SNF'}
+                </span>
+              </div>
 
               <div className="info-row">
                 <MapPin size={14} />
                 <span>{selectedFacility.city}, {selectedFacility.state}</span>
               </div>
 
-              {selectedFacility.overall_rating > 0 && (
+              {selectedFacility.facilityType === 'snf' && selectedFacility.overall_rating > 0 && (
                 <div className="info-row">
                   <Star size={14} fill="#fbbf24" stroke="#fbbf24" />
                   <span>{selectedFacility.overall_rating} Stars</span>
                 </div>
               )}
 
-              {(selectedFacility.total_beds || selectedFacility.numberOfBeds) && (
+              {(selectedFacility.total_beds || selectedFacility.numberOfBeds || selectedFacility.capacity) && (
                 <div className="info-row">
                   <TrendingUp size={14} />
-                  <span>{selectedFacility.total_beds || selectedFacility.numberOfBeds} Beds</span>
+                  <span>{selectedFacility.total_beds || selectedFacility.numberOfBeds || selectedFacility.capacity} {selectedFacility.facilityType === 'alf' ? 'Capacity' : 'Beds'}</span>
                 </div>
               )}
 
-              {(selectedFacility.total_deficiencies > 0 || selectedFacility.deficiency_count > 0) && (
+              {selectedFacility.facilityType === 'snf' && (selectedFacility.total_deficiencies > 0 || selectedFacility.deficiency_count > 0) && (
                 <div className="info-row warning">
                   <AlertCircle size={14} />
                   <span>{selectedFacility.total_deficiencies || selectedFacility.deficiency_count} Deficiencies</span>
                 </div>
               )}
 
-              <div className="facility-type">
-                {selectedFacility.ownership_type || selectedFacility.ownershipType || 'Unknown Type'}
-              </div>
+              {selectedFacility.facilityType === 'alf' && selectedFacility.state_facility_type_1 && (
+                <div className="facility-type">
+                  {selectedFacility.state_facility_type_1}
+                </div>
+              )}
+
+              {selectedFacility.facilityType === 'snf' && (selectedFacility.ownership_type || selectedFacility.ownershipType) && (
+                <div className="facility-type">
+                  {selectedFacility.ownership_type || selectedFacility.ownershipType}
+                </div>
+              )}
             </div>
           </InfoWindow>
         )}

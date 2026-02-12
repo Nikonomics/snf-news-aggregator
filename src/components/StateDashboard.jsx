@@ -209,14 +209,16 @@ function StateDashboard() {
     try {
       setDashboardLoading(true)
 
-      // Fetch both analysis and facilities data in parallel
-      const [analysisResponse, facilitiesResponse] = await Promise.all([
+      // Fetch analysis, SNF facilities, and ALF facilities in parallel
+      const [analysisResponse, snfResponse, alfResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/state/${stateCode}/analysis`),
-        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities`)
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/facilities`),
+        fetch(`${API_BASE_URL}/api/state/${stateCode}/alf-facilities?limit=1000`)
       ])
 
       const analysisData = await analysisResponse.json()
-      const facilitiesData = await facilitiesResponse.json()
+      const snfData = await snfResponse.json()
+      const alfData = await alfResponse.json()
 
       if (!analysisData.success) {
         throw new Error(analysisData.message || analysisData.error || 'Failed to load dashboard data')
@@ -225,8 +227,20 @@ function StateDashboard() {
       // Transform the analysis data into the format the UI expects
       const transformedData = transformAnalysisToMetrics(analysisData)
 
-      // Add facilities data
-      transformedData.facilities = facilitiesData.facilities || []
+      // Combine SNF and ALF facilities with type tags
+      const allFacilities = []
+
+      if (snfData.facilities) {
+        const snfFacilities = snfData.facilities.map(f => ({ ...f, facilityType: 'snf' }))
+        allFacilities.push(...snfFacilities)
+      }
+
+      if (alfData.facilities) {
+        const alfFacilities = alfData.facilities.map(f => ({ ...f, facilityType: 'alf' }))
+        allFacilities.push(...alfFacilities)
+      }
+
+      transformedData.facilities = allFacilities
 
       setDashboardData(transformedData)
     } catch (err) {

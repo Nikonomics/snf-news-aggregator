@@ -46,6 +46,7 @@ function FacilityTable({ facilities }) {
   const [sortField, setSortField] = useState('name')
   const [sortDirection, setSortDirection] = useState('asc')
   const [searchTerm, setSearchTerm] = useState('')
+  const [facilityTypeFilter, setFacilityTypeFilter] = useState('both')
   const [selectedFacility, setSelectedFacility] = useState(null)
   const [deficiencies, setDeficiencies] = useState([])
   const [loadingDeficiencies, setLoadingDeficiencies] = useState(false)
@@ -111,10 +112,16 @@ function FacilityTable({ facilities }) {
   }
 
   const sortedFacilities = [...facilities]
-    .filter(f =>
-      (f.facility_name || f.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (f.city || '').toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(f => {
+      // Facility type filter
+      if (facilityTypeFilter !== 'both' && f.facilityType !== facilityTypeFilter) {
+        return false
+      }
+
+      // Search filter
+      return (f.facility_name || f.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (f.city || '').toLowerCase().includes(searchTerm.toLowerCase())
+    })
     .sort((a, b) => {
       let aVal, bVal
 
@@ -194,13 +201,33 @@ function FacilityTable({ facilities }) {
           <Building2 size={20} />
           Facilities ({sortedFacilities.length})
         </h3>
-        <input
-          type="search"
-          placeholder="Search facilities..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          className="facility-search"
-        />
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select
+            value={facilityTypeFilter}
+            onChange={(e) => {
+              setFacilityTypeFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="both">Both SNF & ALF</option>
+            <option value="snf">SNF Only</option>
+            <option value="alf">ALF Only</option>
+          </select>
+          <input
+            type="search"
+            placeholder="Search facilities..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="facility-search"
+          />
+        </div>
       </div>
 
       {searchTerm && sortedFacilities.length === 0 && (
@@ -251,21 +278,36 @@ function FacilityTable({ facilities }) {
                   {facility.ownership_chain || facility.chainOrganization || '-'}
                 </td>
                 <td>
-                  <div className={`rating-cell ${getStarRatingClass(facility.overall_rating || facility.overallRating)}`}>
-                    <div className="rating-number">{facility.overall_rating || facility.overallRating || 'N/A'}</div>
-                    {renderStars(facility.overall_rating || facility.overallRating)}
-                  </div>
+                  {facility.facilityType === 'alf' ? (
+                    <div className="rating-cell">N/A</div>
+                  ) : (
+                    <div className={`rating-cell ${getStarRatingClass(facility.overall_rating || facility.overallRating)}`}>
+                      <div className="rating-number">{facility.overall_rating || facility.overallRating || 'N/A'}</div>
+                      {renderStars(facility.overall_rating || facility.overallRating)}
+                    </div>
+                  )}
                 </td>
-                <td className="beds-cell">{facility.certified_beds || facility.certifiedBeds || 0}</td>
+                <td className="beds-cell">{facility.certified_beds || facility.certifiedBeds || facility.capacity || 0}</td>
                 <td>
-                  <div className="occupancy-cell">
-                    <TrendingUp size={14} />
-                    {parseFloat(facility.occupancy_rate || facility.occupancyRate || 0).toFixed(1)}%
-                  </div>
+                  {facility.facilityType === 'alf' ? (
+                    <div className="occupancy-cell">N/A</div>
+                  ) : (
+                    <div className="occupancy-cell">
+                      <TrendingUp size={14} />
+                      {parseFloat(facility.occupancy_rate || facility.occupancyRate || 0).toFixed(1)}%
+                    </div>
+                  )}
                 </td>
                 <td className="ownership-cell">
-                  <span className={`ownership-badge ${(facility.ownership_type || facility.ownershipType || '').toLowerCase().replace(/[\s-]/g, '')}`}>
-                    {facility.ownership_type || facility.ownershipType || 'Unknown'}
+                  <span className={`ownership-badge ${facility.facilityType === 'alf' ? 'alf-badge' : 'snf-badge'}`} style={{
+                    backgroundColor: facility.facilityType === 'alf' ? '#3b82f6' : '#10b981',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    {facility.facilityType === 'alf' ? 'ALF' : 'SNF'}
                   </span>
                 </td>
                 <td className="deficiencies-cell">

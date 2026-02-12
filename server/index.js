@@ -2658,6 +2658,106 @@ app.get('/api/county/:countyFips/summary', async (req, res) => {
   }
 })
 
+// ============================================================================
+// ALF (Assisted Living Facilities) Endpoints
+// ============================================================================
+
+// GET /api/state/:stateCode/alf-facilities - Get ALF facilities for a state
+app.get('/api/state/:stateCode/alf-facilities', async (req, res) => {
+  try {
+    const { stateCode } = req.params
+    const { active = 'true', limit = '1000', offset = '0' } = req.query
+
+    const facilities = await pool.query(
+      `SELECT
+        id, facility_id, facility_name, address, city, state, zip_code,
+        phone_number, county, licensee, state_facility_type_2, state_facility_type_1,
+        date_accessed, license_number, capacity, email_address, ownership_type,
+        latitude, longitude, county_fips, active
+       FROM alf_facilities
+       WHERE state = $1 AND active = $2
+       ORDER BY facility_name
+       LIMIT $3 OFFSET $4`,
+      [stateCode.toUpperCase(), active === 'true', parseInt(limit), parseInt(offset)]
+    )
+
+    res.json({
+      success: true,
+      facilities: facilities.rows,
+      count: facilities.rows.length
+    })
+  } catch (error) {
+    console.error('Error fetching ALF facilities:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/county/:countyFips/alf-facilities - Get ALF facilities for county by FIPS
+app.get('/api/county/:countyFips/alf-facilities', async (req, res) => {
+  try {
+    const { countyFips } = req.params
+    const { active = 'true' } = req.query
+
+    const facilities = await pool.query(
+      `SELECT
+        id, facility_id, facility_name, address, city, state, zip_code,
+        phone_number, county, licensee, state_facility_type_2, state_facility_type_1,
+        license_number, capacity, email_address, ownership_type,
+        latitude, longitude, county_fips, active
+       FROM alf_facilities
+       WHERE county_fips = $1 AND active = $2
+       ORDER BY facility_name`,
+      [countyFips, active === 'true']
+    )
+
+    res.json({
+      success: true,
+      facilities: facilities.rows,
+      count: facilities.rows.length
+    })
+  } catch (error) {
+    console.error('Error fetching ALF facilities by county:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// GET /api/alf-facilities/stats - Get ALF statistics by state
+app.get('/api/alf-facilities/stats', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT
+        state,
+        COUNT(*) as total_facilities,
+        AVG(capacity) as avg_capacity,
+        SUM(capacity) as total_capacity,
+        COUNT(DISTINCT county_fips) as counties_with_alfs
+      FROM alf_facilities
+      WHERE active = true AND capacity IS NOT NULL
+      GROUP BY state
+      ORDER BY total_facilities DESC
+    `)
+
+    res.json({
+      success: true,
+      stats: stats.rows
+    })
+  } catch (error) {
+    console.error('Error fetching ALF stats:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+// ============================================================================
+
 // GET /api/state/:stateCode/counties/summaries - Get county summaries for a state
 app.get('/api/state/:stateCode/counties/summaries', async (req, res) => {
   try {
