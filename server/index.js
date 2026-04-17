@@ -1816,14 +1816,14 @@ app.post('/api/admin/backfill-content-hashes', requireAdminKey, async (req, res)
   }
 })
 
-// Admin: Triage + purge untriaged backfill articles
+// Admin: Re-process untriaged backfill articles through the REAL ingestion pipeline
 app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
   try {
-    const { batchSize = 50, deleteLow = true, dryRun = false } = req.body || {};
+    const { batchSize = 25, deleteLow = true } = req.body || {};
 
-    // Find untriaged articles (category='General' or 'Untriaged_Processed', no analysis)
+    // Find articles needing processing
     const result = await db.query(`
-      SELECT id, title, summary, url, source, published_date, category
+      SELECT id, title, summary, url, source, published_date
       FROM articles
       WHERE (category = 'General' OR category = 'Untriaged_Processed')
         AND (analysis IS NULL OR analysis::text = 'null')
@@ -1831,65 +1831,73 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
       LIMIT $1
     `, [batchSize]);
 
-    console.log(`🔍 Triage-backfill: ${result.rows.length} untriaged articles (batch ${batchSize}, deleteLow=${deleteLow}, dryRun=${dryRun})`);
+    console.log(`🔍 Triage-backfill: ${result.rows.length} articles to process through real pipeline`);
 
-    let triaged = 0, deleted = 0, errors = 0;
+    let processed = 0, deleted = 0, errors = 0;
     const kept = [];
 
     for (const row of result.rows) {
       try {
+        // Build article object matching RSS pipeline format
         const article = {
           title: row.title,
-          summary: row.summary,
+          summary: row.summary || '',
+          url: row.url,
+          source: row.source || 'Google News',
+          published_date: row.published_date,
+          tags: [],
+        };
+
+        // Run through the REAL pipeline: analyzeArticleWithAI returns enriched result
+        const enrichedResult = await analyzeArticleWithAI(article);
+
+        if (!enrichedResult) {
+          errors++;
+          console.error(`  ❌ No result for article ${row.id}`);
+          continue;
+        }
+
+        const tier = article.relevance_tier || enrichedResult.relevance_tier || 'medium';
+
+        // Delete low-relevance junk
+        if (deleteLow && tier === 'low') {
+          await db.query('DELETE FROM articles WHERE id = $1', [row.id]);
+          deleted++;
+          console.log(`  🗑️ low | ${row.title.substring(0, 50)}...`);
+          continue;
+        }
+
+        // Use insertArticle with the enriched result — this handles
+        // category, analysis, tags, relevance_tier, scope, etc.
+        // insertArticle does ON CONFLICT UPDATE, so it will update the existing row
+        const articleId = await insertArticle({
+          ...enrichedResult,
+          title: row.title,
           url: row.url,
           source: row.source,
           published_date: row.published_date,
-        };
+          relevance_tier: tier,
+        });
 
-        // Run full AI triage + analysis
-        const analysis = await analyzeArticleWithAI(article);
-        const tier = article.relevance_tier || 'low';
-        const category = analysis?.articleType || article.category || 'General';
-
-        // Map articleType to category
-        let mappedCategory = 'General';
-        const catLower = (category || '').toLowerCase();
-        if (catLower.includes('m&a') || catLower.includes('merger') || catLower.includes('acquisition')) mappedCategory = 'M&A';
-        else if (catLower.includes('regulat') || catLower.includes('compliance') || catLower.includes('cms')) mappedCategory = 'Regulatory';
-        else if (catLower.includes('financ') || catLower.includes('reimburse') || catLower.includes('billing')) mappedCategory = 'Financial';
-        else if (catLower.includes('staff') || catLower.includes('workforce') || catLower.includes('labor')) mappedCategory = 'Staffing';
-        else if (catLower.includes('quality') || catLower.includes('clinical') || catLower.includes('patient')) mappedCategory = 'Quality';
-        else if (catLower.includes('tech') || catLower.includes('innov')) mappedCategory = 'Technology';
-        else if (catLower.includes('operat')) mappedCategory = 'Operations';
-
-        // Force category update for kept articles to break the loop
-        if (mappedCategory === 'General' && tier !== 'low') {
-          mappedCategory = 'Untriaged_Processed';
+        // Save tags if present
+        if (enrichedResult.tags && enrichedResult.tags.length > 0) {
+          await insertArticleTags(articleId, enrichedResult.tags);
         }
 
-        if (deleteLow && tier === 'low') {
-          if (!dryRun) {
-            await db.query('DELETE FROM articles WHERE id = $1', [row.id]);
-          }
-          deleted++;
-          console.log(`  🗑️ ${tier} | ${row.title.substring(0, 50)}...`);
-        } else {
-          if (!dryRun) {
-            await db.query(
-              'UPDATE articles SET analysis = $1, category = $2, relevance_tier = $3, scope = $4 WHERE id = $5',
-              [JSON.stringify(analysis), mappedCategory, tier, analysis?.scope || 'National', row.id]
-            );
-          }
-          kept.push({ id: row.id, tier, category: mappedCategory, title: row.title.substring(0, 60) });
-          triaged++;
-          console.log(`  ✅ ${tier} | ${mappedCategory} | ${row.title.substring(0, 50)}...`);
-        }
+        processed++;
+        kept.push({
+          id: articleId,
+          tier,
+          category: enrichedResult.category || 'General',
+          title: row.title.substring(0, 60),
+        });
+        console.log(`  ✅ ${tier} | ${enrichedResult.category || '?'} | ${row.title.substring(0, 50)}...`);
 
-        // Rate limit: 500ms between AI calls
+        // Rate limit
         await new Promise(r => setTimeout(r, 500));
       } catch (err) {
         errors++;
-        console.error(`  ❌ Error triaging article ${row.id}: ${err.message}`);
+        console.error(`  ❌ Error processing article ${row.id}: ${err.message}`);
       }
     }
 
@@ -1899,9 +1907,9 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
         AND (analysis IS NULL OR analysis::text = 'null')
     `);
 
-    console.log(`✅ Triage batch done: ${triaged} kept, ${deleted} deleted, ${errors} errors, ${remaining.rows[0].count} remaining`);
+    console.log(`✅ Pipeline batch done: ${processed} processed, ${deleted} deleted, ${errors} errors, ${remaining.rows[0].count} remaining`);
     res.json({
-      success: true, triaged, deleted, errors, dryRun,
+      success: true, processed, deleted, errors,
       remaining: parseInt(remaining.rows[0].count),
       kept: kept.slice(0, 10),
     });
