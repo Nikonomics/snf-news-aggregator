@@ -1,0 +1,81 @@
+{
+  "corrections": [
+    {
+      "id": null,
+      "title": "Virginia staffing standard",
+      "nik_tier": "medium",
+      "nik_note": "high only if in virginia"
+    },
+    {
+      "id": null,
+      "title": "Long-Term Care (LA DOH)",
+      "nik_tier": "low",
+      "nik_note": "only if in louisiana, likely low nationally"
+    },
+    {
+      "id": null,
+      "title": "Discharge rights Utah",
+      "nik_tier": "medium",
+      "nik_note": "only if in utah"
+    },
+    {
+      "id": null,
+      "title": "Nursing home owner pardoned AR",
+      "nik_tier": "medium",
+      "nik_note": "only if in arkansas"
+    },
+    {
+      "id": null,
+      "title": "Chart Reviews MA Insurers (KFF)",
+      "nik_tier": "high",
+      "nik_note": "national high"
+    },
+    {
+      "id": null,
+      "title": "Virginia staffing rule McKnights",
+      "nik_tier": "medium",
+      "nik_note": "high only if in virginia"
+    },
+    {
+      "id": null,
+      "title": "Ohio quality story McKnights",
+      "nik_tier": "medium",
+      "nik_note": "high if ohio, medium nationally"
+    },
+    {
+      "id": null,
+      "title": "Journey Georgia McKnights",
+      "nik_tier": "low",
+      "nik_note": "low, fluff"
+    },
+    {
+      "id": null,
+      "title": "Games residents activities",
+      "nik_tier": "low",
+      "nik_note": "low, fluff"
+    },
+    {
+      "id": null,
+      "title": "Majestic Care enters WV McKnights",
+      "nik_tier": "medium",
+      "nik_note": "high if in wv or doing ma, medium nationally"
+    }
+  ],
+  "insight": {
+    "date": "2026-04-17",
+    "source": "Nik review session",
+    "finding": "Geographic relevance is the primary triage signal. Most state-specific articles are HIGH for operators in that state, MEDIUM nationally. Fluff/consumer content is LOW regardless of state.",
+    "implications": [
+      "affected_states accuracy is load-bearing for triage quality",
+      "deriveTier() must be state-aware at query time, not at ingest time",
+      "National HIGH threshold is higher than state-specific HIGH",
+      "Fluff pattern (activities, awards, local human interest) = LOW always"
+    ],
+    "calibration": {
+      "national_high": "regulatory/compliance affecting all operators (KFF MA piece)",
+      "state_high": "staffing rules, enforcement, M&A, closures in operators home states",
+      "medium": "same state articles for operators not in that state",
+      "low": "fluff, consumer content, activities, awards regardless of state"
+    }
+  }
+}
