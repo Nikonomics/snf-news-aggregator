@@ -1821,11 +1821,11 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
   try {
     const { batchSize = 50, deleteLow = true, dryRun = false } = req.body || {};
 
-    // Find untriaged articles (category='General', no analysis)
+    // Find untriaged articles (category='General' or 'Untriaged_Processed', no analysis)
     const result = await db.query(`
       SELECT id, title, summary, url, source, published_date, category
       FROM articles
-      WHERE category = 'General'
+      WHERE (category = 'General' OR category = 'Untriaged_Processed')
         AND (analysis IS NULL OR analysis::text = 'null')
       ORDER BY published_date DESC
       LIMIT $1
@@ -1895,7 +1895,8 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
 
     const remaining = await db.query(`
       SELECT COUNT(*) as count FROM articles
-      WHERE category = 'General' AND (analysis IS NULL OR analysis::text = 'null')
+      WHERE (category = 'General' OR category = 'Untriaged_Processed')
+        AND (analysis IS NULL OR analysis::text = 'null')
     `);
 
     console.log(`✅ Triage batch done: ${triaged} kept, ${deleted} deleted, ${errors} errors, ${remaining.rows[0].count} remaining`);
