@@ -137,7 +137,28 @@ const CLASSIFY_TOOL = {
 // System prompt
 const SYSTEM_PROMPT = `You are an expert healthcare policy analyst specializing in skilled nursing facility (SNF) operations.
 
-**HIGH** means a SNF administrator, regional leader, reimbursement lead, compliance officer, or owner-operator would prioritize this in their daily brief because it affects revenue, compliance exposure, staffing cost, survey risk, or operating decisions within 90 days. HIGH is not reserved for emergencies.
+Your job is to classify news articles for SNF operators (administrators, regional directors, reimbursement leads, compliance officers, owner-operators).
+
+**impact_scope** — be precise:
+- "national": affects SNF operators across all US states (CMS final rules, federal legislation, Medicare/Medicaid national rate changes, federal court rulings on nationwide mandates)
+- "state": affects operators in one specific US state (state Medicaid rate changes, state legislation, state enforcement actions)
+- "regional": affects a multi-state region
+- "local": affects a single facility or local market only (one nursing home closure, local hospital partnership, city/county news)
+
+Examples of NATIONAL scope: CMS staffing final rule, Medicare SNF payment rule, federal court striking down a nationwide mandate, Medicaid cuts in federal budget bill.
+Examples of STATE scope: Virginia pursuing its own staffing rule, Ohio Medicaid rate change, Texas court ruling on a state law.
+Examples of LOCAL scope: one facility closing, one chain entering one market, a single survey deficiency citation.
+
+**event_type** — pick the most specific match:
+- regulatory_update: new CMS rules, final rules, guidance, proposed rules
+- rate_change: Medicare/Medicaid payment rate changes
+- enforcement: survey citations, CMPs, OIG/DOJ actions
+- acquisition: facility sales, chain mergers, PE deals
+- closure: facility closures, bankruptcies
+- staffing: workforce mandates, union actions, wage changes
+- quality: star ratings, quality measure changes
+- litigation: lawsuits, settlements, court rulings
+- other: only if none of the above fit
 
 For \`entities\`: named organizations, chains, or specific regulation identifiers ONLY. Never output: CMS, Medicare, Medicaid, HHS, nursing home, SNF, LTC, long-term care, skilled nursing, or any generic sector term.`
 
@@ -245,7 +266,11 @@ function parseTriageResponse(response) {
  * Derive relevance tier from triage result.
  * KEY CALIBRATION: state-specific articles are MEDIUM at ingest.
  * Feed query promotes them to HIGH for operators in matching states.
- * Only genuinely national articles are HIGH at ingest time.
+ * HIGH at ingest = genuinely important regardless of state.
+ * State-specific = MEDIUM at ingest, promoted by feed query for matching operators.
+ *
+ * v2.4 fix: don't rely solely on impact_scope (model defaults to 'local' too often).
+ * Use operator_impact_types + actionability_window + event_type as primary signals.
  *
  * @param {object} r - Cleaned triage result
  * @returns {'high'|'medium'|'low'}
@@ -253,24 +278,38 @@ function parseTriageResponse(response) {
 function deriveTier(r) {
   if (!r.is_snf_relevant) return 'low'
   const t = r.operator_impact_types || []
+  const isActionable = ['immediate', '30d'].includes(r.actionability_window)
+  const isHighImpact = t.some(x => ['revenue', 'compliance', 'staffing'].includes(x))
+  const isNational = r.impact_scope === 'national'
+  const isStateOrNational = ['national', 'state'].includes(r.impact_scope)
 
-  // National HIGH: affects all SNF operators regardless of state
-  const isNationalHigh = (
-    r.impact_scope === 'national' &&
-    t.some(x => ['revenue', 'compliance', 'staffing'].includes(x)) &&
-    ['immediate', '30d'].includes(r.actionability_window)
-  ) || (
-    r.impact_scope === 'national' && r.severity >= 2
-  )
+  // National regulatory/compliance + actionable → HIGH
+  const isNationalHigh = isNational && isHighImpact && isActionable
 
-  // Closure anywhere = HIGH (competitors + market intel)
+  // High severity national → HIGH regardless of window
+  const isHighSeverityNational = isNational && r.severity >= 2
+
+  // Regulatory update nationally → almost always HIGH
+  const isNationalRegulatory = isNational && r.event_type === 'regulatory_update'
+
+  // National rate change → HIGH
+  const isNationalRateChange = isNational && r.event_type === 'rate_change'
+
+  // State-level high-impact + actionable + severity → HIGH
+  // (state promotion at query time handles per-operator relevance)
+  const isStateHighImpact = isStateOrNational && isHighImpact && isActionable && r.severity >= 1
+
+  // Closure = HIGH (market intel, competitor awareness)
   const isClosure = r.event_type === 'closure' && r.novelty === 'new_development'
 
-  // National M&A = HIGH
-  const isNationalMA = t.includes('market') && r.novelty === 'new_development' && r.impact_scope === 'national'
+  // M&A = HIGH
+  const isMA = (r.event_type === 'acquisition' || t.includes('market')) && r.novelty === 'new_development'
 
-  return (isNationalHigh || isClosure || isNationalMA) ? 'high' : 'medium'
-  // NOTE: 'low' is only returned when is_snf_relevant=false OR fluff_pattern matched upstream
+  const isHigh = isNationalHigh || isHighSeverityNational || isNationalRegulatory ||
+    isNationalRateChange || isStateHighImpact || isClosure || isMA
+
+  return isHigh ? 'high' : 'medium'
+  // NOTE: 'low' only from is_snf_relevant=false or fluff_pattern early return
 }
 
 // ---------------------------------------------------------------------------
