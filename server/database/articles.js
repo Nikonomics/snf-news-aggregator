@@ -261,6 +261,33 @@ export async function getArticles(options = {}) {
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
     `
     values.push(limit, offset, `%${search}%`, search)
+  } else if (states && states.length > 0) {
+    // Geo-aware ranking: articles whose affected_states overlap the requested states
+    // get a 1.5× rank boost via CASE in ORDER BY (Phase 1 geo-awareness).
+    // The states array is already bound as a WHERE condition above; we reuse it here
+    // by finding its parameter index in the values array.
+    const statesParamIdx = values.indexOf(states) + 1  // 1-based $N
+    dataQuery = `
+      SELECT
+        id, external_id, title, summary, url, source, published_date as date,
+        category, impact, relevance_score, scope, states, analysis,
+        image_url, created_at, updated_at,
+        -- Geo-aware rank: state-matching articles float to top within tier
+        CASE relevance_tier
+          WHEN 'high'   THEN 3.0
+          WHEN 'medium' THEN 1.5
+          ELSE 1.0
+        END *
+        CASE
+          WHEN affected_states && $${statesParamIdx}::text[] THEN 1.5
+          ELSE 1.0
+        END AS geo_rank_score
+      FROM articles
+      ${whereClause}
+      ORDER BY geo_rank_score DESC, published_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `
+    values.push(limit, offset)
   } else {
     dataQuery = `
       SELECT

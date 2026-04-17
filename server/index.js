@@ -7,6 +7,7 @@ import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import aiService from './services/aiService.js'
+import { triageArticle, ensureShadowLogTable } from './services/triageService.js'
 import * as db from './database/db.js'
 import pool from './database/db.js'
 import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
@@ -260,58 +261,15 @@ const categorizeArticle = (title, content) => {
   }
 }
 
-// AI-based triage to determine relevance tier (using cheap Claude Haiku)
+// AI-based triage to determine relevance tier — Phase 1 rewrite
+// Delegates to triageService.js (Tool Use API, fluff detection, shadow logging)
 async function triageArticleRelevance(article) {
-  const triagePrompt = `You are an expert healthcare policy analyst. Quickly classify this article's relevance to skilled nursing facility (SNF) operators.
-
-Article Title: ${article.title}
-Article Summary: ${article.summary || 'N/A'}
-Source: ${article.source}
-
-Classification Task:
-Determine if this article is:
-- **HIGH**: Directly relevant to SNF operations (CMS regulations, Medicare/Medicaid reimbursement, staffing mandates, compliance requirements, quality/star ratings, M&A activity, financial/operational guidance, enforcement actions)
-- **MEDIUM**: Adjacent healthcare content with contextual value (broader healthcare policy, market trends, industry analysis, operational best practices, technology/innovation, workforce trends)
-- **LOW**: Not relevant to SNF operations (community events, obituaries, pet parades, local news, political opinions unrelated to healthcare policy, general news)
-
-CRITICAL: Respond with ONLY a JSON object. No text before or after.
-
-{
-  "relevanceTier": "high|medium|low",
-  "reasoning": "1-2 sentence explanation of why you chose this tier"
-}
-
-Return ONLY the JSON object. No markdown. No extra text.`
-
   try {
-    const response = await aiService.analyzeContent(triagePrompt, {
-      model: 'claude-haiku-4-5-20251001',
-      maxTokens: 200,
-      temperature: 0.3
-    })
-
-    let cleanedResponse = response.content.trim()
-    if (cleanedResponse.startsWith('```json')) {
-      cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-    } else if (cleanedResponse.startsWith('```')) {
-      cleanedResponse = cleanedResponse.replace(/```\n?/g, '')
-    }
-
-    const triageResult = JSON.parse(cleanedResponse)
-
-    const validTiers = ['high', 'medium', 'low']
-    if (!validTiers.includes(triageResult.relevanceTier)) {
-      console.warn(`Invalid tier "${triageResult.relevanceTier}", defaulting to medium`)
-      return 'medium'
-    }
-
-    console.log(`  → AI Triage: ${triageResult.relevanceTier} - ${triageResult.reasoning} (${response.provider})`)
-
-    return triageResult.relevanceTier
-
+    const result = await triageArticle(article)
+    return result.tier
   } catch (error) {
     console.error('Triage failed, falling back to keyword-based:', error.message)
-    // Fallback to simple keyword-based triage
+    // Fallback to simple keyword-based triage (preserves original behaviour on hard failure)
     const text = `${article.title} ${article.summary || ''}`.toLowerCase()
     if (text.match(/obituary|pet parade|craft fair|holiday party|bingo|birthday celebrat/)) {
       return 'low'
@@ -4447,6 +4405,14 @@ async function startServer() {
     // Initialize database
     await db.testConnection()
     await db.initializeDatabase()
+
+    // Phase 1: ensure shadow triage log table exists
+    try {
+      await ensureShadowLogTable()
+      console.log('✓ shadow_triage_log table ready')
+    } catch (err) {
+      console.warn('⚠️  Could not create shadow_triage_log table:', err.message)
+    }
 
     // Load conferences data
     loadConferences()
