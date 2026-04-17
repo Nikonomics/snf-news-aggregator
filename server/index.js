@@ -2032,6 +2032,9 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
           const enrichedResult = await analyzeArticleWithAI(article);
           if (!enrichedResult) return { status: 'error', id: row.id };
 
+          // Use the same categorization as the RSS pipeline
+          const category = categorizeArticle(row.title, enrichedResult.summary || row.summary || '');
+
           const articleId = await insertArticle({
             ...enrichedResult,
             title: row.title,
@@ -2041,6 +2044,7 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
             published_date: row.published_date,
             relevance_tier: row.relevance_tier,
             summary: enrichedResult.summary || row.summary || '',
+            category: category,
           });
 
           if (enrichedResult.tags && enrichedResult.tags.length > 0) {
