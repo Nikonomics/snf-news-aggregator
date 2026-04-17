@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eval Review — Phase 0.7</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  header { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 16px; font-weight: 600; color: #f8fafc; }
+  .progress { font-size: 13px; color: #94a3b8; }
+  .progress span { color: #38bdf8; font-weight: 600; }
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-high { background: #1d4ed8; color: #bfdbfe; }
+  .badge-medium { background: #854d0e; color: #fef08a; }
+  .badge-low { background: #374151; color: #9ca3af; }
+  .badge-source { background: #1e3a5f; color: #93c5fd; font-size: 10px; }
+  .badge-conf { background: #1c3a2e; color: #6ee7b7; font-size: 10px; }
+  .card-title { font-size: 15px; font-weight: 600; color: #f1f5f9; line-height: 1.4; margin-bottom: 6px; }
+  .card-title a { color: inherit; text-decoration: none; }
+  .card-title a:hover { color: #38bdf8; }
+  .card-summary { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .existing { font-size: 11px; color: #64748b; margin-bottom: 14px; }
+  .existing strong { color: #94a3b8; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-high { background: #1d4ed8; color: #fff; }
+  .btn-high:hover { background: #2563eb; }
+  .btn-high.active { background: #2563eb; box-shadow: 0 0 0 2px #93c5fd; }
+  .btn-medium { background: #92400e; color: #fef3c7; }
+  .btn-medium:hover { background: #b45309; }
+  .btn-medium.active { background: #b45309; box-shadow: 0 0 0 2px #fcd34d; }
+  .btn-low { background: #374151; color: #d1d5db; }
+  .btn-low:hover { background: #4b5563; }
+  .btn-low.active { background: #4b5563; box-shadow: 0 0 0 2px #9ca3af; }
+  .btn-skip { background: transparent; color: #64748b; border: 1px solid #334155; }
+  .btn-skip:hover { color: #94a3b8; border-color: #475569; }
+  .done-state { text-align: center; padding: 60px 20px; }
+  .done-state h2 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 12px; }
+  .done-state p { color: #94a3b8; margin-bottom: 24px; }
+  .export-btn { background: #0284c7; color: #fff; padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .export-btn:hover { background: #0369a1; }
+  .reviewed-badge { font-size: 11px; color: #4ade80; background: #052e16; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 Eval Review — Phase 0.7</h1>
+  <div class="progress">Reviewed: <span id="reviewed-count">0</span> / <span id="total-count">0</span></div>
+</header>
+
+<div class="container" id="container">
+  <p style="color:#64748b;text-align:center;padding:40px">Loading articles...</p>
+</div>
+
+<script>
+// Inline the review dataset
+const JSONL_URL = './eval-needs-review.jsonl';
+
+let articles = [];
+let decisions = {};
+
+async function load() {
+  const text = await fetch(JSONL_URL).then(r => r.text());
+  articles = text.trim().split('\n').map(l => JSON.parse(l));
+  document.getElementById('total-count').textContent = articles.length;
+  render();
+}
+
+function render() {
+  const container = document.getElementById('container');
+  const remaining = articles.filter(a => !decisions[a.id]);
+
+  if (remaining.length === 0) {
+    container.innerHTML = `
+      <div class="done-state">
+        <h2>✅ Review complete!</h2>
+        <p>You reviewed ${Object.keys(decisions).length} articles. Download the corrections file and send it to Gary.</p>
+        <button class="export-btn" onclick="exportDecisions()">Download corrections.json</button>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('reviewed-count').textContent = Object.keys(decisions).length;
+
+  container.innerHTML = remaining.map(a => {
+    const confPct = Math.round((a.label_confidence || 0) * 100);
+    const tierClass = `badge-${a.correct_tier}`;
+    const d = decisions[a.id];
+    return `
+    <div class="card" id="card-${a.id}">
+      <div class="card-meta">
+        <span class="badge ${tierClass}">Gary: ${a.correct_tier}</span>
+        <span class="badge badge-source">${a.source_slug || a.source}</span>
+        <span class="badge badge-conf">conf: ${confPct}%</span>
+        ${a.label_source ? `<span class="badge badge-conf" style="background:#1a1a2e;color:#a78bfa">${a.label_source}</span>` : ''}
+      </div>
+      <div class="card-title">
+        <a href="${a.url}" target="_blank" rel="noopener">${a.title} ↗</a>
+      </div>
+      ${a.summary ? `<div class="card-summary">${a.summary}</div>` : ''}
+      <div class="existing">
+        Existing category: <strong>${a.existing_category}</strong> &nbsp;·&nbsp;
+        Gary's category: <strong>${a.correct_category}</strong>
+      </div>
+      <div class="actions">
+        <button class="btn btn-high ${d === 'high' ? 'active' : ''}" onclick="decide(${a.id}, 'high')">HIGH</button>
+        <button class="btn btn-medium ${d === 'medium' ? 'active' : ''}" onclick="decide(${a.id}, 'medium')">MEDIUM</button>
+        <button class="btn btn-low ${d === 'low' ? 'active' : ''}" onclick="decide(${a.id}, 'low')">LOW</button>
+        <button class="btn btn-skip" onclick="decide(${a.id}, 'skip')">Skip</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function decide(id, tier) {
+  decisions[id] = tier;
+  document.getElementById('reviewed-count').textContent = Object.keys(decisions).length;
+  // Fade out card
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.style.opacity = '0.3';
+    card.style.transition = 'opacity 0.2s';
+    setTimeout(() => card.remove(), 200);
+  }
+  // Check done
+  const remaining = articles.filter(a => !decisions[a.id]).length;
+  if (remaining === 0) render();
+}
+
+function exportDecisions() {
+  const corrections = articles
+    .filter(a => decisions[a.id] && decisions[a.id] !== 'skip')
+    .map(a => ({ id: a.id, title: a.title, gary_tier: a.correct_tier, nik_tier: decisions[a.id] }));
+  const blob = new Blob([JSON.stringify(corrections, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'corrections.json'; a.click();
+}
+
+load();
+</script>
+</body>
+</html>
