@@ -32,12 +32,14 @@ export function generateExternalId(title, url) {
 // Insert a new article
 export async function insertArticle(article) {
   const externalId = generateExternalId(article.title, article.url)
+  const contentHash = generateContentHash(article.title, article.summary || '')
 
   const query = `
     INSERT INTO articles (
       external_id, title, summary, url, source, published_date,
-      category, impact, relevance_score, scope, states, analysis, image_url, relevance_tier
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      category, impact, relevance_score, scope, states, analysis,
+      image_url, relevance_tier, content_hash
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     ON CONFLICT (external_id) DO UPDATE SET
       title = EXCLUDED.title,
       summary = EXCLUDED.summary,
@@ -49,6 +51,7 @@ export async function insertArticle(article) {
       analysis = EXCLUDED.analysis,
       image_url = EXCLUDED.image_url,
       relevance_tier = EXCLUDED.relevance_tier,
+      content_hash = COALESCE(EXCLUDED.content_hash, articles.content_hash),
       updated_at = CURRENT_TIMESTAMP
     RETURNING id
   `
@@ -75,7 +78,8 @@ export async function insertArticle(article) {
     article.analysis?.state ? [article.analysis.state] : null,
     article.analysis || null,
     article.image_url || null,
-    article.relevance_tier || 'medium'
+    article.relevance_tier || 'medium',
+    contentHash
   ]
 
   try {
@@ -365,7 +369,7 @@ export async function findSimilarArticles(title, publishedDate, dateWindowDays =
     WHERE
       published_date BETWEEN $2::timestamp - INTERVAL '${dateWindowDays} days'
                         AND $2::timestamp + INTERVAL '${dateWindowDays} days'
-      AND similarity(title, $1) > 0.3
+      AND similarity(title, $1) > 0.65
     ORDER BY title_similarity DESC, published_date DESC
     LIMIT $3
   `

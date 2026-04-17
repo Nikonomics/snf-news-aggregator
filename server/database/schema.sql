@@ -240,6 +240,7 @@ ORDER BY date_start ASC;
 -- ============================================================
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS relevance_tier VARCHAR(20) DEFAULT 'medium';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64);
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_analyzed BOOLEAN DEFAULT FALSE;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_acquirer VARCHAR(255);
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_target VARCHAR(255);

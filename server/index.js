@@ -1775,6 +1775,47 @@ app.post('/api/admin/add-image-url-column', requireAdminKey, async (req, res) =>
   }
 })
 
+app.post('/api/admin/backfill-content-hashes', requireAdminKey, async (req, res) => {
+  try {
+    const BATCH_SIZE = 200
+    let totalUpdated = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const batch = await db.query(`
+        SELECT id, title, summary FROM articles
+        WHERE content_hash IS NULL
+        ORDER BY id
+        LIMIT $1
+      `, [BATCH_SIZE])
+
+      if (batch.rows.length === 0) {
+        hasMore = false
+        break
+      }
+
+      for (const row of batch.rows) {
+        const hash = generateContentHash(row.title, row.summary || '')
+        await db.query(
+          'UPDATE articles SET content_hash = $1 WHERE id = $2',
+          [hash, row.id]
+        )
+        totalUpdated++
+      }
+
+      console.log(`Backfilled ${totalUpdated} content hashes...`)
+
+      if (batch.rows.length < BATCH_SIZE) {
+        hasMore = false
+      }
+    }
+
+    res.json({ success: true, updated: totalUpdated })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Admin: Backfill images for articles without image_url
 app.post('/api/admin/backfill-images', requireAdminKey, async (req, res) => {
   try {

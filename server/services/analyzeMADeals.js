@@ -350,6 +350,11 @@ Example structure:
  * @param {number} articleId - Article ID
  * @param {Object} maDetails - Extracted M&A details
  * @returns {Promise<void>}
+ *
+ * Storage convention:
+ * - ma_* columns: indexed summary fields for SQL queries (list, filter, aggregate)
+ * - analysis.maDetails (JSONB): canonical full extraction (all 18 fields, detail views)
+ * - Both are written on save. JSONB is source of truth for rich fields.
  */
 export async function saveMAAnalysis(articleId, maDetails) {
   try {
