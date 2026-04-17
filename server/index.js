@@ -707,7 +707,7 @@ JSON Structure:
 Return ONLY the JSON object. No markdown. No extra text.`;
 
     const response = await aiService.analyzeContent(prompt, {
-      maxTokens: 2000,
+      maxTokens: 4000,
       temperature: 0.1
     });
 
