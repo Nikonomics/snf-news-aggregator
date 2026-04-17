@@ -1919,6 +1919,164 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
   }
 });
 
+
+// Admin: PASS 1 ONLY - Bulk triage (Haiku) + delete low, skip deep analysis
+app.post('/api/admin/bulk-triage', requireAdminKey, async (req, res) => {
+  try {
+    const { batchSize = 50, deleteLow = true, concurrency = 10 } = req.body || {};
+
+    const result = await db.query(`
+      SELECT id, title, summary, url, source, published_date
+      FROM articles
+      WHERE (category = 'General' OR category = 'Untriaged_Processed')
+        AND (relevance_tier IS NULL OR relevance_tier = '')
+      ORDER BY published_date DESC
+      LIMIT $1
+    `, [batchSize]);
+
+    console.log(`🔍 Bulk-triage: ${result.rows.length} articles (concurrency=${concurrency})`);
+
+    let triaged = 0, deleted = 0, errors = 0;
+    const kept = [];
+
+    // Process in concurrent chunks
+    for (let i = 0; i < result.rows.length; i += concurrency) {
+      const chunk = result.rows.slice(i, i + concurrency);
+      const promises = chunk.map(async (row) => {
+        try {
+          const article = {
+            title: row.title,
+            summary: row.summary || '',
+            source: row.source || 'Google News',
+            tags: [],
+          };
+          const tier = await triageArticleRelevance(article);
+
+          if (deleteLow && tier === 'low') {
+            await db.query('DELETE FROM articles WHERE id = $1', [row.id]);
+            return { status: 'deleted', id: row.id };
+          } else {
+            await db.query(
+              'UPDATE articles SET relevance_tier = $1 WHERE id = $2',
+              [tier, row.id]
+            );
+            return { status: 'kept', id: row.id, tier, title: row.title.substring(0, 60) };
+          }
+        } catch (err) {
+          console.error(`  ❌ Triage error ${row.id}: ${err.message}`);
+          return { status: 'error', id: row.id };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      for (const r of results) {
+        if (r.status === 'deleted') deleted++;
+        else if (r.status === 'kept') { triaged++; kept.push(r); }
+        else errors++;
+      }
+    }
+
+    const remaining = await db.query(`
+      SELECT COUNT(*) as count FROM articles
+      WHERE (category = 'General' OR category = 'Untriaged_Processed')
+        AND (relevance_tier IS NULL OR relevance_tier = '')
+    `);
+
+    console.log(`✅ Bulk triage: ${triaged} kept, ${deleted} deleted, ${errors} errors, ${remaining.rows[0].count} remaining`);
+    res.json({
+      success: true, triaged, deleted, errors,
+      remaining: parseInt(remaining.rows[0].count),
+      kept: kept.slice(0, 5),
+    });
+  } catch (error) {
+    console.error('Bulk-triage error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: PASS 2 ONLY - Deep analysis on already-triaged articles (high/medium only)
+app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
+  try {
+    const { batchSize = 10, concurrency = 3 } = req.body || {};
+
+    const result = await db.query(`
+      SELECT id, title, summary, url, source, published_date, relevance_tier
+      FROM articles
+      WHERE relevance_tier IN ('high', 'medium')
+        AND (analysis IS NULL OR analysis::text = 'null')
+      ORDER BY
+        CASE WHEN relevance_tier = 'high' THEN 0 ELSE 1 END,
+        published_date DESC
+      LIMIT $1
+    `, [batchSize]);
+
+    console.log(`🔬 Bulk-analyze: ${result.rows.length} articles (concurrency=${concurrency})`);
+
+    let processed = 0, errors = 0;
+    const kept = [];
+
+    for (let i = 0; i < result.rows.length; i += concurrency) {
+      const chunk = result.rows.slice(i, i + concurrency);
+      const promises = chunk.map(async (row) => {
+        try {
+          const article = {
+            title: row.title,
+            summary: row.summary || '',
+            url: row.url,
+            source: row.source || 'Google News',
+            published_date: row.published_date,
+            relevance_tier: row.relevance_tier,
+            tags: [],
+          };
+
+          const enrichedResult = await analyzeArticleWithAI(article);
+          if (!enrichedResult) return { status: 'error', id: row.id };
+
+          const articleId = await insertArticle({
+            ...enrichedResult,
+            title: row.title,
+            url: row.url,
+            source: row.source,
+            published_date: row.published_date,
+            relevance_tier: row.relevance_tier,
+          });
+
+          if (enrichedResult.tags && enrichedResult.tags.length > 0) {
+            await insertArticleTags(articleId, enrichedResult.tags);
+          }
+
+          return { status: 'ok', id: articleId, tier: row.relevance_tier, category: enrichedResult.category || '?', title: row.title.substring(0, 60) };
+        } catch (err) {
+          console.error(`  ❌ Analyze error ${row.id}: ${err.message}`);
+          return { status: 'error', id: row.id };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      for (const r of results) {
+        if (r.status === 'ok') { processed++; kept.push(r); }
+        else errors++;
+      }
+    }
+
+    const remaining = await db.query(`
+      SELECT COUNT(*) as count FROM articles
+      WHERE relevance_tier IN ('high', 'medium')
+        AND (analysis IS NULL OR analysis::text = 'null')
+    `);
+
+    console.log(`✅ Bulk analyze: ${processed} processed, ${errors} errors, ${remaining.rows[0].count} remaining`);
+    res.json({
+      success: true, processed, errors,
+      remaining: parseInt(remaining.rows[0].count),
+      kept: kept.slice(0, 5),
+    });
+  } catch (error) {
+    console.error('Bulk-analyze error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // TEMPORARY: Bulk article backfill for historical import
 app.post('/api/admin/backfill-articles', requireAdminKey, async (req, res) => {
   try {
