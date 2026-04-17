@@ -2122,6 +2122,86 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
   }
 });
 
+// Admin: Recategorize articles that were processed before the category mapping fix
+app.post('/api/admin/recategorize', requireAdminKey, async (req, res) => {
+  try {
+    const { batchSize = 50, concurrency = 10, targetCategory = 'Operations', dryRun = false } = req.body || {};
+
+    const result = await db.query(`
+      SELECT id, title, summary, url, source, published_date, relevance_tier, analysis
+      FROM articles
+      WHERE category = $1
+        AND analysis IS NOT NULL
+        AND analysis::text != 'null'
+      ORDER BY published_date DESC
+      LIMIT $2
+    `, [targetCategory, batchSize]);
+
+    console.log(`\ud83d\udd0d Recategorize: ${result.rows.length} articles with category '${targetCategory}'`);
+
+    let recategorized = 0, errors = 0;
+    const updatedArticles = [];
+
+    for (let i = 0; i < result.rows.length; i += concurrency) {
+      const chunk = result.rows.slice(i, i + concurrency);
+      const promises = chunk.map(async (row) => {
+        try {
+          const article = {
+            title: row.title,
+            summary: row.summary || '',
+            url: row.url,
+            source: row.source || 'Google News',
+            published_date: row.published_date,
+            relevance_tier: row.relevance_tier,
+            tags: [], // Tags will be re-inserted
+          };
+
+          // Re-run categorization using the existing article data and AI analysis
+          const category = categorizeArticle(row.title, row.analysis?.summary || row.summary || '');
+
+          if (category !== targetCategory) { // Only update if category changed
+            if (!dryRun) {
+              await db.query(
+                'UPDATE articles SET category = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+                [category, row.id]
+              );
+            }
+            return { status: 'updated', id: row.id, oldCategory: targetCategory, newCategory: category, title: row.title.substring(0, 60) };
+          } else {
+            return { status: 'no_change', id: row.id, category: targetCategory, title: row.title.substring(0, 60) };
+          }
+        } catch (err) {
+          console.error(`  ❌ Recategorize error ${row.id}: ${err.message}`);
+          return { status: 'error', id: row.id };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      for (const r of results) {
+        if (r.status === 'updated') { recategorized++; updatedArticles.push(r); }
+        else if (r.status === 'error') errors++;
+      }
+    }
+
+    const remaining = await db.query(`
+      SELECT COUNT(*) as count FROM articles
+      WHERE category = $1
+        AND analysis IS NOT NULL
+        AND analysis::text != 'null'
+    `, [targetCategory]);
+
+    console.log(`✅ Recategorize batch done: ${recategorized} updated, ${errors} errors, ${remaining.rows[0].count} remaining in '${targetCategory}'`);
+    res.json({
+      success: true, recategorized, errors, dryRun,
+      remaining: parseInt(remaining.rows[0].count),
+      updatedArticles: updatedArticles.slice(0, 5),
+    });
+  } catch (error) {
+    console.error('Recategorize error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // TEMPORARY: Bulk article backfill for historical import
 app.post('/api/admin/backfill-articles', requireAdminKey, async (req, res) => {
   try {
