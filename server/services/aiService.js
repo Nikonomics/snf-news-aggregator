@@ -11,13 +11,11 @@ class AIService {
     this.providers = {
       openai: {
         client: null,
-        available: false,
-        priority: 1
+        available: false
       },
       anthropic: {
         client: null,
-        available: false,
-        priority: 2
+        available: false
       }
     }
     
@@ -46,7 +44,6 @@ class AIService {
       }
     }
     
-    this.currentProvider = null
     this.failedProviders = new Set()
     this.requestCounts = new Map()
     this.lastReset = Date.now()
@@ -54,44 +51,53 @@ class AIService {
     // Reset counters every hour
     setInterval(() => {
       this.requestCounts.clear()
+      this.failedProviders.clear()
       this.lastReset = Date.now()
     }, 60 * 60 * 1000)
   }
 
-  getCurrentProvider() {
-    if (this.currentProvider && this.providers[this.currentProvider].available && !this.failedProviders.has(this.currentProvider)) {
-      return this.currentProvider
-    }
-    return this.getNextAvailableProvider()
+  getNativeProvider(model) {
+    if (!model) return 'anthropic'
+    if (model.startsWith('claude-')) return 'anthropic'
+    if (model.startsWith('gpt-') || model.startsWith('o1') || model.startsWith('o3')) return 'openai'
+    return 'anthropic'
   }
 
-  getNextAvailableProvider() {
-    // Sort providers by priority
-    const sortedProviders = Object.entries(this.providers)
-      .filter(([name, config]) => config.available && !this.failedProviders.has(name))
-      .sort((a, b) => a[1].priority - b[1].priority)
-
-    if (sortedProviders.length === 0) {
-      console.error('❌ No AI providers available. Please check your API keys.')
-      throw new Error('No AI providers available. Please check your API keys.')
+  getCrossProviderModel(model) {
+    const mapping = {
+      'claude-haiku-4-5-20251001': 'gpt-4o-mini',
+      'claude-sonnet-4-20250514': 'gpt-4o',
+      'gpt-4o-mini': 'claude-haiku-4-5-20251001',
+      'gpt-4o': 'claude-sonnet-4-20250514'
     }
 
-    this.currentProvider = sortedProviders[0][0]
-    console.log(`🔄 Using AI provider: ${this.currentProvider}`)
-    return this.currentProvider
+    return mapping[model] || null
   }
 
-  markProviderFailed(provider) {
-    this.failedProviders.add(provider)
-    console.warn(`🚨 AI provider ${provider} marked as failed`)
-  }
+  getProviderForModel(model) {
+    if (!model) model = 'claude-haiku-4-5-20251001'
 
-  markProviderSuccess(provider) {
-    this.failedProviders.delete(provider)
-    // Reset to primary provider if it's working again
-    if (provider === 'openai') {
-      this.currentProvider = 'openai'
+    const nativeProvider = this.getNativeProvider(model)
+
+    if (this.providers[nativeProvider]?.available && !this.failedProviders.has(nativeProvider)) {
+      return { provider: nativeProvider, model }
     }
+
+    const altModel = this.getCrossProviderModel(model)
+    if (altModel) {
+      const altProvider = this.getNativeProvider(altModel)
+      if (this.providers[altProvider]?.available && !this.failedProviders.has(altProvider)) {
+        console.warn(`⚠️ ${nativeProvider} failed/unavailable for ${model}, falling back to ${altProvider} with ${altModel}`)
+        return { provider: altProvider, model: altModel }
+      }
+    }
+
+    if (this.providers[nativeProvider]?.available) {
+      console.warn(`⚠️ Retrying ${nativeProvider} for ${model} despite previous failure`)
+      return { provider: nativeProvider, model }
+    }
+
+    throw new Error(`No AI providers available for model ${model}`)
   }
 
   incrementRequestCount(provider) {
@@ -111,7 +117,7 @@ class AIService {
         failed: this.failedProviders.has(name),
         requestCount: this.getRequestCount(name)
       })),
-      currentProvider: this.currentProvider,
+      currentProvider: null,
       failedProviders: Array.from(this.failedProviders),
       lastReset: this.lastReset
     }
@@ -119,34 +125,45 @@ class AIService {
 
   async analyzeContent(prompt, options = {}) {
     const maxRetries = 3
+    const requestedModel = options.model || 'claude-haiku-4-5-20251001'
     let lastError
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
+      let routing
       try {
-        const provider = this.getCurrentProvider()
-        const result = await this.callProvider(provider, prompt, options)
+        routing = this.getProviderForModel(requestedModel)
+        const result = await this.callProvider(routing.provider, prompt, { ...options, model: routing.model })
         
-        this.markProviderSuccess(provider)
-        this.incrementRequestCount(provider)
+        this.failedProviders.delete(routing.provider)
+        this.incrementRequestCount(routing.provider)
         
         return {
           ...result,
-          provider,
+          provider: routing.provider,
+          model: routing.model,
           attempt: attempt + 1
         }
       } catch (error) {
         lastError = error
-        console.warn(`AI attempt ${attempt + 1} failed:`, error.message)
+        console.warn(`AI attempt ${attempt + 1} failed (provider: ${routing?.provider}, model: ${routing?.model}):`, error.message)
         
-        if (error.message.includes('rate limit') || error.message.includes('quota')) {
-          this.markProviderFailed(this.currentProvider)
+        if (error.status === 429 || error.message?.includes('rate limit')) {
+          const failedProvider = routing?.provider || this.getNativeProvider(requestedModel)
+          this.failedProviders.add(failedProvider)
+          console.warn(`🚨 Marked ${failedProvider} as failed, next attempt will try failover`)
+        }
+
+        if (error.status === 400 && error.message?.includes('model')) {
+          throw new Error(`Invalid model ${routing?.model || requestedModel} for provider: ${error.message}`)
         }
         
-        if (attempt === maxRetries - 1) {
-          throw lastError
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
         }
       }
     }
+
+    throw lastError
   }
 
   async callProvider(provider, prompt, options) {
@@ -168,7 +185,7 @@ class AIService {
 
   async callAnthropic(prompt, options) {
     const response = await this.providers.anthropic.client.messages.create({
-      model: options.model || 'claude-haiku-4-5-20251001',
+      model: options.model,
       max_tokens: options.maxTokens || 1000,
       temperature: options.temperature || 0.1,
       messages: [{
@@ -186,7 +203,7 @@ class AIService {
 
   async callOpenAI(prompt, options) {
     const response = await this.providers.openai.client.chat.completions.create({
-      model: options.model || 'gpt-4o',
+      model: options.model,
       max_tokens: options.maxTokens || 1000,
       temperature: options.temperature || 0.1,
       messages: [{

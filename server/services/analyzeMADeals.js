@@ -4,9 +4,9 @@
  * This runs ONLY on articles classified as category='M&A'
  */
 
-import fetch from 'node-fetch'
 import * as db from '../database/db.js'
 import { getArticleTextForAnalysis } from '../utils/articleFetcher.js'
+import aiService from './aiService.js'
 
 /**
  * Extract acquirer name from article for historical lookup
@@ -311,31 +311,13 @@ Example structure:
 }`
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', // Premium model for M&A extraction
-        max_tokens: 3000, // Increased for richer analysis
-        temperature: 0.3,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }]
-      })
+    const response = await aiService.analyzeContent(prompt, {
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 3000,
+      temperature: 0.3
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`M&A Analysis API error: ${response.status} - ${errorText}`)
-    }
-
-    const result = await response.json()
-    const textContent = result.content[0].text
+    const textContent = response.content
 
     // Clean up response (remove markdown if present)
     let cleanedResponse = textContent.trim()

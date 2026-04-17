@@ -6,7 +6,6 @@ import { readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import Anthropic from '@anthropic-ai/sdk'
 import aiService from './services/aiService.js'
 import * as db from './database/db.js'
 import pool from './database/db.js'
@@ -285,33 +284,13 @@ CRITICAL: Respond with ONLY a JSON object. No text before or after.
 Return ONLY the JSON object. No markdown. No extra text.`
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // Cheap, fast model for triage
-        max_tokens: 200,
-        temperature: 0.3,
-        messages: [{
-          role: 'user',
-          content: triagePrompt
-        }]
-      })
+    const response = await aiService.analyzeContent(triagePrompt, {
+      model: 'claude-haiku-4-5-20251001',
+      maxTokens: 200,
+      temperature: 0.3
     })
 
-    if (!response.ok) {
-      throw new Error(`Triage API error: ${response.status}`)
-    }
-
-    const result = await response.json()
-    const textContent = result.content[0].text
-
-    // Clean up response
-    let cleanedResponse = textContent.trim()
+    let cleanedResponse = response.content.trim()
     if (cleanedResponse.startsWith('```json')) {
       cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '')
     } else if (cleanedResponse.startsWith('```')) {
@@ -319,7 +298,14 @@ Return ONLY the JSON object. No markdown. No extra text.`
     }
 
     const triageResult = JSON.parse(cleanedResponse)
-    console.log(`  → AI Triage: ${triageResult.relevanceTier} - ${triageResult.reasoning}`)
+
+    const validTiers = ['high', 'medium', 'low']
+    if (!validTiers.includes(triageResult.relevanceTier)) {
+      console.warn(`Invalid tier "${triageResult.relevanceTier}", defaulting to medium`)
+      return 'medium'
+    }
+
+    console.log(`  → AI Triage: ${triageResult.relevanceTier} - ${triageResult.reasoning} (${response.provider})`)
 
     return triageResult.relevanceTier
 
