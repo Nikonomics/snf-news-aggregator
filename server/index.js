@@ -1862,6 +1862,11 @@ app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
         else if (catLower.includes('tech') || catLower.includes('innov')) mappedCategory = 'Technology';
         else if (catLower.includes('operat')) mappedCategory = 'Operations';
 
+        // Force category update for kept articles to break the loop
+        if (mappedCategory === 'General' && tier !== 'low') {
+          mappedCategory = 'Untriaged_Processed';
+        }
+
         if (deleteLow && tier === 'low') {
           if (!dryRun) {
             await db.query('DELETE FROM articles WHERE id = $1', [row.id]);
