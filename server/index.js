@@ -475,7 +475,7 @@ async function analyzeArticleWithAI(article) {
     const hasOpinionLanguage = opinionIndicators.some(indicator => combinedText.includes(indicator));
 
     const isOpinionPiece = article.category === 'Opinion' ||
-                          article.tags.some(tag => ['opinion', 'commentary', 'editorial', 'perspective', 'column'].includes(tag.toLowerCase())) ||
+                          (article.tags || []).some(tag => ['opinion', 'commentary', 'editorial', 'perspective', 'column'].includes(tag.toLowerCase())) ||
                           hasOpinionLanguage;
 
     if (isOpinionPiece) {
