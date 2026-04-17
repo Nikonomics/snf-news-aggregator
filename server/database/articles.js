@@ -1,5 +1,7 @@
 import * as db from './db.js'
 import crypto from 'crypto'
+import he from 'he'
+import { normalizeSourceSlug } from '../lib/sourceSlug.js'
 
 // Retry database operations with exponential backoff
 async function retryQuery(queryFn, maxRetries = 3) {
@@ -34,18 +36,30 @@ export async function insertArticle(article) {
   if (!article.title || !article.url) {
     throw new Error(`insertArticle requires title and url (got title=${!!article.title}, url=${!!article.url})`)
   }
+
+  // Phase 0.5 — normalize source slug and decode HTML entities before any DB write
+  const normalizedSource = article.source
+    ? normalizeSourceSlug(article.source)
+    : null
+  const cleanTitle = he.decode(article.title || '')
+  const cleanSummary = he.decode(article.summary || '')
+
+  // Use cleaned values for the rest of the function
+  article = { ...article, title: cleanTitle, summary: cleanSummary }
+
   const externalId = generateExternalId(article.title, article.url)
   const contentHash = generateContentHash(article.title, article.summary || '')
 
   const query = `
     INSERT INTO articles (
-      external_id, title, summary, url, source, published_date,
+      external_id, title, summary, url, source, source_slug, published_date,
       category, impact, relevance_score, scope, states, analysis,
       image_url, relevance_tier, content_hash
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     ON CONFLICT (external_id) DO UPDATE SET
       title = EXCLUDED.title,
       summary = EXCLUDED.summary,
+      source_slug = EXCLUDED.source_slug,
       category = EXCLUDED.category,
       impact = EXCLUDED.impact,
       relevance_score = EXCLUDED.relevance_score,
@@ -72,7 +86,8 @@ export async function insertArticle(article) {
     article.title,
     article.summary || null,
     article.url,
-    article.source,
+    article.source,        // raw source display name
+    normalizedSource,      // Phase 0.5: normalizeSourceSlug(article.source)
     article.date || new Date(),
     article.category || 'Operations',
     article.impact || 'low',

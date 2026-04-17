@@ -5,6 +5,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
+import { smartTruncate } from '../lib/truncate.js'
 
 class AIService {
   constructor() {
@@ -123,7 +124,29 @@ class AIService {
     }
   }
 
+  /**
+   * Phase 0.6 — Truncate article fields before any AI call.
+   * Apply to BOTH triage and analysis callers:
+   *   const safeArticle = aiService.prepareArticle(article)
+   *
+   * @param {object} article - article object with title and summary
+   * @returns {object} article with title and summary truncated to spec limits
+   */
+  prepareArticle(article) {
+    if (!article) return article
+    return {
+      ...article,
+      summary: smartTruncate(article.summary, 4000),
+      title: (article.title || '').substring(0, 500),
+    }
+  }
+
   async analyzeContent(prompt, options = {}) {
+    // Phase 0.6 — if caller passes article context, truncate before building prompt
+    if (options.article) {
+      options = { ...options, article: this.prepareArticle(options.article) }
+    }
+
     const maxRetries = 3
     const requestedModel = options.model || 'claude-haiku-4-5-20251001'
     let lastError
