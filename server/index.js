@@ -2036,9 +2036,11 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
             ...enrichedResult,
             title: row.title,
             url: row.url,
-            source: row.source,
+            source: row.source || 'Google News',
+            date: row.published_date,
             published_date: row.published_date,
             relevance_tier: row.relevance_tier,
+            summary: enrichedResult.summary || row.summary || '',
           });
 
           if (enrichedResult.tags && enrichedResult.tags.length > 0) {

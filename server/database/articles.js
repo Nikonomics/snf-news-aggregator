@@ -31,6 +31,9 @@ export function generateExternalId(title, url) {
 
 // Insert a new article
 export async function insertArticle(article) {
+  if (!article.title || !article.url) {
+    throw new Error(`insertArticle requires title and url (got title=${!!article.title}, url=${!!article.url})`)
+  }
   const externalId = generateExternalId(article.title, article.url)
   const contentHash = generateContentHash(article.title, article.summary || '')
 
