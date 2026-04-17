@@ -168,7 +168,7 @@ class AIService {
 
   async callAnthropic(prompt, options) {
     const response = await this.providers.anthropic.client.messages.create({
-      model: options.model || 'claude-3-5-sonnet-20241022',
+      model: options.model || 'claude-haiku-4-5-20251001',
       max_tokens: options.maxTokens || 1000,
       temperature: options.temperature || 0.1,
       messages: [{
