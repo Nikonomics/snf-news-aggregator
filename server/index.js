@@ -1816,6 +1816,48 @@ app.post('/api/admin/backfill-content-hashes', requireAdminKey, async (req, res)
   }
 })
 
+// TEMPORARY: Bulk article backfill for historical import
+app.post('/api/admin/backfill-articles', requireAdminKey, async (req, res) => {
+  try {
+    const { articles } = req.body;
+    if (!Array.isArray(articles)) {
+      return res.status(400).json({ error: 'articles must be an array' });
+    }
+
+    console.log(`📦 Backfill: processing ${articles.length} articles`);
+    let inserted = 0, skipped = 0, errors = 0;
+
+    for (const article of articles) {
+      try {
+        await insertArticle({
+          title: article.title,
+          summary: article.summary || '',
+          url: article.url,
+          source: article.source || 'Google News',
+          published_date: article.published_date,
+          category: article.category || 'General',
+          impact: article.impact || 'medium',
+          relevance_score: article.relevance_score || 50,
+          scope: article.scope || 'National',
+          analysis: article.analysis || null,
+          image_url: article.image_url || null,
+          relevance_tier: article.relevance_tier || 'medium',
+        });
+        inserted++;
+      } catch (err) {
+        if (err.code === '23505') { skipped++; }
+        else { errors++; if (errors <= 5) console.error(`  Backfill error: ${err.message}`); }
+      }
+    }
+
+    console.log(`✅ Backfill: ${inserted} inserted, ${skipped} dupes, ${errors} errors`);
+    res.json({ success: true, inserted, skipped, errors, total: articles.length });
+  } catch (error) {
+    console.error('Backfill error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Admin: Backfill images for articles without image_url
 app.post('/api/admin/backfill-images', requireAdminKey, async (req, res) => {
   try {
