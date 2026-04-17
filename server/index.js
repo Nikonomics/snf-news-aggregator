@@ -2032,8 +2032,39 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
           const enrichedResult = await analyzeArticleWithAI(article);
           if (!enrichedResult) return { status: 'error', id: row.id };
 
-          // Use the same categorization as the RSS pipeline
-          const category = categorizeArticle(row.title, enrichedResult.summary || row.summary || '');
+          // Map AI articleType to DB category, with keyword fallback
+          const aiType = (enrichedResult.analysis?.articleType || '').toLowerCase();
+          let category;
+          if (aiType.includes('financial') || aiType.includes('market')) {
+            // Check if it's specifically M&A content
+            const text = `${row.title} ${row.summary || ''}`.toLowerCase();
+            if (text.includes('acqui') || text.includes('merger') || text.includes('m&a') ||
+                text.includes('buyout') || text.includes('takeover') || text.includes('consolidat') ||
+                text.includes('private equity') || text.includes('pe firm') || text.includes('deal')) {
+              category = 'M&A';
+            } else {
+              category = 'Financial';
+            }
+          } else if (aiType.includes('regulat')) {
+            category = 'Regulatory';
+          } else if (aiType.includes('policy')) {
+            category = 'Regulatory';
+          } else if (aiType.includes('opinion') || aiType.includes('commentary')) {
+            category = 'Opinion';
+          } else if (aiType.includes('operational') || aiType.includes('guidance')) {
+            category = 'Operations';
+          } else if (aiType.includes('breaking')) {
+            // Use keyword categorization for breaking news since it could be any topic
+            category = categorizeArticle(row.title, enrichedResult.summary || row.summary || '');
+            // Fix Market Intelligence → M&A mismatch
+            if (category === 'Market Intelligence') category = 'M&A';
+          } else if (aiType.includes('industry') || aiType.includes('trend')) {
+            category = categorizeArticle(row.title, enrichedResult.summary || row.summary || '');
+            if (category === 'Market Intelligence') category = 'M&A';
+          } else {
+            category = categorizeArticle(row.title, enrichedResult.summary || row.summary || '');
+            if (category === 'Market Intelligence') category = 'M&A';
+          }
 
           const articleId = await insertArticle({
             ...enrichedResult,
