@@ -27,6 +27,7 @@ import { getStatesWithScores, getStatesByMetric, getTopBottomStates } from './se
 import { checkDuplicate, getDeduplicationStats } from './services/deduplication.js'
 import { getTopStories, getEmergingTrends } from './services/trendAnalysis.js'
 import { getArticleImage } from './utils/imageExtractor.js'
+import { requireAdminKey } from './middleware/adminAuth.js'
 import {
   getStateDemographics,
   getAllStateDemographics,
@@ -1764,7 +1765,7 @@ app.post('/api/weekly-reports/generate', async (req, res) => {
 })
 
 // Admin: Add image_url column to articles
-app.post('/api/admin/add-image-url-column', async (req, res) => {
+app.post('/api/admin/add-image-url-column', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🔧 Adding image_url column to articles table...')
 
@@ -1789,7 +1790,7 @@ app.post('/api/admin/add-image-url-column', async (req, res) => {
 })
 
 // Admin: Backfill images for articles without image_url
-app.post('/api/admin/backfill-images', async (req, res) => {
+app.post('/api/admin/backfill-images', requireAdminKey, async (req, res) => {
   try {
     console.log('🖼️  Starting image backfill process...')
 
@@ -1893,7 +1894,7 @@ app.post('/api/admin/backfill-images', async (req, res) => {
 })
 
 // Admin: Add personalization columns to weekly_reports
-app.post('/api/admin/migrate-weekly-reports-personalization', async (req, res) => {
+app.post('/api/admin/migrate-weekly-reports-personalization', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🔧 Adding personalization columns to weekly_reports table...')
 
@@ -3446,7 +3447,7 @@ async function refreshArticlesInBackground() {
 }
 
 // POST /api/admin/update-google-news-sources - Extract actual sources from Google News articles
-app.post('/api/admin/update-google-news-sources', async (req, res) => {
+app.post('/api/admin/update-google-news-sources', requireAdminKey, async (req, res) => {
   try {
     console.log('Updating Google News article sources...')
 
@@ -3505,7 +3506,7 @@ app.post('/api/admin/update-google-news-sources', async (req, res) => {
 })
 
 // POST /api/admin/create-state-summaries-table - Create state_summaries table
-app.post('/api/admin/create-state-summaries-table', async (req, res) => {
+app.post('/api/admin/create-state-summaries-table', requireAdminKey, async (req, res) => {
   try {
     console.log('Creating state_summaries table...')
 
@@ -3555,7 +3556,7 @@ app.post('/api/admin/create-state-summaries-table', async (req, res) => {
 })
 
 // POST /api/admin/tag-opinion-pieces - Identify and tag opinion/commentary articles
-app.post('/api/admin/tag-opinion-pieces', async (req, res) => {
+app.post('/api/admin/tag-opinion-pieces', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🔍 Identifying opinion/commentary pieces...')
 
@@ -3618,85 +3619,56 @@ app.post('/api/admin/tag-opinion-pieces', async (req, res) => {
 })
 
 // Admin endpoint to cleanup duplicate articles
-app.post('/api/admin/cleanup-duplicates', async (req, res) => {
+app.post('/api/admin/cleanup-duplicates', requireAdminKey, async (req, res) => {
+  const dryRun = req.query.dry_run !== 'false'
+  const daysBack = parseInt(req.query.days) || 30
+
   try {
-    console.log('\n🔍 Finding duplicate articles...')
-
-    // Find articles with the same normalized title
     const result = await db.query(`
-      SELECT
-        id,
-        title,
-        published_date,
-        source,
-        url,
-        LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_title
-      FROM articles
-      ORDER BY normalized_title, published_date ASC
-    `)
+      WITH ranked AS (
+        SELECT
+          id,
+          title,
+          published_date,
+          source,
+          url,
+          LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_title,
+          ROW_NUMBER() OVER (
+            PARTITION BY LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')), url
+            ORDER BY published_date ASC
+          ) as rn
+        FROM articles
+      )
+      SELECT id, title, published_date, source, normalized_title
+      FROM ranked
+      WHERE rn > 1
+        AND published_date > NOW() - INTERVAL '1 day' * $1
+      ORDER BY normalized_title
+      LIMIT 500
+    `, [daysBack])
 
-    console.log(`Analyzing ${result.rows.length} articles...`)
-
-    // Group by normalized title
-    const titleGroups = {}
-    for (const article of result.rows) {
-      const key = article.normalized_title
-      if (!titleGroups[key]) {
-        titleGroups[key] = []
-      }
-      titleGroups[key].push(article)
+    if (dryRun) {
+      return res.json({
+        dryRun: true,
+        wouldDelete: result.rows.length,
+        articles: result.rows.map(r => ({ id: r.id, title: r.title, date: r.published_date }))
+      })
     }
 
-    // Find duplicates (groups with more than 1 article)
-    const duplicateGroups = Object.entries(titleGroups)
-      .filter(([_, articles]) => articles.length > 1)
-      .sort((a, b) => b[1].length - a[1].length) // Sort by most duplicates first
-
-    console.log(`Found ${duplicateGroups.length} sets of duplicates`)
-
-    let totalDeleted = 0
-    const deletedArticles = []
-
-    for (const [normalizedTitle, articles] of duplicateGroups) {
-      // Keep the oldest one (first published)
-      const keeper = articles[0]
-      const duplicates = articles.slice(1)
-
-      console.log(`\n📄 "${keeper.title}" - keeping ID ${keeper.id}, deleting ${duplicates.length} duplicates`)
-
-      for (const dup of duplicates) {
-        // Delete the duplicate
-        await db.query('DELETE FROM articles WHERE id = $1', [dup.id])
-        totalDeleted++
-        deletedArticles.push({
-          id: dup.id,
-          title: dup.title,
-          date: dup.published_date
-        })
-      }
+    let deleted = 0
+    for (const row of result.rows) {
+      await db.query('DELETE FROM articles WHERE id = $1', [row.id])
+      deleted++
     }
 
-    console.log(`\n✅ Cleanup complete! Deleted ${totalDeleted} duplicates`)
-
-    res.json({
-      success: true,
-      message: 'Duplicates cleaned up',
-      totalDeleted,
-      duplicateGroups: duplicateGroups.length,
-      totalArticles: result.rows.length,
-      remainingArticles: result.rows.length - totalDeleted
-    })
+    res.json({ success: true, deleted, daysBack })
   } catch (error) {
-    console.error('Error cleaning up duplicates:', error)
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+    res.status(500).json({ error: error.message })
   }
 })
 
 // Admin endpoint: Add relevance_tier column and update category taxonomy
-app.post('/api/admin/migrate-relevance-tier', async (req, res) => {
+app.post('/api/admin/migrate-relevance-tier', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🔄 Starting relevance tier migration...')
 
@@ -3804,7 +3776,7 @@ app.post('/api/admin/migrate-relevance-tier', async (req, res) => {
 })
 
 // Admin endpoint: Backfill images for articles without image_url
-app.post('/api/admin/backfill-images', async (req, res) => {
+app.post('/api/admin/backfill-images', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🖼️  Starting image backfill process...')
 
@@ -3924,7 +3896,7 @@ app.post('/api/admin/backfill-images', async (req, res) => {
 })
 
 // Admin endpoint: Clear placeholder images and backfill with real images
-app.post('/api/admin/clear-and-backfill-images', async (req, res) => {
+app.post('/api/admin/clear-and-backfill-images', requireAdminKey, async (req, res) => {
   try {
     console.log('\n🖼️  Starting clear & backfill process...')
 
@@ -4086,7 +4058,7 @@ app.post('/api/admin/clear-and-backfill-images', async (req, res) => {
 })
 
 // Admin endpoint: Run weekly reports table migration
-app.post('/api/admin/migrate-weekly-reports', async (req, res) => {
+app.post('/api/admin/migrate-weekly-reports', requireAdminKey, async (req, res) => {
   try {
     console.log('Running weekly_reports table migration...')
 
@@ -4569,60 +4541,11 @@ async function startServer() {
       // Set up automatic refresh interval
       setInterval(refreshArticlesInBackground, REFRESH_INTERVAL_MS)
 
-      // Set up daily duplicate cleanup (runs at 3am)
-      const scheduleCleanup = () => {
-        const now = new Date()
-        const next3AM = new Date()
-        next3AM.setHours(3, 0, 0, 0)
-        if (next3AM <= now) {
-          next3AM.setDate(next3AM.getDate() + 1)
-        }
-        const msUntil3AM = next3AM - now
-
-        setTimeout(async () => {
-          console.log('\n🧹 Running automated duplicate cleanup...')
-          try {
-            const result = await db.query(`
-              SELECT id, title, published_date, LOWER(REGEXP_REPLACE(title, '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_title
-              FROM articles
-              ORDER BY normalized_title, published_date ASC
-            `)
-
-            const titleGroups = {}
-            for (const article of result.rows) {
-              const key = article.normalized_title
-              if (!titleGroups[key]) titleGroups[key] = []
-              titleGroups[key].push(article)
-            }
-
-            const duplicateGroups = Object.entries(titleGroups).filter(([_, articles]) => articles.length > 1)
-            let totalDeleted = 0
-
-            for (const [_, articles] of duplicateGroups) {
-              const duplicates = articles.slice(1)
-              for (const dup of duplicates) {
-                await db.query('DELETE FROM articles WHERE id = $1', [dup.id])
-                totalDeleted++
-              }
-            }
-
-            if (totalDeleted > 0) {
-              console.log(`✓ Automated cleanup removed ${totalDeleted} duplicates`)
-            } else {
-              console.log(`✓ No duplicates found`)
-            }
-          } catch (error) {
-            console.error('❌ Automated cleanup failed:', error)
-          }
-
-          // Schedule next cleanup
-          scheduleCleanup()
-        }, msUntil3AM)
-
-        console.log(`✓ Duplicate cleanup scheduled for ${next3AM.toLocaleString()}`)
-      }
-
-      scheduleCleanup()
+      // DISABLED: Automated duplicate cleanup was unsafe (loads all articles into memory,
+      // deletes by normalized title only). Use /api/admin/cleanup-duplicates manually
+      // with admin auth after verifying the deletion list.
+      // See REMEDIATION-SPEC v1.1 Phase 1.5 for details.
+      console.log('ℹ️ Automated duplicate cleanup disabled (unsafe). Use admin endpoint with review.')
     }).catch(error => {
       console.error('Error fetching initial articles:', error)
     })

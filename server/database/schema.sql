@@ -32,6 +32,24 @@ CREATE TABLE IF NOT EXISTS articles (
     -- AI Analysis (stored as JSONB for flexibility)
     analysis JSONB,
 
+    -- Media and relevance
+    image_url TEXT,
+    relevance_tier VARCHAR(20) DEFAULT 'medium',
+
+    -- M&A analysis fields
+    ma_analyzed BOOLEAN DEFAULT FALSE,
+    ma_acquirer VARCHAR(255),
+    ma_target VARCHAR(255),
+    ma_deal_value VARCHAR(100),
+    ma_deal_type VARCHAR(100),
+    ma_facility_count INTEGER,
+    ma_states TEXT[],
+    ma_acquirer_type VARCHAR(100),
+    ma_seller_type VARCHAR(100),
+    ma_strategic_rationale TEXT,
+    ma_analyzed_at TIMESTAMP,
+    ma_analysis_attempts INTEGER DEFAULT 0,
+
     -- Deduplication fields (added 2025-10-11)
     content_hash VARCHAR(64),
     last_content_update TIMESTAMP,
@@ -177,16 +195,20 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Triggers to auto-update updated_at
+-- Triggers: drop-then-create for idempotency
+DROP TRIGGER IF EXISTS update_articles_updated_at ON articles;
 CREATE TRIGGER update_articles_updated_at BEFORE UPDATE ON articles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_conferences_updated_at ON conferences;
 CREATE TRIGGER update_conferences_updated_at BEFORE UPDATE ON conferences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_preferences_updated_at ON user_preferences;
 CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_state_summaries_updated_at ON state_summaries;
 CREATE TRIGGER update_state_summaries_updated_at BEFORE UPDATE ON state_summaries
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -211,3 +233,22 @@ FROM conferences
 WHERE date_start >= CURRENT_DATE
     AND status = 'confirmed'
 ORDER BY date_start ASC;
+
+-- ============================================================
+-- COLUMN MIGRATIONS (safe for existing databases)
+-- These use ADD COLUMN IF NOT EXISTS so they're idempotent.
+-- ============================================================
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS relevance_tier VARCHAR(20) DEFAULT 'medium';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_analyzed BOOLEAN DEFAULT FALSE;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_acquirer VARCHAR(255);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_target VARCHAR(255);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_deal_value VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_deal_type VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_facility_count INTEGER;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_states TEXT[];
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_acquirer_type VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_seller_type VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_strategic_rationale TEXT;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_analyzed_at TIMESTAMP;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ma_analysis_attempts INTEGER DEFAULT 0;

@@ -9,111 +9,66 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
+import { pool } from '../database/db.js'
 import * as db from '../database/db.js'
 import { processMAArticle } from '../services/analyzeMADeals.js'
+
+const LOCK_ID = 829471
+const MAX_ATTEMPTS = 3
 
 /**
  * Find and analyze all unprocessed M&A articles
  * @returns {Promise<Object>} Summary of processing results
  */
 export async function analyzeNewMAArticles() {
+  const client = await pool.connect()
+
   try {
-    console.log('\n' + '='.repeat(80))
-    console.log('M&A Analysis Worker - Checking for new articles')
-    console.log('='.repeat(80) + '\n')
+    const lockResult = await client.query('SELECT pg_try_advisory_lock($1) as acquired', [LOCK_ID])
+    if (!lockResult.rows[0].acquired) {
+      console.log('⏭️ M&A worker: another instance holds the lock, skipping')
+      return { skipped: true }
+    }
 
-    // Find M&A articles that haven't been analyzed yet
-    const query = `
-      SELECT
-        id, external_id, title, summary, url, source,
-        published_date, category, analysis
-      FROM articles
-      WHERE category = 'M&A'
-        AND ma_analyzed = FALSE
-      ORDER BY published_date DESC
-    `
+    try {
+      const unprocessed = await db.query(`
+        SELECT id, title, url, summary, source, analysis, ma_analysis_attempts
+        FROM articles
+        WHERE category = 'M&A'
+          AND ma_analyzed = FALSE
+          AND (ma_analysis_attempts IS NULL OR ma_analysis_attempts < $1)
+        ORDER BY published_date DESC
+      `, [MAX_ATTEMPTS])
 
-    const result = await db.query(query)
-    const maArticles = result.rows
+      console.log(`Found ${unprocessed.rows.length} unprocessed M&A articles`)
 
-    if (maArticles.length === 0) {
-      console.log('✓ No new M&A articles to analyze\n')
-      return {
-        success: true,
-        processed: 0,
-        succeeded: 0,
-        failed: 0,
-        message: 'No new M&A articles found'
+      let processed = 0
+      let failed = 0
+
+      for (const article of unprocessed.rows) {
+        try {
+          await db.query(
+            'UPDATE articles SET ma_analysis_attempts = COALESCE(ma_analysis_attempts, 0) + 1 WHERE id = $1',
+            [article.id]
+          )
+
+          await processMAArticle(article)
+          processed++
+          console.log(`✅ Processed: ${article.title.substring(0, 60)}...`)
+
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (error) {
+          failed++
+          console.error(`❌ Failed (attempt ${(article.ma_analysis_attempts || 0) + 1}/${MAX_ATTEMPTS}): ${article.title.substring(0, 60)}... — ${error.message}`)
+        }
       }
+
+      return { processed, failed, total: unprocessed.rows.length }
+    } finally {
+      await client.query('SELECT pg_advisory_unlock($1)', [LOCK_ID])
     }
-
-    console.log(`📊 Found ${maArticles.length} new M&A article${maArticles.length === 1 ? '' : 's'} to analyze\n`)
-
-    let processed = 0
-    let succeeded = 0
-    let failed = 0
-    const errors = []
-
-    for (const article of maArticles) {
-      processed++
-
-      try {
-        console.log(`[${processed}/${maArticles.length}] Analyzing: ${article.title.substring(0, 60)}...`)
-
-        await processMAArticle(article)
-
-        succeeded++
-
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-      } catch (error) {
-        console.error(`✗ Failed: ${error.message}`)
-        failed++
-        errors.push({
-          articleId: article.id,
-          title: article.title.substring(0, 60),
-          error: error.message
-        })
-      }
-    }
-
-    // Summary
-    console.log('\n' + '='.repeat(80))
-    console.log('M&A ANALYSIS WORKER COMPLETE')
-    console.log('='.repeat(80))
-    console.log(`Total articles: ${processed}`)
-    console.log(`Succeeded: ${succeeded}`)
-    console.log(`Failed: ${failed}`)
-
-    if (succeeded > 0) {
-      console.log(`\n✅ ${succeeded} M&A article${succeeded === 1 ? '' : 's'} analyzed successfully!`)
-    }
-
-    if (failed > 0) {
-      console.log(`\n⚠️  ${failed} article${failed === 1 ? '' : 's'} failed:`)
-      errors.forEach(err => {
-        console.log(`   - ${err.title}: ${err.error}`)
-      })
-    }
-
-    console.log()
-
-    return {
-      success: failed === 0,
-      processed,
-      succeeded,
-      failed,
-      errors: errors.length > 0 ? errors : undefined,
-      message: `Processed ${processed} article${processed === 1 ? '' : 's'}: ${succeeded} succeeded, ${failed} failed`
-    }
-
-  } catch (error) {
-    console.error('Fatal error in M&A analysis worker:', error)
-    return {
-      success: false,
-      error: error.message
-    }
+  } finally {
+    client.release()
   }
 }
 
@@ -122,28 +77,13 @@ export async function analyzeNewMAArticles() {
  * Runs every hour to check for new M&A articles
  */
 export function startMAAnalysisWorker() {
-  console.log('\n🚀 Starting M&A Analysis Worker')
-  console.log('   Schedule: Every hour')
-  console.log('   Queries: category=\'M&A\' AND ma_analyzed=FALSE\n')
+  console.log('🚀 Starting M&A Analysis Worker (advisory lock, max 3 attempts)')
 
-  // Run immediately on startup
-  analyzeNewMAArticles().catch(error => {
-    console.error('Error in initial M&A analysis run:', error)
-  })
-
-  // Then run every hour
-  const INTERVAL = 60 * 60 * 1000 // 1 hour in milliseconds
+  analyzeNewMAArticles().catch(err => console.error('Initial M&A run error:', err))
 
   setInterval(() => {
-    analyzeNewMAArticles().catch(error => {
-      console.error('Error in scheduled M&A analysis run:', error)
-    })
-  }, INTERVAL)
-
-  console.log('✅ M&A Analysis Worker started successfully\n')
+    analyzeNewMAArticles().catch(err => console.error('Scheduled M&A run error:', err))
+  }, 60 * 60 * 1000)
 }
 
-export default {
-  analyzeNewMAArticles,
-  startMAAnalysisWorker
-}
+export default { analyzeNewMAArticles, startMAAnalysisWorker }

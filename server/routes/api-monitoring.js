@@ -5,6 +5,7 @@
 import express from 'express'
 import apiKeyManager from '../services/apiKeyManager.js'
 import aiService from '../services/aiService.js'
+import { requireAdminKey } from '../middleware/adminAuth.js'
 
 const router = express.Router()
 
@@ -70,7 +71,7 @@ router.get('/api-keys/health', async (req, res) => {
 })
 
 // Reset failed keys (admin endpoint)
-router.post('/api-keys/reset', (req, res) => {
+router.post('/api-keys/reset', requireAdminKey, (req, res) => {
   try {
     // Reset failed keys - they might be working again
     apiKeyManager.failedKeys.clear()

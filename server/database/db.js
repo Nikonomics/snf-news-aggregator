@@ -29,8 +29,9 @@ pool.on('connect', () => {
 })
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected database error:', err)
-  process.exit(-1)
+  console.error('❌ Unexpected database pool error:', err.message)
+  // Do NOT exit. Pool handles reconnections internally.
+  // Query-level retryQuery() handles transient failures for writes.
 })
 
 // Initialize database schema
