@@ -147,10 +147,10 @@ class AIService {
         lastError = error
         console.warn(`AI attempt ${attempt + 1} failed (provider: ${routing?.provider}, model: ${routing?.model}):`, error.message)
         
-        if (error.status === 429 || error.message?.includes('rate limit')) {
+        if (error.status === 429 || error.status === 402 || error.message?.includes('rate limit') || error.message?.includes('quota') || error.message?.includes('billing')) {
           const failedProvider = routing?.provider || this.getNativeProvider(requestedModel)
           this.failedProviders.add(failedProvider)
-          console.warn(`🚨 Marked ${failedProvider} as failed, next attempt will try failover`)
+          console.warn(`🚨 Marked ${failedProvider} as failed (${error.status || 'unknown status'}), next attempt will try failover`)
         }
 
         if (error.status === 400 && error.message?.includes('model')) {
