@@ -2014,7 +2014,6 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
 
     let processed = 0, errors = 0;
     const kept = [];
-    const attempted = []; // New array to store all attempted articles
 
     for (let i = 0; i < result.rows.length; i += concurrency) {
       const chunk = result.rows.slice(i, i + concurrency);
@@ -2089,6 +2088,11 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
           return { status: 'ok', id: articleId, tier: row.relevance_tier, category: enrichedResult.category || '?', title: row.title.substring(0, 60) };
         } catch (err) {
           console.error(`  ❌ Analyze error ${row.id}: ${err.message}`);
+          // Update article to skipped category if it errors out
+          await db.query(
+            'UPDATE articles SET category = $1, relevance_tier = $2, analysis = $3 WHERE id = $4',
+            ['Untriaged_Skipped_Error', row.relevance_tier || 'low', { error: err.message, timestamp: new Date().toISOString() }, row.id]
+          );
           return { status: 'error', id: row.id };
         }
       });
@@ -2110,7 +2114,6 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
     res.json({
       success: true, processed, errors,
       remaining: parseInt(remaining.rows[0].count),
-      attempted: attempted.slice(0, 50), // Return all attempted for debugging
       kept: kept.slice(0, 5),
     });
   } catch (error) {
