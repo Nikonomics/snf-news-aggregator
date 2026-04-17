@@ -2014,6 +2014,7 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
 
     let processed = 0, errors = 0;
     const kept = [];
+    const attempted = []; // New array to store all attempted articles
 
     for (let i = 0; i < result.rows.length; i += concurrency) {
       const chunk = result.rows.slice(i, i + concurrency);
@@ -2028,6 +2029,9 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
             relevance_tier: row.relevance_tier,
             tags: [],
           };
+
+          // Always add to attempted, regardless of success/failure
+          attempted.push({ id: row.id, tier: row.relevance_tier, title: row.title.substring(0, 60) });
 
           const enrichedResult = await analyzeArticleWithAI(article);
           if (!enrichedResult) return { status: 'error', id: row.id };
@@ -2106,6 +2110,7 @@ app.post('/api/admin/bulk-analyze', requireAdminKey, async (req, res) => {
     res.json({
       success: true, processed, errors,
       remaining: parseInt(remaining.rows[0].count),
+      attempted: attempted.slice(0, 50), // Return all attempted for debugging
       kept: kept.slice(0, 5),
     });
   } catch (error) {
