@@ -1816,6 +1816,95 @@ app.post('/api/admin/backfill-content-hashes', requireAdminKey, async (req, res)
   }
 })
 
+// Admin: Triage + purge untriaged backfill articles
+app.post('/api/admin/triage-backfill', requireAdminKey, async (req, res) => {
+  try {
+    const { batchSize = 50, deleteLow = true, dryRun = false } = req.body || {};
+
+    // Find untriaged articles (category='General', no analysis)
+    const result = await db.query(`
+      SELECT id, title, summary, url, source, published_date, category
+      FROM articles
+      WHERE category = 'General'
+        AND (analysis IS NULL OR analysis::text = 'null')
+      ORDER BY published_date DESC
+      LIMIT $1
+    `, [batchSize]);
+
+    console.log(`🔍 Triage-backfill: ${result.rows.length} untriaged articles (batch ${batchSize}, deleteLow=${deleteLow}, dryRun=${dryRun})`);
+
+    let triaged = 0, deleted = 0, errors = 0;
+    const kept = [];
+
+    for (const row of result.rows) {
+      try {
+        const article = {
+          title: row.title,
+          summary: row.summary,
+          url: row.url,
+          source: row.source,
+          published_date: row.published_date,
+        };
+
+        // Run full AI triage + analysis
+        const analysis = await analyzeArticleWithAI(article);
+        const tier = article.relevance_tier || 'low';
+        const category = analysis?.articleType || article.category || 'General';
+
+        // Map articleType to category
+        let mappedCategory = 'General';
+        const catLower = (category || '').toLowerCase();
+        if (catLower.includes('m&a') || catLower.includes('merger') || catLower.includes('acquisition')) mappedCategory = 'M&A';
+        else if (catLower.includes('regulat') || catLower.includes('compliance') || catLower.includes('cms')) mappedCategory = 'Regulatory';
+        else if (catLower.includes('financ') || catLower.includes('reimburse') || catLower.includes('billing')) mappedCategory = 'Financial';
+        else if (catLower.includes('staff') || catLower.includes('workforce') || catLower.includes('labor')) mappedCategory = 'Staffing';
+        else if (catLower.includes('quality') || catLower.includes('clinical') || catLower.includes('patient')) mappedCategory = 'Quality';
+        else if (catLower.includes('tech') || catLower.includes('innov')) mappedCategory = 'Technology';
+        else if (catLower.includes('operat')) mappedCategory = 'Operations';
+
+        if (deleteLow && tier === 'low') {
+          if (!dryRun) {
+            await db.query('DELETE FROM articles WHERE id = $1', [row.id]);
+          }
+          deleted++;
+          console.log(`  🗑️ ${tier} | ${row.title.substring(0, 50)}...`);
+        } else {
+          if (!dryRun) {
+            await db.query(
+              'UPDATE articles SET analysis = $1, category = $2, relevance_tier = $3, scope = $4 WHERE id = $5',
+              [JSON.stringify(analysis), mappedCategory, tier, analysis?.scope || 'National', row.id]
+            );
+          }
+          kept.push({ id: row.id, tier, category: mappedCategory, title: row.title.substring(0, 60) });
+          triaged++;
+          console.log(`  ✅ ${tier} | ${mappedCategory} | ${row.title.substring(0, 50)}...`);
+        }
+
+        // Rate limit: 500ms between AI calls
+        await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        errors++;
+        console.error(`  ❌ Error triaging article ${row.id}: ${err.message}`);
+      }
+    }
+
+    const remaining = await db.query(`
+      SELECT COUNT(*) as count FROM articles
+      WHERE category = 'General' AND (analysis IS NULL OR analysis::text = 'null')
+    `);
+
+    console.log(`✅ Triage batch done: ${triaged} kept, ${deleted} deleted, ${errors} errors, ${remaining.rows[0].count} remaining`);
+    res.json({
+      success: true, triaged, deleted, errors, dryRun,
+      remaining: parseInt(remaining.rows[0].count),
+      kept: kept.slice(0, 10),
+    });
+  } catch (error) {
+    console.error('Triage-backfill error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // TEMPORARY: Bulk article backfill for historical import
 app.post('/api/admin/backfill-articles', requireAdminKey, async (req, res) => {
   try {
