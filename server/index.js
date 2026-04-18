@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import aiService from './services/aiService.js'
 import { triageArticle, ensureShadowLogTable } from './services/triageService.js'
+import { reclassifyBatch, getReclassifyStats } from './services/categoryService.js'
 import * as db from './database/db.js'
 import pool from './database/db.js'
 import { insertArticle, insertArticleTags, getArticles, updateArticleContent, generateContentHash } from './database/articles.js'
@@ -4075,6 +4076,122 @@ app.post('/api/admin/migrate-weekly-reports', requireAdminKey, async (req, res) 
       success: false,
       error: error.message
     })
+  }
+})
+
+// ============================================================
+// PHASE 2 — CATEGORY RECLASSIFICATION ADMIN ENDPOINT
+// ============================================================
+
+// POST /api/admin/reclassify-categories
+// Runs one batch of Operations article category backfill.
+// Body: { batchSize?: number, dryRun?: boolean }
+// dryRun=true returns stats only without processing any articles.
+app.post('/api/admin/reclassify-categories', requireAdminKey, async (req, res) => {
+  try {
+    const batchSize = parseInt(req.body.batchSize ?? 25, 10)
+    const dryRun = req.body.dryRun === true || req.body.dryRun === 'true'
+
+    if (isNaN(batchSize) || batchSize < 1 || batchSize > 200) {
+      return res.status(400).json({
+        success: false,
+        error: 'batchSize must be a number between 1 and 200',
+      })
+    }
+
+    if (dryRun) {
+      const stats = await getReclassifyStats()
+      return res.json({
+        success: true,
+        dryRun: true,
+        stats,
+      })
+    }
+
+    const processed = await reclassifyBatch(batchSize)
+    const stats = await getReclassifyStats()
+
+    return res.json({
+      success: true,
+      dryRun: false,
+      processed,
+      stats,
+    })
+  } catch (error) {
+    console.error('Error in /api/admin/reclassify-categories:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    })
+  }
+})
+
+// ============================================================
+// PHASE 3 — SOURCE AUTHORITY + RANKINGS API ENDPOINTS
+// ============================================================
+
+// POST /api/admin/refresh-rankings — manually trigger a ranked view refresh
+// Requires x-admin-key header. Also called by cron every 30 min.
+app.post('/api/admin/refresh-rankings', requireAdminKey, async (req, res) => {
+  try {
+    await db.query('REFRESH MATERIALIZED VIEW CONCURRENTLY article_rankings;')
+    res.json({ refreshed: true, timestamp: new Date() })
+  } catch (error) {
+    console.error('Error refreshing article_rankings:', error.message)
+    res.status(500).json({ error: 'Failed to refresh rankings', message: error.message })
+  }
+})
+
+// GET /api/rankings/top — top 20 articles by rank_score, optional ?states=VA,MD filter
+// Public endpoint (no auth required).
+app.get('/api/rankings/top', async (req, res) => {
+  try {
+    const statesParam = req.query.states // e.g. "VA,MD"
+    const userStates = statesParam
+      ? statesParam.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+      : []
+
+    let queryText
+    let queryValues
+
+    if (userStates.length > 0) {
+      // Filter: national articles OR articles that mention one of the operator's states
+      queryText = `
+        SELECT
+          id, title, url, published_date, relevance_tier, primary_category,
+          impact_scope, event_type, actionability_window, severity,
+          affected_states, source_slug,
+          ROUND(rank_score::numeric, 4) AS rank_score
+        FROM article_rankings
+        WHERE (
+          cardinality(affected_states) = 0
+          OR affected_states && $1::text[]
+          OR impact_scope = 'national'
+        )
+        ORDER BY rank_score DESC
+        LIMIT 20;
+      `
+      queryValues = [userStates]
+    } else {
+      // No state filter — return global top 20
+      queryText = `
+        SELECT
+          id, title, url, published_date, relevance_tier, primary_category,
+          impact_scope, event_type, actionability_window, severity,
+          affected_states, source_slug,
+          ROUND(rank_score::numeric, 4) AS rank_score
+        FROM article_rankings
+        ORDER BY rank_score DESC
+        LIMIT 20;
+      `
+      queryValues = []
+    }
+
+    const { rows } = await db.query(queryText, queryValues)
+    res.json({ articles: rows, count: rows.length, states_filter: userStates })
+  } catch (error) {
+    console.error('Error fetching top rankings:', error.message)
+    res.status(500).json({ error: 'Failed to fetch rankings', message: error.message })
   }
 })
 
